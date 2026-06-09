@@ -20,6 +20,8 @@ use App\Http\Controllers\Api\V1\Catalog\CoursePublishingController;
 use App\Http\Controllers\Api\V1\Catalog\LessonController;
 use App\Http\Controllers\Api\V1\Catalog\SectionController;
 use App\Http\Controllers\Api\V1\Certification\CertificateController;
+use App\Http\Controllers\Api\V1\Communication\ForumController;
+use App\Http\Controllers\Api\V1\Communication\TicketController;
 use App\Http\Controllers\Api\V1\Enrollment\EnrollmentController;
 use App\Http\Controllers\Api\V1\Enrollment\LessonProgressController;
 use App\Http\Controllers\Api\V1\Enrollment\MediaStreamController;
@@ -203,4 +205,27 @@ Route::middleware('auth:sanctum')->prefix('scheduling')->name('api.scheduling.')
     Route::post('courses/{course}/sessions', [LiveSessionController::class, 'store'])->name('sessions.store');
     Route::post('sessions/{session}/register', [LiveSessionController::class, 'register'])->name('sessions.register');
     Route::get('calendar', [CalendarController::class, 'index'])->name('calendar');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Communication — forums & support tickets (PRD §5.ز)
+|--------------------------------------------------------------------------
+*/
+Route::middleware('auth:sanctum')->prefix('community')->name('api.community.')->group(function () {
+    // Forums.
+    Route::get('courses/{course}/threads', [ForumController::class, 'index'])->name('threads.index');
+    Route::post('courses/{course}/threads', [ForumController::class, 'storeThread'])->name('threads.store');
+    Route::get('threads/{thread}', [ForumController::class, 'show'])->name('threads.show');
+    Route::post('threads/{thread}/posts', [ForumController::class, 'reply'])->name('threads.reply');
+    Route::post('posts/{post}/report', [ForumController::class, 'report'])->name('posts.report');
+    Route::post('posts/{post}/hide', [ForumController::class, 'hide'])->name('posts.hide');
+    Route::post('courses/{course}/bans', [ForumController::class, 'ban'])->name('bans.store');
+
+    // Support tickets.
+    Route::get('tickets', [TicketController::class, 'index'])->name('tickets.index');
+    Route::post('tickets', [TicketController::class, 'store'])->name('tickets.store');
+    Route::get('tickets/{ticket}', [TicketController::class, 'show'])->name('tickets.show');
+    Route::post('tickets/{ticket}/messages', [TicketController::class, 'reply'])->name('tickets.reply');
+    Route::post('tickets/{ticket}/close', [TicketController::class, 'close'])->name('tickets.close');
 });
