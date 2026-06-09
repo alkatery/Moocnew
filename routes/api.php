@@ -2,6 +2,11 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\Api\V1\Admin\SettingsController;
+use App\Http\Controllers\Api\V1\Auth\LoginController;
+use App\Http\Controllers\Api\V1\Auth\LogoutController;
+use App\Http\Controllers\Api\V1\Auth\MeController;
+use App\Http\Controllers\Api\V1\Auth\RegisterController;
 use App\Http\Controllers\Api\V1\HealthController;
 use Illuminate\Support\Facades\Route;
 
@@ -18,3 +23,19 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::get('health', HealthController::class)->name('api.health');
+
+Route::prefix('auth')->name('api.auth.')->group(function () {
+    Route::post('register', RegisterController::class)->name('register');
+    Route::post('login', LoginController::class)->name('login');
+
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::post('logout', LogoutController::class)->name('logout');
+        Route::get('me', MeController::class)->name('me');
+    });
+});
+
+Route::middleware('auth:sanctum')->prefix('admin')->name('api.admin.')->group(function () {
+    Route::get('settings', [SettingsController::class, 'show'])->name('settings.show');
+    Route::patch('settings/payments', [SettingsController::class, 'updatePayments'])
+        ->name('settings.payments.update');
+});

@@ -24,4 +24,19 @@ return [
         'enabled_default' => (bool) env('PAYMENTS_ENABLED', false),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | PDPL
+    |--------------------------------------------------------------------------
+    |
+    | The version string stamped on every consent record (PRD §5.أ, §7).
+    | Bump it whenever the privacy/data-processing policy changes so that
+    | consent history stays auditable and re-consent can be detected.
+    |
+    */
+
+    'pdpl' => [
+        'policy_version' => env('PDPL_POLICY_VERSION', '2026-06-01'),
+    ],
+
 ];
