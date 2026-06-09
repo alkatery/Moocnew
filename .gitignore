@@ -21,3 +21,7 @@ yarn-error.log
 /.nova
 /.vscode
 /.zed
+
+# Redis dump artifact (from local dev redis-server)
+/dump.rdb
+*.rdb
