@@ -12,7 +12,12 @@ use App\Http\Controllers\Api\V1\Catalog\CourseController;
 use App\Http\Controllers\Api\V1\Catalog\CoursePublishingController;
 use App\Http\Controllers\Api\V1\Catalog\LessonController;
 use App\Http\Controllers\Api\V1\Catalog\SectionController;
+use App\Http\Controllers\Api\V1\Enrollment\EnrollmentController;
+use App\Http\Controllers\Api\V1\Enrollment\LessonProgressController;
+use App\Http\Controllers\Api\V1\Enrollment\MediaStreamController;
+use App\Http\Controllers\Api\V1\Enrollment\PlaybackController;
 use App\Http\Controllers\Api\V1\HealthController;
+use App\Http\Controllers\Api\V1\Webhooks\BunnyVideoWebhookController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -80,3 +85,25 @@ Route::prefix('catalog')->name('api.catalog.')->group(function () {
         Route::delete('lessons/{lesson}', [LessonController::class, 'destroy'])->name('lessons.destroy');
     });
 });
+
+/*
+|--------------------------------------------------------------------------
+| Enrollment & Access (PRD §5.ج)
+|--------------------------------------------------------------------------
+*/
+Route::middleware('auth:sanctum')->name('api.enrollment.')->group(function () {
+    Route::post('catalog/courses/{course}/enroll', [EnrollmentController::class, 'store'])->name('enroll');
+    Route::get('enrollments', [EnrollmentController::class, 'index'])->name('index');
+
+    Route::post('lessons/{lesson}/progress', [LessonProgressController::class, 'store'])->name('progress');
+    Route::get('lessons/{lesson}/playback', [PlaybackController::class, 'show'])->name('playback');
+});
+
+// Signed, short-lived delivery of storage-hosted videos (no auth: the
+// signature is the capability).
+Route::get('media/stream/{lesson}', MediaStreamController::class)
+    ->middleware('signed')
+    ->name('api.media.stream');
+
+// Managed video provider status webhook (signature-verified, idempotent).
+Route::post('webhooks/video/bunny', BunnyVideoWebhookController::class)->name('api.webhooks.video.bunny');

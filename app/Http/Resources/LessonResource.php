@@ -28,6 +28,7 @@ final class LessonResource extends JsonResource
             'type' => $this->type->value,
             'position' => $this->position,
             'is_free_preview' => $this->is_free_preview,
+            'video_provider' => $this->video_provider?->value,
             'video_status' => $this->video_status->value,
         ];
     }

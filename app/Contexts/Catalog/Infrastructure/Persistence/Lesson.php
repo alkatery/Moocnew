@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Contexts\Catalog\Infrastructure\Persistence;
 
 use App\Contexts\Catalog\Domain\Course\LessonType;
+use App\Contexts\Catalog\Domain\Course\VideoProvider;
 use App\Contexts\Catalog\Domain\Course\VideoStatus;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -16,6 +17,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int $section_id
  * @property string $title
  * @property LessonType $type
+ * @property VideoProvider|null $video_provider
  * @property string|null $video_id
  * @property VideoStatus $video_status
  * @property bool $is_free_preview
@@ -28,6 +30,7 @@ final class Lesson extends Model
         'type',
         'content',
         'asset_path',
+        'video_provider',
         'video_id',
         'video_status',
         'position',
@@ -38,6 +41,7 @@ final class Lesson extends Model
     {
         return [
             'type' => LessonType::class,
+            'video_provider' => VideoProvider::class,
             'video_status' => VideoStatus::class,
             'is_free_preview' => 'boolean',
         ];

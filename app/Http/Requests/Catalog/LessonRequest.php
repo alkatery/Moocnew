@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Requests\Catalog;
 
 use App\Contexts\Catalog\Domain\Course\LessonType;
+use App\Contexts\Catalog\Domain\Course\VideoProvider;
 use App\Contexts\Catalog\Infrastructure\Persistence\Lesson;
 use App\Contexts\Catalog\Infrastructure\Persistence\Section;
 use Illuminate\Foundation\Http\FormRequest;
@@ -34,7 +35,8 @@ final class LessonRequest extends FormRequest
             'title' => [$required, 'string', 'max:255'],
             'type' => [$required, Rule::enum(LessonType::class)],
             'content' => ['nullable', 'string'],
-            'video_id' => ['nullable', 'string', 'max:255'],
+            'video_provider' => ['nullable', 'required_with:video_id', Rule::enum(VideoProvider::class)],
+            'video_id' => ['nullable', 'string', 'max:255', 'required_with:video_provider'],
             'position' => ['nullable', 'integer', 'min:0'],
             'is_free_preview' => ['nullable', 'boolean'],
         ];

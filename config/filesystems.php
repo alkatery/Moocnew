@@ -38,6 +38,21 @@ return [
             'report' => false,
         ],
 
+        // Protected media (lesson videos/files) delivered via signed routes.
+        // Local in development; point at an S3-compatible disk (e.g.
+        // Cloudflare R2) in production via env.
+        'media' => [
+            'driver' => env('MEDIA_DISK_DRIVER', 'local'),
+            'root' => storage_path('app/media'),
+            'key' => env('MEDIA_AWS_ACCESS_KEY_ID'),
+            'secret' => env('MEDIA_AWS_SECRET_ACCESS_KEY'),
+            'region' => env('MEDIA_AWS_DEFAULT_REGION'),
+            'bucket' => env('MEDIA_AWS_BUCKET'),
+            'endpoint' => env('MEDIA_AWS_ENDPOINT'),
+            'use_path_style_endpoint' => (bool) env('MEDIA_AWS_USE_PATH_STYLE_ENDPOINT', false),
+            'throw' => true,
+        ],
+
         'public' => [
             'driver' => 'local',
             'root' => storage_path('app/public'),

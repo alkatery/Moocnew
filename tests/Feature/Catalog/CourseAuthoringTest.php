@@ -88,6 +88,7 @@ it('lets the owner build sections and lessons', function () {
     $this->postJson("/api/v1/catalog/sections/{$section}/lessons", [
         'title' => 'الدرس الأول',
         'type' => 'video',
+        'video_provider' => 'bunny',
         'video_id' => 'vid_123',
     ])->assertCreated()
         ->assertJsonPath('data.type', 'video')
