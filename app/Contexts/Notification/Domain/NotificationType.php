@@ -13,6 +13,7 @@ enum NotificationType: string
     case EnrollmentConfirmed = 'enrollment_confirmed';
     case CourseCompleted = 'course_completed';
     case AssignmentGraded = 'assignment_graded';
+    case SessionReminder = 'session_reminder';
 
     public function label(): string
     {
@@ -20,6 +21,7 @@ enum NotificationType: string
             self::EnrollmentConfirmed => 'تأكيد الالتحاق',
             self::CourseCompleted => 'إتمام الدورة',
             self::AssignmentGraded => 'تصحيح الواجب',
+            self::SessionReminder => 'تذكير بحصة مباشرة',
         };
     }
 }

@@ -7,6 +7,7 @@ use App\Contexts\Enrollment\Infrastructure\Providers\EnrollmentServiceProvider;
 use App\Contexts\Identity\Infrastructure\Providers\IdentityServiceProvider;
 use App\Contexts\Notification\Infrastructure\Providers\NotificationServiceProvider;
 use App\Contexts\Platform\Infrastructure\Providers\PlatformServiceProvider;
+use App\Contexts\Scheduling\Infrastructure\Providers\SchedulingServiceProvider;
 use App\Providers\AppServiceProvider;
 
 return [
@@ -18,4 +19,5 @@ return [
     CertificationServiceProvider::class,
     NotificationServiceProvider::class,
     CommerceServiceProvider::class,
+    SchedulingServiceProvider::class,
 ];

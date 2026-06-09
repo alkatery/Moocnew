@@ -27,6 +27,8 @@ use App\Http\Controllers\Api\V1\Enrollment\PlaybackController;
 use App\Http\Controllers\Api\V1\HealthController;
 use App\Http\Controllers\Api\V1\Notification\NotificationController;
 use App\Http\Controllers\Api\V1\Notification\PreferenceController;
+use App\Http\Controllers\Api\V1\Scheduling\CalendarController;
+use App\Http\Controllers\Api\V1\Scheduling\LiveSessionController;
 use App\Http\Controllers\Api\V1\Webhooks\BunnyVideoWebhookController;
 use App\Http\Controllers\Api\V1\Webhooks\MoyasarPaymentWebhookController;
 use Illuminate\Support\Facades\Route;
@@ -189,4 +191,16 @@ Route::middleware('auth:sanctum')->prefix('notifications')->name('api.notificati
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('presence/heartbeat', [PresenceController::class, 'heartbeat'])->name('api.presence.heartbeat');
     Route::get('analytics/overview', [AnalyticsController::class, 'overview'])->name('api.analytics.overview');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Scheduling — live sessions & calendar (PRD §5.و)
+|--------------------------------------------------------------------------
+*/
+Route::middleware('auth:sanctum')->prefix('scheduling')->name('api.scheduling.')->group(function () {
+    Route::get('courses/{course}/sessions', [LiveSessionController::class, 'index'])->name('sessions.index');
+    Route::post('courses/{course}/sessions', [LiveSessionController::class, 'store'])->name('sessions.store');
+    Route::post('sessions/{session}/register', [LiveSessionController::class, 'register'])->name('sessions.register');
+    Route::get('calendar', [CalendarController::class, 'index'])->name('calendar');
 });
