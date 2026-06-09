@@ -14,6 +14,8 @@ enum NotificationChannel: string
     case Database = 'database';
     case Mail = 'mail';
     case Sms = 'sms';
+    case WhatsApp = 'whatsapp';
+    case Push = 'push';
 
     /**
      * @return list<string>

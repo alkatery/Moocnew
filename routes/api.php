@@ -193,6 +193,7 @@ Route::middleware('auth:sanctum')->prefix('notifications')->name('api.notificati
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('presence/heartbeat', [PresenceController::class, 'heartbeat'])->name('api.presence.heartbeat');
     Route::get('analytics/overview', [AnalyticsController::class, 'overview'])->name('api.analytics.overview');
+    Route::get('analytics/courses/{course}/dropoff', [AnalyticsController::class, 'courseDropoff'])->name('api.analytics.dropoff');
 });
 
 /*

@@ -27,11 +27,7 @@ final class CourseCompletedNotification extends PreferenceAwareNotification
      */
     protected function candidateChannels(): array
     {
-        return [
-            NotificationChannel::Database->value,
-            NotificationChannel::Mail->value,
-            NotificationChannel::Sms->value,
-        ];
+        return NotificationChannel::values();
     }
 
     public function toMail(mixed $notifiable): MailMessage
