@@ -3,6 +3,8 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\Api\V1\Admin\SettingsController;
+use App\Http\Controllers\Api\V1\Analytics\AnalyticsController;
+use App\Http\Controllers\Api\V1\Analytics\PresenceController;
 use App\Http\Controllers\Api\V1\Assessment\AssignmentController;
 use App\Http\Controllers\Api\V1\Assessment\AssignmentSubmissionController;
 use App\Http\Controllers\Api\V1\Assessment\QuestionController;
@@ -171,4 +173,14 @@ Route::middleware('auth:sanctum')->prefix('notifications')->name('api.notificati
     Route::post('{id}/read', [NotificationController::class, 'markAsRead'])->name('read');
     Route::get('preferences', [PreferenceController::class, 'index'])->name('preferences.index');
     Route::put('preferences', [PreferenceController::class, 'update'])->name('preferences.update');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Analytics & presence (PRD §5.ي) — aggregate only (PDPL)
+|--------------------------------------------------------------------------
+*/
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('presence/heartbeat', [PresenceController::class, 'heartbeat'])->name('api.presence.heartbeat');
+    Route::get('analytics/overview', [AnalyticsController::class, 'overview'])->name('api.analytics.overview');
 });

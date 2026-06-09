@@ -2,6 +2,7 @@
 
 use App\Contexts\Catalog\Infrastructure\Providers\CatalogServiceProvider;
 use App\Contexts\Certification\Infrastructure\Providers\CertificationServiceProvider;
+use App\Contexts\Commerce\Infrastructure\Providers\CommerceServiceProvider;
 use App\Contexts\Enrollment\Infrastructure\Providers\EnrollmentServiceProvider;
 use App\Contexts\Identity\Infrastructure\Providers\IdentityServiceProvider;
 use App\Contexts\Notification\Infrastructure\Providers\NotificationServiceProvider;
@@ -16,4 +17,5 @@ return [
     EnrollmentServiceProvider::class,
     CertificationServiceProvider::class,
     NotificationServiceProvider::class,
+    CommerceServiceProvider::class,
 ];

@@ -1,6 +1,7 @@
 <?php
 
 use App\Contexts\Catalog\Domain\Course\InvalidCourseTransition;
+use App\Http\Middleware\EnsurePaymentsEnabled;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -14,7 +15,9 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-        //
+        $middleware->alias([
+            'payments.enabled' => EnsurePaymentsEnabled::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         // Domain rule violations surface as 422 on the API rather than 500.
