@@ -1,4 +1,5 @@
 'use client';
+import Link from 'next/link';
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
@@ -51,7 +52,13 @@ export default function CourseDetailPage() {
         </div>
       ))}
       {msg && <p className="error">{msg}</p>}
-      <button className="btn" onClick={() => void enroll()} disabled={busy}>{t('course.enroll')}</button>
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        <button className="btn" onClick={() => void enroll()} disabled={busy}>{t('course.enroll')}</button>
+        {course.pricing_type !== 'free' && (
+          <Link className="btn" href={`/checkout/${course.slug}`}>{t('course.buy')}</Link>
+        )}
+        <Link className="btn" href={`/community/${course.slug}`}>{t('community.title')}</Link>
+      </div>
     </section>
   );
 }

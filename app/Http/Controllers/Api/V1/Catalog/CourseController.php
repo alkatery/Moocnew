@@ -21,6 +21,21 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 final class CourseController extends Controller
 {
     /**
+     * Courses authored by the current instructor, in any status — powers the
+     * instructor studio.
+     */
+    public function mine(Request $request): AnonymousResourceCollection
+    {
+        $courses = Course::query()
+            ->where('instructor_id', $request->user()->getKey())
+            ->with(['category', 'instructor'])
+            ->latest()
+            ->paginate(20);
+
+        return CourseResource::collection($courses);
+    }
+
+    /**
      * Public catalogue listing: only published courses, with optional
      * full-text search (Scout/Meilisearch) and category/pricing filters.
      */

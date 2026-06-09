@@ -46,3 +46,47 @@ export interface AuthUser {
 export interface Paginated<T> {
   data: T[];
 }
+
+export interface Order {
+  id: number;
+  course_id: number;
+  status: string;
+  total_minor: number;
+  currency: string;
+  created_at: string | null;
+}
+
+export interface ForumThreadSummary {
+  id: number;
+  title: string;
+  posts_count?: number;
+}
+
+export interface ForumPost {
+  id: number;
+  body: string;
+  user_id: number;
+  created_at: string | null;
+}
+
+export interface NotificationItem {
+  id: string;
+  data: Record<string, unknown>;
+  read_at: string | null;
+  created_at: string | null;
+}
+
+export interface Preference {
+  type: string;
+  channel: string;
+  enabled: boolean;
+}
+
+export interface CalendarEvent {
+  type: string;
+  title: string;
+  course_id: number;
+  at: string;
+  at_local: string;
+  hijri: string;
+}

@@ -114,3 +114,18 @@ it('lets the owner soft-delete their course', function () {
     $this->deleteJson("/api/v1/catalog/courses/{$course->slug}")->assertNoContent();
     $this->assertSoftDeleted('courses', ['id' => $course->id]);
 });
+
+it('lists only the current instructor’s own courses in the studio', function () {
+    $me = userWithRole(Role::Instructor);
+    $other = userWithRole(Role::Instructor);
+
+    Course::factory()->for($me, 'instructor')->create();          // draft, mine
+    Course::factory()->for($me, 'instructor')->published()->create();
+    Course::factory()->for($other, 'instructor')->create();       // not mine
+
+    Sanctum::actingAs($me);
+
+    $this->getJson('/api/v1/catalog/mine')
+        ->assertOk()
+        ->assertJsonCount(2, 'data');
+});

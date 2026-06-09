@@ -78,6 +78,7 @@ Route::prefix('catalog')->name('api.catalog.')->group(function () {
     Route::get('courses/{course}', [CourseController::class, 'show'])->name('courses.show');
 
     Route::middleware('auth:sanctum')->group(function () {
+        Route::get('mine', [CourseController::class, 'mine'])->name('courses.mine');
         Route::post('categories', [CategoryController::class, 'store'])->name('categories.store');
 
         Route::post('courses', [CourseController::class, 'store'])->name('courses.store');
