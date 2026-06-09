@@ -17,6 +17,7 @@ use App\Http\Controllers\Api\V1\Catalog\CourseController;
 use App\Http\Controllers\Api\V1\Catalog\CoursePublishingController;
 use App\Http\Controllers\Api\V1\Catalog\LessonController;
 use App\Http\Controllers\Api\V1\Catalog\SectionController;
+use App\Http\Controllers\Api\V1\Certification\CertificateController;
 use App\Http\Controllers\Api\V1\Enrollment\EnrollmentController;
 use App\Http\Controllers\Api\V1\Enrollment\LessonProgressController;
 use App\Http\Controllers\Api\V1\Enrollment\MediaStreamController;
@@ -143,4 +144,17 @@ Route::middleware('auth:sanctum')->prefix('assessment')->name('api.assessment.')
     Route::post('assignments/{assignment}/submissions', [AssignmentSubmissionController::class, 'store'])->name('submissions.store');
     Route::get('assignments/{assignment}/submissions', [AssignmentSubmissionController::class, 'index'])->name('submissions.index');
     Route::post('submissions/{submission}/grade', [AssignmentSubmissionController::class, 'grade'])->name('submissions.grade');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Certificates (PRD §5.ح)
+|--------------------------------------------------------------------------
+*/
+// Public verification (reached via the QR code on the certificate).
+Route::get('certificates/verify/{uuid}', [CertificateController::class, 'verify'])->name('api.certificates.verify');
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('certificates', [CertificateController::class, 'index'])->name('api.certificates.index');
+    Route::get('certificates/{certificate}/download', [CertificateController::class, 'download'])->name('api.certificates.download');
 });

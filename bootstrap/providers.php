@@ -1,6 +1,7 @@
 <?php
 
 use App\Contexts\Catalog\Infrastructure\Providers\CatalogServiceProvider;
+use App\Contexts\Certification\Infrastructure\Providers\CertificationServiceProvider;
 use App\Contexts\Enrollment\Infrastructure\Providers\EnrollmentServiceProvider;
 use App\Contexts\Identity\Infrastructure\Providers\IdentityServiceProvider;
 use App\Contexts\Platform\Infrastructure\Providers\PlatformServiceProvider;
@@ -12,4 +13,5 @@ return [
     IdentityServiceProvider::class,
     CatalogServiceProvider::class,
     EnrollmentServiceProvider::class,
+    CertificationServiceProvider::class,
 ];

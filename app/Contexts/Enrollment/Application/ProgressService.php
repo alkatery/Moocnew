@@ -6,10 +6,12 @@ namespace App\Contexts\Enrollment\Application;
 
 use App\Contexts\Catalog\Infrastructure\Persistence\Lesson;
 use App\Contexts\Enrollment\Domain\EnrollmentStatus;
+use App\Contexts\Enrollment\Domain\Events\EnrollmentCompleted;
 use App\Contexts\Enrollment\Infrastructure\Persistence\Enrollment;
 use App\Contexts\Enrollment\Infrastructure\Persistence\LessonProgress;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
 
 /**
  * Records lesson progress and the video resume position, and keeps the
@@ -68,6 +70,8 @@ final class ProgressService
 
         $enrollment->progress_percent = $percent;
 
+        $justCompleted = false;
+
         if (
             $percent === 100
             && $enrollment->status === EnrollmentStatus::Active
@@ -75,8 +79,17 @@ final class ProgressService
         ) {
             $enrollment->status = EnrollmentStatus::Completed;
             $enrollment->completed_at = Date::now();
+            $justCompleted = true;
         }
 
         $enrollment->save();
+
+        if ($justCompleted) {
+            Event::dispatch(new EnrollmentCompleted(
+                $enrollment->getKey(),
+                $enrollment->user_id,
+                $enrollment->course_id,
+            ));
+        }
     }
 }
