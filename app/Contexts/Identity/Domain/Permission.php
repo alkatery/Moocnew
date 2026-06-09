@@ -17,6 +17,7 @@ enum Permission: string
     case ManageCourses = 'courses.manage';
     case ReviewCourses = 'courses.review';
     case ViewAnalytics = 'analytics.view';
+    case ManageCommerce = 'commerce.manage';
 
     /**
      * Map of which roles are granted which permissions. Seeded into the
@@ -34,6 +35,7 @@ enum Permission: string
                 self::ManageCourses->value,
                 self::ReviewCourses->value,
                 self::ViewAnalytics->value,
+                self::ManageCommerce->value,
             ],
             Role::Supervisor->value => [
                 self::ReviewCourses->value,

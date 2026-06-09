@@ -28,6 +28,7 @@ use App\Http\Controllers\Api\V1\HealthController;
 use App\Http\Controllers\Api\V1\Notification\NotificationController;
 use App\Http\Controllers\Api\V1\Notification\PreferenceController;
 use App\Http\Controllers\Api\V1\Webhooks\BunnyVideoWebhookController;
+use App\Http\Controllers\Api\V1\Webhooks\MoyasarPaymentWebhookController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -117,6 +118,11 @@ Route::get('media/stream/{lesson}', MediaStreamController::class)
 
 // Managed video provider status webhook (signature-verified, idempotent).
 Route::post('webhooks/video/bunny', BunnyVideoWebhookController::class)->name('api.webhooks.video.bunny');
+
+// Payment gateway webhook (Moyasar) — gated by payments.enabled, signed, idempotent.
+Route::post('webhooks/payments/moyasar', MoyasarPaymentWebhookController::class)
+    ->middleware('payments.enabled')
+    ->name('api.webhooks.payments.moyasar');
 
 /*
 |--------------------------------------------------------------------------

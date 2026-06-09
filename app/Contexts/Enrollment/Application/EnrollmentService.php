@@ -71,6 +71,51 @@ final class EnrollmentService
     }
 
     /**
+     * Activate (or create) a learner's enrollment once their order is paid,
+     * linking it to the order. Idempotent: an already-active enrollment is
+     * returned unchanged. Called by the Commerce context on payment success.
+     */
+    public function activateForOrder(int $userId, int $courseId, int $orderId): Enrollment
+    {
+        return DB::transaction(function () use ($userId, $courseId, $orderId): Enrollment {
+            $enrollment = Enrollment::query()
+                ->where('user_id', $userId)
+                ->where('course_id', $courseId)
+                ->lockForUpdate()
+                ->first()
+                ?? new Enrollment([
+                    'user_id' => $userId,
+                    'course_id' => $courseId,
+                    'progress_percent' => 0,
+                ]);
+
+            if ($enrollment->status === EnrollmentStatus::Active || $enrollment->status === EnrollmentStatus::Completed) {
+                return $enrollment;
+            }
+
+            $enrollment->status = EnrollmentStatus::Active;
+            $enrollment->order_id = $orderId;
+            $enrollment->enrolled_at ??= Date::now();
+            $enrollment->save();
+
+            Event::dispatch(new EnrollmentActivated($enrollment->getKey(), $userId, $courseId));
+
+            return $enrollment;
+        });
+    }
+
+    /**
+     * Mark a learner's enrollment refunded (revokes access), e.g. when their
+     * order is refunded.
+     */
+    public function refundForOrder(int $orderId): void
+    {
+        Enrollment::query()
+            ->where('order_id', $orderId)
+            ->update(['status' => EnrollmentStatus::Refunded->value]);
+    }
+
+    /**
      * A course grants access on enrollment when payments are off entirely,
      * or the course is free / zero-priced.
      */
