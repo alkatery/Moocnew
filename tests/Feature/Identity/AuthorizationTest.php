@@ -3,21 +3,12 @@
 declare(strict_types=1);
 
 use App\Contexts\Identity\Domain\Role;
-use App\Models\User;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Laravel\Sanctum\Sanctum;
 
 beforeEach(function () {
     $this->seed(RolesAndPermissionsSeeder::class);
 });
-
-function userWithRole(Role $role): User
-{
-    $user = User::factory()->create();
-    $user->assignRole($role->value);
-
-    return $user;
-}
 
 it('lets a super admin view the settings panel', function () {
     Sanctum::actingAs(userWithRole(Role::SuperAdmin));

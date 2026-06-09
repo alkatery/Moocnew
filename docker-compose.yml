@@ -19,10 +19,13 @@ services:
     environment:
       DB_HOST: pgsql
       REDIS_HOST: redis
+      MEILISEARCH_HOST: http://meilisearch:7700
     depends_on:
       pgsql:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      meilisearch:
         condition: service_healthy
 
   web:
@@ -63,6 +66,22 @@ services:
       timeout: 5s
       retries: 5
 
+  meilisearch:
+    image: getmeili/meilisearch:v1.7
+    environment:
+      MEILI_MASTER_KEY: masterKey
+      MEILI_ENV: development
+    ports:
+      - "7700:7700"
+    volumes:
+      - meili-data:/meili_data
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--spider", "http://localhost:7700/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
 volumes:
   pgsql-data:
   redis-data:
+  meili-data:

@@ -1,5 +1,6 @@
 <?php
 
+use App\Contexts\Catalog\Domain\Course\InvalidCourseTransition;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -16,5 +17,12 @@ return Application::configure(basePath: dirname(__DIR__))
         //
     })
     ->withExceptions(function (Exceptions $exceptions) {
-        //
+        // Domain rule violations surface as 422 on the API rather than 500.
+        $exceptions->render(function (InvalidCourseTransition $e, $request) {
+            if ($request->expectsJson()) {
+                return response()->json(['message' => $e->getMessage()], 422);
+            }
+
+            return null;
+        });
     })->create();

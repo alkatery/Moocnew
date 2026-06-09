@@ -1,0 +1,122 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Contexts\Catalog\Infrastructure\Persistence;
+
+use App\Contexts\Catalog\Domain\Course\CourseStatus;
+use App\Contexts\Catalog\Domain\Course\PricingType;
+use App\Models\User;
+use Database\Factories\CourseFactory;
+use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Laravel\Scout\Searchable;
+
+/**
+ * A course (PRD §6). Indexed for search via Laravel Scout; only published
+ * courses are made searchable so drafts never leak into the catalogue.
+ *
+ * @property int $id
+ * @property int $instructor_id
+ * @property int|null $category_id
+ * @property string $title
+ * @property string $slug
+ * @property CourseStatus $status
+ * @property PricingType $pricing_type
+ * @property int $price_minor
+ */
+final class Course extends Model
+{
+    /** @use HasFactory<CourseFactory> */
+    use HasFactory, Searchable, SoftDeletes;
+
+    protected $fillable = [
+        'instructor_id',
+        'category_id',
+        'title',
+        'slug',
+        'summary',
+        'description',
+        'status',
+        'pricing_type',
+        'price_minor',
+        'published_at',
+    ];
+
+    protected function casts(): array
+    {
+        return [
+            'status' => CourseStatus::class,
+            'pricing_type' => PricingType::class,
+            'price_minor' => 'integer',
+            'published_at' => 'datetime',
+        ];
+    }
+
+    public function getRouteKeyName(): string
+    {
+        return 'slug';
+    }
+
+    /**
+     * The model lives outside app/Models, so the factory is resolved
+     * explicitly rather than by Laravel's naming convention.
+     */
+    protected static function newFactory(): Factory
+    {
+        return CourseFactory::new();
+    }
+
+    /**
+     * @return BelongsTo<User, $this>
+     */
+    public function instructor(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'instructor_id');
+    }
+
+    /**
+     * @return BelongsTo<Category, $this>
+     */
+    public function category(): BelongsTo
+    {
+        return $this->belongsTo(Category::class);
+    }
+
+    /**
+     * @return HasMany<Section, $this>
+     */
+    public function sections(): HasMany
+    {
+        return $this->hasMany(Section::class)->orderBy('position');
+    }
+
+    /**
+     * Keep drafts and in-review courses out of the search index.
+     */
+    public function shouldBeSearchable(): bool
+    {
+        return $this->status === CourseStatus::Published;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function toSearchableArray(): array
+    {
+        return [
+            'id' => $this->id,
+            'title' => $this->title,
+            'summary' => $this->summary,
+            'description' => $this->description,
+            'category' => $this->category?->name,
+            'instructor' => $this->instructor?->name,
+            'pricing_type' => $this->pricing_type->value,
+            'price_minor' => $this->price_minor,
+        ];
+    }
+}

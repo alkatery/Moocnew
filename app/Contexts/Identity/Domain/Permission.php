@@ -13,6 +13,9 @@ namespace App\Contexts\Identity\Domain;
 enum Permission: string
 {
     case ManageSettings = 'settings.manage';
+    case ManageCategories = 'categories.manage';
+    case ManageCourses = 'courses.manage';
+    case ReviewCourses = 'courses.review';
 
     /**
      * Map of which roles are granted which permissions. Seeded into the
@@ -26,9 +29,16 @@ enum Permission: string
         return [
             Role::SuperAdmin->value => [
                 self::ManageSettings->value,
+                self::ManageCategories->value,
+                self::ManageCourses->value,
+                self::ReviewCourses->value,
             ],
-            Role::Supervisor->value => [],
-            Role::Instructor->value => [],
+            Role::Supervisor->value => [
+                self::ReviewCourses->value,
+            ],
+            Role::Instructor->value => [
+                self::ManageCourses->value,
+            ],
             Role::Student->value => [],
             Role::Visitor->value => [],
         ];

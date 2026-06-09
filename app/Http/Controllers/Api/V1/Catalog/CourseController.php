@@ -1,0 +1,124 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Http\Controllers\Api\V1\Catalog;
+
+use App\Contexts\Catalog\Application\SlugGenerator;
+use App\Contexts\Catalog\Domain\Course\CourseStatus;
+use App\Contexts\Catalog\Domain\Course\PricingType;
+use App\Contexts\Catalog\Infrastructure\Persistence\Category;
+use App\Contexts\Catalog\Infrastructure\Persistence\Course;
+use App\Http\Controllers\Controller;
+use App\Http\Requests\Catalog\StoreCourseRequest;
+use App\Http\Requests\Catalog\UpdateCourseRequest;
+use App\Http\Resources\CourseResource;
+use Illuminate\Contracts\Database\Eloquent\Builder;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+
+final class CourseController extends Controller
+{
+    /**
+     * Public catalogue listing: only published courses, with optional
+     * full-text search (Scout/Meilisearch) and category/pricing filters.
+     */
+    public function index(Request $request): AnonymousResourceCollection
+    {
+        $perPage = min((int) $request->integer('per_page', 15), 50);
+        $term = trim((string) $request->query('q', ''));
+
+        $categoryId = $this->resolveCategoryId($request->query('category'));
+        $pricing = $request->query('pricing'); // free|paid|null
+
+        if ($term !== '') {
+            $paginator = Course::search($term)
+                ->query(fn (Builder $query) => $this->applyCatalogueFilters($query, $categoryId, $pricing))
+                ->paginate($perPage);
+        } else {
+            $paginator = $this->applyCatalogueFilters(Course::query(), $categoryId, $pricing)
+                ->latest('published_at')
+                ->paginate($perPage);
+        }
+
+        return CourseResource::collection($paginator);
+    }
+
+    public function show(Request $request, Course $course): CourseResource
+    {
+        abort_unless($request->user()?->can('view', $course) ?? $course->status === CourseStatus::Published, 404);
+
+        $course->load(['category', 'instructor', 'sections.lessons']);
+
+        return new CourseResource($course);
+    }
+
+    public function store(StoreCourseRequest $request, SlugGenerator $slugs): JsonResponse
+    {
+        $pricingType = PricingType::from($request->validated('pricing_type'));
+
+        $course = Course::query()->create([
+            'instructor_id' => $request->user()->getKey(),
+            'category_id' => $request->validated('category_id'),
+            'title' => $request->validated('title'),
+            'slug' => $slugs->forTitle($request->validated('title'), 'courses'),
+            'summary' => $request->validated('summary'),
+            'description' => $request->validated('description'),
+            'status' => CourseStatus::Draft,
+            'pricing_type' => $pricingType,
+            'price_minor' => $pricingType === PricingType::Free ? 0 : (int) $request->validated('price_minor', 0),
+        ]);
+
+        return (new CourseResource($course))->response()->setStatusCode(201);
+    }
+
+    public function update(UpdateCourseRequest $request, Course $course): CourseResource
+    {
+        $data = $request->safe()->only([
+            'title',
+            'category_id',
+            'summary',
+            'description',
+            'pricing_type',
+            'price_minor',
+        ]);
+
+        // A free course always carries a zero price.
+        if (($data['pricing_type'] ?? $course->pricing_type->value) === PricingType::Free->value) {
+            $data['price_minor'] = 0;
+        }
+
+        $course->update($data);
+
+        return new CourseResource($course->fresh(['category', 'instructor']));
+    }
+
+    public function destroy(Request $request, Course $course): JsonResponse
+    {
+        abort_unless($request->user()?->can('delete', $course) ?? false, 403);
+
+        $course->delete();
+
+        return response()->json(status: 204);
+    }
+
+    private function applyCatalogueFilters(Builder $query, ?int $categoryId, ?string $pricing): Builder
+    {
+        return $query
+            ->where('status', CourseStatus::Published->value)
+            ->with(['category', 'instructor'])
+            ->when($categoryId !== null, fn (Builder $q) => $q->where('category_id', $categoryId))
+            ->when($pricing === 'free', fn (Builder $q) => $q->where('pricing_type', PricingType::Free->value))
+            ->when($pricing === 'paid', fn (Builder $q) => $q->where('pricing_type', '!=', PricingType::Free->value));
+    }
+
+    private function resolveCategoryId(mixed $slug): ?int
+    {
+        if (! is_string($slug) || $slug === '') {
+            return null;
+        }
+
+        return Category::query()->where('slug', $slug)->value('id');
+    }
+}

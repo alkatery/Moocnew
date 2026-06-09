@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Contexts\Identity\Domain\Role;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -21,3 +23,21 @@ pest()->extend(TestCase::class)
 
 pest()->extend(TestCase::class)
     ->in('Unit');
+
+/*
+|--------------------------------------------------------------------------
+| Shared Helpers
+|--------------------------------------------------------------------------
+*/
+
+/**
+ * Create a user carrying the given platform role. Assumes the
+ * RolesAndPermissionsSeeder has already run for the test.
+ */
+function userWithRole(Role $role): User
+{
+    $user = User::factory()->create();
+    $user->assignRole($role->value);
+
+    return $user;
+}

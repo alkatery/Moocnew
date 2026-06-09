@@ -19,8 +19,8 @@ final class IdentityServiceProvider extends ServiceProvider
 {
     public function boot(): void
     {
-        Gate::before(function (User $user, string $ability): ?bool {
-            return $user->hasRole(Role::SuperAdmin->value) ? true : null;
+        Gate::before(function (?User $user, string $ability): ?bool {
+            return $user?->hasRole(Role::SuperAdmin->value) ? true : null;
         });
     }
 }
