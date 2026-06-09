@@ -23,6 +23,8 @@ use App\Http\Controllers\Api\V1\Enrollment\LessonProgressController;
 use App\Http\Controllers\Api\V1\Enrollment\MediaStreamController;
 use App\Http\Controllers\Api\V1\Enrollment\PlaybackController;
 use App\Http\Controllers\Api\V1\HealthController;
+use App\Http\Controllers\Api\V1\Notification\NotificationController;
+use App\Http\Controllers\Api\V1\Notification\PreferenceController;
 use App\Http\Controllers\Api\V1\Webhooks\BunnyVideoWebhookController;
 use Illuminate\Support\Facades\Route;
 
@@ -157,4 +159,16 @@ Route::get('certificates/verify/{uuid}', [CertificateController::class, 'verify'
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('certificates', [CertificateController::class, 'index'])->name('api.certificates.index');
     Route::get('certificates/{certificate}/download', [CertificateController::class, 'download'])->name('api.certificates.download');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Notifications & preference centre (PRD §5.ط)
+|--------------------------------------------------------------------------
+*/
+Route::middleware('auth:sanctum')->prefix('notifications')->name('api.notifications.')->group(function () {
+    Route::get('/', [NotificationController::class, 'index'])->name('index');
+    Route::post('{id}/read', [NotificationController::class, 'markAsRead'])->name('read');
+    Route::get('preferences', [PreferenceController::class, 'index'])->name('preferences.index');
+    Route::put('preferences', [PreferenceController::class, 'update'])->name('preferences.update');
 });

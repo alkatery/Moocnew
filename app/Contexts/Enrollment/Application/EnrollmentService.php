@@ -7,12 +7,14 @@ namespace App\Contexts\Enrollment\Application;
 use App\Contexts\Catalog\Domain\Course\PricingType;
 use App\Contexts\Catalog\Infrastructure\Persistence\Course;
 use App\Contexts\Enrollment\Domain\EnrollmentStatus;
+use App\Contexts\Enrollment\Domain\Events\EnrollmentActivated;
 use App\Contexts\Enrollment\Infrastructure\Persistence\Enrollment;
 use App\Contexts\Identity\Application\ActivityLogger;
 use App\Contexts\Platform\Application\FeatureFlags;
 use App\Models\User;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
 
 /**
  * The single entry point for enrolling a learner (PRD §1, §5.ج). Enrollment
@@ -55,6 +57,14 @@ final class EnrollmentService
                 'course_id' => $course->getKey(),
                 'status' => $enrollment->status->value,
             ]);
+
+            if ($enrollment->status === EnrollmentStatus::Active) {
+                Event::dispatch(new EnrollmentActivated(
+                    $enrollment->getKey(),
+                    $user->getKey(),
+                    $course->getKey(),
+                ));
+            }
 
             return $enrollment;
         });
