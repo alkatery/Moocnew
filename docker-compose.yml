@@ -1,0 +1,68 @@
+# ---------------------------------------------------------------------------
+# Local development stack for the MOOC Platform.
+#
+#   app    — PHP-FPM (Laravel 11)
+#   web    — Nginx serving public/ and proxying PHP to app:9000
+#   pgsql  — PostgreSQL 16 (PRD §2)
+#   redis  — Redis 7 (cache, queues, sessions, heartbeat)
+#
+# Search (Meilisearch) and queue monitoring (Horizon) are introduced in
+# later phases and intentionally omitted from the Phase 0 stack.
+# ---------------------------------------------------------------------------
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - .:/var/www/html
+    environment:
+      DB_HOST: pgsql
+      REDIS_HOST: redis
+    depends_on:
+      pgsql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  web:
+    image: nginx:1.27-alpine
+    ports:
+      - "8080:80"
+    volumes:
+      - .:/var/www/html
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - app
+
+  pgsql:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: mooc
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgsql-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  pgsql-data:
+  redis-data:
