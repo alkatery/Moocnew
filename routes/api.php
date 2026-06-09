@@ -3,6 +3,11 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\Api\V1\Admin\SettingsController;
+use App\Http\Controllers\Api\V1\Assessment\AssignmentController;
+use App\Http\Controllers\Api\V1\Assessment\AssignmentSubmissionController;
+use App\Http\Controllers\Api\V1\Assessment\QuestionController;
+use App\Http\Controllers\Api\V1\Assessment\QuizAttemptController;
+use App\Http\Controllers\Api\V1\Assessment\QuizController;
 use App\Http\Controllers\Api\V1\Auth\LoginController;
 use App\Http\Controllers\Api\V1\Auth\LogoutController;
 use App\Http\Controllers\Api\V1\Auth\MeController;
@@ -107,3 +112,35 @@ Route::get('media/stream/{lesson}', MediaStreamController::class)
 
 // Managed video provider status webhook (signature-verified, idempotent).
 Route::post('webhooks/video/bunny', BunnyVideoWebhookController::class)->name('api.webhooks.video.bunny');
+
+/*
+|--------------------------------------------------------------------------
+| Assessment — quizzes & assignments (PRD §5.هـ)
+|--------------------------------------------------------------------------
+*/
+Route::middleware('auth:sanctum')->prefix('assessment')->name('api.assessment.')->group(function () {
+    // Question bank (authoring).
+    Route::get('courses/{course}/questions', [QuestionController::class, 'index'])->name('questions.index');
+    Route::post('courses/{course}/questions', [QuestionController::class, 'store'])->name('questions.store');
+    Route::patch('questions/{question}', [QuestionController::class, 'update'])->name('questions.update');
+    Route::delete('questions/{question}', [QuestionController::class, 'destroy'])->name('questions.destroy');
+
+    // Quizzes.
+    Route::get('courses/{course}/quizzes', [QuizController::class, 'index'])->name('quizzes.index');
+    Route::post('courses/{course}/quizzes', [QuizController::class, 'store'])->name('quizzes.store');
+    Route::get('quizzes/{quiz}', [QuizController::class, 'show'])->name('quizzes.show');
+    Route::patch('quizzes/{quiz}', [QuizController::class, 'update'])->name('quizzes.update');
+    Route::delete('quizzes/{quiz}', [QuizController::class, 'destroy'])->name('quizzes.destroy');
+
+    // Attempts.
+    Route::post('quizzes/{quiz}/attempts', [QuizAttemptController::class, 'start'])->name('attempts.start');
+    Route::get('attempts/{attempt}', [QuizAttemptController::class, 'show'])->name('attempts.show');
+    Route::post('attempts/{attempt}/submit', [QuizAttemptController::class, 'submit'])->name('attempts.submit');
+
+    // Assignments.
+    Route::get('courses/{course}/assignments', [AssignmentController::class, 'index'])->name('assignments.index');
+    Route::post('courses/{course}/assignments', [AssignmentController::class, 'store'])->name('assignments.store');
+    Route::post('assignments/{assignment}/submissions', [AssignmentSubmissionController::class, 'store'])->name('submissions.store');
+    Route::get('assignments/{assignment}/submissions', [AssignmentSubmissionController::class, 'index'])->name('submissions.index');
+    Route::post('submissions/{submission}/grade', [AssignmentSubmissionController::class, 'grade'])->name('submissions.grade');
+});

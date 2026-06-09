@@ -1,0 +1,63 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Http\Controllers\Api\V1\Assessment;
+
+use App\Contexts\Assessment\Application\QuizAttemptService;
+use App\Contexts\Assessment\Infrastructure\Persistence\Quiz;
+use App\Contexts\Assessment\Infrastructure\Persistence\QuizAttempt;
+use App\Contexts\Enrollment\Application\CourseAccess;
+use App\Http\Controllers\Controller;
+use App\Http\Requests\Assessment\SubmitAttemptRequest;
+use App\Http\Resources\QuestionResource;
+use App\Http\Resources\QuizAttemptResource;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+
+final class QuizAttemptController extends Controller
+{
+    public function __construct(
+        private readonly QuizAttemptService $attempts,
+        private readonly CourseAccess $access,
+    ) {}
+
+    /**
+     * Start (or resume) an attempt and return the questions to answer —
+     * shuffled if configured, and always without the answer key.
+     */
+    public function start(Request $request, Quiz $quiz): JsonResponse
+    {
+        abort_unless($this->access->canParticipate($request->user(), $quiz->course), 403);
+
+        $attempt = $this->attempts->start($quiz, $request->user());
+
+        $questions = $quiz->questions()->get();
+        if ($quiz->shuffle) {
+            $questions = $questions->shuffle()->values();
+        }
+
+        return response()->json([
+            'attempt' => new QuizAttemptResource($attempt),
+            'questions' => QuestionResource::collection($questions),
+        ], $attempt->wasRecentlyCreated ? 201 : 200);
+    }
+
+    public function show(Request $request, QuizAttempt $attempt): QuizAttemptResource
+    {
+        $isOwner = $attempt->user_id === $request->user()->getKey();
+        abort_unless($isOwner || $this->access->isStaffFor($request->user(), $attempt->quiz->course), 403);
+
+        return new QuizAttemptResource($attempt);
+    }
+
+    public function submit(SubmitAttemptRequest $request, QuizAttempt $attempt): QuizAttemptResource
+    {
+        abort_unless($attempt->user_id === $request->user()->getKey(), 403);
+
+        /** @var array<int, mixed> $answers */
+        $answers = (array) $request->validated('answers', []);
+
+        return new QuizAttemptResource($this->attempts->submit($attempt, $answers));
+    }
+}
