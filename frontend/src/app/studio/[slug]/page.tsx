@@ -116,7 +116,7 @@ export default function ManageCoursePage() {
       await api(`/catalog/courses/${slug}/submit`, { method: 'POST' });
       setNote(t('studio.submit') + ' ✓');
       load();
-    } catch { setNote(t('common.error')); }
+    } catch (e) { setNote(e instanceof Error ? e.message : t('common.error')); }
   }
 
   if (loadError) {
@@ -141,7 +141,13 @@ export default function ManageCoursePage() {
         actions={
           <>
             {note && <span className="success self-center">{note}</span>}
-            <button className="btn" onClick={() => void submit()}>{t('studio.submit')}</button>
+            {course.status === 'draft' || course.status === 'rejected' ? (
+              <button className="btn" onClick={() => void submit()}>{t('studio.submit')}</button>
+            ) : course.status === 'pending_review' ? (
+              <span className="badge">قيد المراجعة لدى الإدارة</span>
+            ) : (
+              <span className="badge bg-emerald-50 text-emerald-700">منشورة ومتاحة للطلاب</span>
+            )}
           </>
         }
       />
