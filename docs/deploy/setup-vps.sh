@@ -31,12 +31,14 @@ echo "==> Hardening: firewall + fail2ban…"
 ufw allow OpenSSH
 ufw allow 80/tcp
 ufw allow 443/tcp
+ufw allow 8080/tcp   # web container is published on :8080 (direct trial access)
 ufw --force enable
 systemctl enable --now fail2ban
 
 echo "==> Fetching application into ${APP_DIR}…"
 if [ ! -d "${APP_DIR}/.git" ]; then
-  git clone "${REPO_URL:-https://github.com/alkatery/moocnew.git}" "${APP_DIR}"
+  git clone --branch "${BRANCH:-main}" \
+    "${REPO_URL:-https://github.com/alkatery/moocnew.git}" "${APP_DIR}"
 fi
 cd "${APP_DIR}"
 
