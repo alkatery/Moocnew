@@ -10,6 +10,7 @@ use App\Contexts\Learning\Domain\PathEnrollmentStatus;
 use App\Contexts\Learning\Infrastructure\Persistence\LearningPath;
 use App\Contexts\Learning\Infrastructure\Persistence\LearningPathItem;
 use App\Contexts\Learning\Infrastructure\Persistence\PathEnrollment;
+use App\Contexts\Shared\Application\ImageUploader;
 use App\Contexts\Shared\Application\SlugGenerator;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Learning\StorePathRequest;
@@ -45,6 +46,7 @@ final class PathController extends Controller
                 'title' => $path->title,
                 'slug' => $path->slug,
                 'summary' => $path->summary,
+                'cover_image' => $path->cover_image,
                 'published_at' => $path->published_at?->toIso8601String(),
                 'courses_count' => $path->items->count(),
                 'levels_count' => $path->items->pluck('level')->unique()->count(),
@@ -97,6 +99,7 @@ final class PathController extends Controller
                 'title' => $path->title,
                 'slug' => $path->slug,
                 'summary' => $path->summary,
+                'cover_image' => $path->cover_image,
                 'description' => $path->description,
                 'published_at' => $path->published_at?->toIso8601String(),
                 'levels' => $levels,
@@ -144,6 +147,20 @@ final class PathController extends Controller
         $path->delete();
 
         return response()->json(status: 204);
+    }
+
+    public function uploadCover(Request $request, LearningPath $path, ImageUploader $uploader): JsonResponse
+    {
+        abort_unless($request->user()?->can(Permission::ManagePaths->value) ?? false, 403);
+
+        $request->validate([
+            'image' => ['required', 'file', 'mimes:png,jpg,jpeg,webp', 'max:4096'],
+        ]);
+
+        $url = $uploader->store($request->file('image'), 'covers', $path->cover_image);
+        $path->update(['cover_image' => $url]);
+
+        return response()->json(['data' => ['cover_image' => $url]]);
     }
 
     /**

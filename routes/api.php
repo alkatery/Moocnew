@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\Api\V1\Admin\ActivityLogController;
 use App\Http\Controllers\Api\V1\Admin\SettingsController;
 use App\Http\Controllers\Api\V1\Admin\SiteContentController as AdminSiteContentController;
 use App\Http\Controllers\Api\V1\Admin\UserController;
@@ -28,6 +29,9 @@ use App\Http\Controllers\Api\V1\Communication\TicketController;
 use App\Http\Controllers\Api\V1\Content\ContactController;
 use App\Http\Controllers\Api\V1\Content\NewsController;
 use App\Http\Controllers\Api\V1\Content\SiteContentController;
+use App\Http\Controllers\Api\V1\Engagement\GamificationController;
+use App\Http\Controllers\Api\V1\Engagement\ReviewController;
+use App\Http\Controllers\Api\V1\Enrollment\CourseProgressController;
 use App\Http\Controllers\Api\V1\Enrollment\EnrollmentController;
 use App\Http\Controllers\Api\V1\Enrollment\LessonProgressController;
 use App\Http\Controllers\Api\V1\Enrollment\MediaStreamController;
@@ -39,6 +43,7 @@ use App\Http\Controllers\Api\V1\Learning\StudyPlanController;
 use App\Http\Controllers\Api\V1\Notification\NotificationController;
 use App\Http\Controllers\Api\V1\Notification\PreferenceController;
 use App\Http\Controllers\Api\V1\Platform\PublicStatsController;
+use App\Http\Controllers\Api\V1\ProfileController;
 use App\Http\Controllers\Api\V1\Scheduling\CalendarController;
 use App\Http\Controllers\Api\V1\Scheduling\LiveSessionController;
 use App\Http\Controllers\Api\V1\Webhooks\BunnyVideoWebhookController;
@@ -88,7 +93,15 @@ Route::middleware('auth:sanctum')->prefix('admin')->name('api.admin.')->group(fu
     Route::get('users', [UserController::class, 'index'])->name('users.index');
     Route::post('users', [UserController::class, 'store'])->name('users.store');
     Route::patch('users/{user}/role', [UserController::class, 'updateRole'])->name('users.role.update');
+    Route::patch('users/{user}/status', [UserController::class, 'updateStatus'])->name('users.status.update');
+    Route::post('users/{user}/reset-password', [UserController::class, 'resetPassword'])->name('users.password.reset');
     Route::post('users/{user}/impersonate', [UserController::class, 'impersonate'])->name('users.impersonate');
+    Route::get('users/{user}/courses', [UserController::class, 'courses'])->name('users.courses');
+    Route::delete('users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
+    Route::patch('courses/{course}/instructor', [UserController::class, 'transferCourse'])->name('courses.transfer');
+
+    // Audit trail.
+    Route::get('activity-logs', [ActivityLogController::class, 'index'])->name('activity-logs.index');
 });
 
 /*
@@ -102,6 +115,21 @@ Route::get('platform/stats', PublicStatsController::class)->name('api.platform.s
 
 // Public editable site content (branding, copy, colours, image URLs).
 Route::get('content/site', SiteContentController::class)->name('api.content.site');
+
+/*
+|--------------------------------------------------------------------------
+| Engagement — reviews, gamification, profiles
+|--------------------------------------------------------------------------
+*/
+Route::get('catalog/courses/{course}/reviews', [ReviewController::class, 'index'])->name('api.reviews.index');
+Route::get('engagement/leaderboard', [GamificationController::class, 'leaderboard'])->name('api.engagement.leaderboard');
+Route::get('profiles/learners/{user}', [ProfileController::class, 'learner'])->name('api.profiles.learner');
+Route::get('profiles/instructors/{user}', [ProfileController::class, 'instructor'])->name('api.profiles.instructor');
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('catalog/courses/{course}/reviews', [ReviewController::class, 'store'])->name('api.reviews.store');
+    Route::get('engagement/me', [GamificationController::class, 'me'])->name('api.engagement.me');
+});
 
 Route::post('contact', [ContactController::class, 'store'])
     ->middleware('throttle:10,1')
@@ -144,6 +172,7 @@ Route::prefix('catalog')->name('api.catalog.')->group(function () {
         Route::post('courses/{course}/reject', [CoursePublishingController::class, 'reject'])->name('courses.reject');
 
         // Sections (shallow-nested under courses).
+        Route::post('courses/{course}/cover', [CourseController::class, 'uploadCover'])->name('courses.cover');
         Route::post('courses/{course}/sections', [SectionController::class, 'store'])->name('sections.store');
         Route::patch('sections/{section}', [SectionController::class, 'update'])->name('sections.update');
         Route::delete('sections/{section}', [SectionController::class, 'destroy'])->name('sections.destroy');
@@ -172,6 +201,7 @@ Route::prefix('learning')->name('api.learning.')->group(function () {
         Route::post('paths', [PathController::class, 'store'])->name('paths.store');
         Route::patch('paths/{path}', [PathController::class, 'update'])->name('paths.update');
         Route::delete('paths/{path}', [PathController::class, 'destroy'])->name('paths.destroy');
+        Route::post('paths/{path}/cover', [PathController::class, 'uploadCover'])->name('paths.cover');
         Route::put('paths/{path}/items', [PathController::class, 'syncItems'])->name('paths.items.sync');
 
         // Learner membership & sequential course enrollment.
@@ -199,6 +229,7 @@ Route::middleware('auth:sanctum')->name('api.enrollment.')->group(function () {
 
     Route::post('lessons/{lesson}/progress', [LessonProgressController::class, 'store'])->name('progress');
     Route::get('lessons/{lesson}/playback', [PlaybackController::class, 'show'])->name('playback');
+    Route::get('catalog/courses/{course}/progress', [CourseProgressController::class, 'show'])->name('course.progress');
 });
 
 // Signed, short-lived delivery of storage-hosted videos (no auth: the

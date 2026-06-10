@@ -26,6 +26,12 @@ final class LoginController extends Controller
             ]);
         }
 
+        if ($user->isDisabled()) {
+            throw ValidationException::withMessages([
+                'email' => ['هذا الحساب موقوف. تواصل مع الإدارة.'],
+            ]);
+        }
+
         $token = $user->createToken(
             $request->input('device_name', 'web'),
         )->plainTextToken;

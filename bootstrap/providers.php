@@ -4,6 +4,7 @@ use App\Contexts\Assessment\Infrastructure\Providers\AssessmentServiceProvider;
 use App\Contexts\Catalog\Infrastructure\Providers\CatalogServiceProvider;
 use App\Contexts\Certification\Infrastructure\Providers\CertificationServiceProvider;
 use App\Contexts\Commerce\Infrastructure\Providers\CommerceServiceProvider;
+use App\Contexts\Engagement\Infrastructure\Providers\EngagementServiceProvider;
 use App\Contexts\Enrollment\Infrastructure\Providers\EnrollmentServiceProvider;
 use App\Contexts\Identity\Infrastructure\Providers\IdentityServiceProvider;
 use App\Contexts\Learning\Infrastructure\Providers\LearningServiceProvider;
@@ -24,4 +25,5 @@ return [
     CommerceServiceProvider::class,
     SchedulingServiceProvider::class,
     LearningServiceProvider::class,
+    EngagementServiceProvider::class,
 ];

@@ -6,6 +6,8 @@ namespace App\Contexts\Catalog\Infrastructure\Persistence;
 
 use App\Contexts\Catalog\Domain\Course\CourseStatus;
 use App\Contexts\Catalog\Domain\Course\PricingType;
+use App\Contexts\Engagement\Infrastructure\Persistence\CourseReview;
+use App\Contexts\Enrollment\Infrastructure\Persistence\Enrollment;
 use App\Models\User;
 use Database\Factories\CourseFactory;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -40,6 +42,7 @@ final class Course extends Model
         'title',
         'slug',
         'summary',
+        'cover_image',
         'description',
         'status',
         'pricing_type',
@@ -95,6 +98,22 @@ final class Course extends Model
     public function sections(): HasMany
     {
         return $this->hasMany(Section::class)->orderBy('position');
+    }
+
+    /**
+     * @return HasMany<Enrollment, $this>
+     */
+    public function enrollments(): HasMany
+    {
+        return $this->hasMany(Enrollment::class);
+    }
+
+    /**
+     * @return HasMany<CourseReview, $this>
+     */
+    public function reviews(): HasMany
+    {
+        return $this->hasMany(CourseReview::class);
     }
 
     /**

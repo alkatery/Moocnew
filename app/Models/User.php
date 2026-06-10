@@ -37,6 +37,7 @@ class User extends Authenticatable
         'interests',
         'locale',
         'timezone',
+        'disabled_at',
     ];
 
     /**
@@ -60,7 +61,13 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'interests' => 'array',
+            'disabled_at' => 'datetime',
         ];
+    }
+
+    public function isDisabled(): bool
+    {
+        return $this->disabled_at !== null;
     }
 
     /**

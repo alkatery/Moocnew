@@ -8,6 +8,7 @@ use App\Contexts\Catalog\Domain\Course\CourseStatus;
 use App\Contexts\Catalog\Domain\Course\PricingType;
 use App\Contexts\Catalog\Infrastructure\Persistence\Category;
 use App\Contexts\Catalog\Infrastructure\Persistence\Course;
+use App\Contexts\Shared\Application\ImageUploader;
 use App\Contexts\Shared\Application\SlugGenerator;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Catalog\StoreCourseRequest;
@@ -47,13 +48,14 @@ final class CourseController extends Controller
         $categoryId = $this->resolveCategoryId($request->query('category'));
         $pricing = $request->query('pricing'); // free|paid|null
 
+        $sort = (string) $request->query('sort', 'newest');
+
         if ($term !== '') {
             $paginator = Course::search($term)
-                ->query(fn (Builder $query) => $this->applyCatalogueFilters($query, $categoryId, $pricing))
+                ->query(fn (Builder $query) => $this->applySort($this->applyCatalogueFilters($query, $categoryId, $pricing), $sort))
                 ->paginate($perPage);
         } else {
-            $paginator = $this->applyCatalogueFilters(Course::query(), $categoryId, $pricing)
-                ->latest('published_at')
+            $paginator = $this->applySort($this->applyCatalogueFilters(Course::query(), $categoryId, $pricing), $sort)
                 ->paginate($perPage);
         }
 
@@ -64,7 +66,9 @@ final class CourseController extends Controller
     {
         abort_unless($request->user()?->can('view', $course) ?? $course->status === CourseStatus::Published, 404);
 
-        $course->load(['category', 'instructor', 'sections.lessons']);
+        $course->load(['category', 'instructor', 'sections.lessons'])
+            ->loadAvg('reviews', 'rating')
+            ->loadCount('reviews');
 
         return new CourseResource($course);
     }
@@ -120,14 +124,45 @@ final class CourseController extends Controller
         return response()->json(status: 204);
     }
 
+    /**
+     * Upload a real cover image for the course (owner/staff only).
+     */
+    public function uploadCover(Request $request, Course $course, ImageUploader $uploader): JsonResponse
+    {
+        abort_unless($request->user()?->can('update', $course) ?? false, 403);
+
+        $request->validate([
+            'image' => ['required', 'file', 'mimes:png,jpg,jpeg,webp', 'max:4096'],
+        ]);
+
+        $url = $uploader->store($request->file('image'), 'covers', $course->cover_image);
+        $course->update(['cover_image' => $url]);
+
+        return response()->json(['data' => ['cover_image' => $url]]);
+    }
+
     private function applyCatalogueFilters(Builder $query, ?int $categoryId, ?string $pricing): Builder
     {
         return $query
             ->where('status', CourseStatus::Published->value)
             ->with(['category', 'instructor'])
+            ->withAvg('reviews', 'rating')
+            ->withCount('reviews')
             ->when($categoryId !== null, fn (Builder $q) => $q->where('category_id', $categoryId))
             ->when($pricing === 'free', fn (Builder $q) => $q->where('pricing_type', PricingType::Free->value))
             ->when($pricing === 'paid', fn (Builder $q) => $q->where('pricing_type', '!=', PricingType::Free->value));
+    }
+
+    /**
+     * Order the catalogue: newest, top-rated, or most popular (by enrollments).
+     */
+    private function applySort(Builder $query, string $sort): Builder
+    {
+        return match ($sort) {
+            'top_rated' => $query->orderByRaw('reviews_avg_rating DESC NULLS LAST')->latest('published_at'),
+            'popular' => $query->withCount('enrollments')->orderByDesc('enrollments_count'),
+            default => $query->latest('published_at'),
+        };
     }
 
     private function resolveCategoryId(mixed $slug): ?int

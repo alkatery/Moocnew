@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace App\Contexts\Enrollment\Application;
 
 use App\Contexts\Catalog\Infrastructure\Persistence\Lesson;
+use App\Contexts\Enrollment\Domain\Events\LessonCompleted;
 use App\Contexts\Enrollment\Infrastructure\Persistence\Enrollment;
 use App\Contexts\Enrollment\Infrastructure\Persistence\LessonProgress;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
 
 /**
  * Records lesson progress and the video resume position, and keeps the
@@ -39,13 +41,23 @@ final class ProgressService
                 $progress->video_position = max(0, $videoPosition);
             }
 
+            $justCompleted = false;
             if ($completed && $progress->completed_at === null) {
                 $progress->completed_at = Date::now();
+                $justCompleted = true;
             }
 
             $progress->save();
 
             $this->recalculate($enrollment);
+
+            if ($justCompleted) {
+                Event::dispatch(new LessonCompleted(
+                    $enrollment->user_id,
+                    $lesson->getKey(),
+                    $enrollment->course_id,
+                ));
+            }
 
             return $progress;
         });

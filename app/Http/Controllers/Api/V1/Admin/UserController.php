@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api\V1\Admin;
 
+use App\Contexts\Catalog\Domain\Course\CourseStatus;
+use App\Contexts\Catalog\Infrastructure\Persistence\Course;
 use App\Contexts\Identity\Application\ActivityLogger;
 use App\Contexts\Identity\Application\CreateUserAccount;
 use App\Contexts\Identity\Domain\Permission;
@@ -16,6 +18,8 @@ use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Facades\Date;
+use Illuminate\Support\Str;
 
 /**
  * Admin user management (PRD §4): onboarding instructors/supervisors,
@@ -99,5 +103,115 @@ final class UserController extends Controller
             'token' => $token,
             'user' => new UserResource($user->load('roles')),
         ]);
+    }
+
+    /**
+     * Suspend or restore an account. A disabled user cannot authenticate;
+     * a Super Admin can never be disabled.
+     */
+    public function updateStatus(Request $request, User $user, ActivityLogger $activity): UserResource
+    {
+        abort_unless($request->user()->can(Permission::ManageUsers->value), 403);
+        abort_if($user->hasRole(Role::SuperAdmin->value), 403, 'لا يمكن إيقاف حساب الإدارة العليا.');
+
+        $disabled = $request->boolean('disabled');
+        $user->forceFill(['disabled_at' => $disabled ? Date::now() : null])->save();
+
+        if ($disabled) {
+            // Revoke active sessions so the suspension takes effect at once.
+            $user->tokens()->delete();
+        }
+
+        $activity->log($disabled ? 'user.disabled' : 'user.enabled', $request->user(), $user);
+
+        return new UserResource($user->load('roles'));
+    }
+
+    /**
+     * Set a new password and return it once so the admin can hand it over.
+     */
+    public function resetPassword(Request $request, User $user, ActivityLogger $activity): JsonResponse
+    {
+        abort_unless($request->user()->can(Permission::ManageUsers->value), 403);
+        abort_if($user->hasRole(Role::SuperAdmin->value), 403, 'لا يمكن إعادة تعيين كلمة مرور الإدارة العليا.');
+
+        $password = Str::password(12);
+        $user->forceFill(['password' => $password])->save();
+        $user->tokens()->delete();
+
+        $activity->log('user.password_reset', $request->user(), $user);
+
+        return response()->json(['data' => ['password' => $password]]);
+    }
+
+    public function destroy(Request $request, User $user, ActivityLogger $activity): JsonResponse
+    {
+        abort_unless($request->user()->can(Permission::ManageUsers->value), 403);
+        abort_if($user->is($request->user()), 422, 'لا يمكنك حذف حسابك.');
+        abort_if($user->hasRole(Role::SuperAdmin->value), 403, 'لا يمكن حذف حساب الإدارة العليا.');
+
+        $user->tokens()->delete();
+        $user->delete(); // soft delete
+
+        $activity->log('user.deleted', $request->user(), $user);
+
+        return response()->json(status: 204);
+    }
+
+    /**
+     * An instructor's courses with enrollment counts — lets staff review an
+     * instructor's catalogue without impersonating them.
+     */
+    public function courses(Request $request, User $user): JsonResponse
+    {
+        abort_unless($request->user()->can(Permission::ManageUsers->value), 403);
+
+        $courses = Course::query()
+            ->where('instructor_id', $user->getKey())
+            ->withCount('enrollments')
+            ->latest()
+            ->get()
+            ->map(fn (Course $c): array => [
+                'id' => $c->id,
+                'title' => $c->title,
+                'slug' => $c->slug,
+                'status' => $c->status->value,
+                'enrollments_count' => $c->enrollments_count,
+            ]);
+
+        return response()->json([
+            'data' => [
+                'instructor' => new UserResource($user->load('roles')),
+                'courses' => $courses,
+                'stats' => [
+                    'courses' => $courses->count(),
+                    'published' => $courses->where('status', CourseStatus::Published->value)->count(),
+                    'learners' => (int) $courses->sum('enrollments_count'),
+                ],
+            ],
+        ]);
+    }
+
+    /**
+     * Reassign a course to a different instructor.
+     */
+    public function transferCourse(Request $request, Course $course, ActivityLogger $activity): JsonResponse
+    {
+        abort_unless($request->user()->can(Permission::ManageUsers->value), 403);
+
+        $validated = $request->validate([
+            'instructor_id' => ['required', 'integer', 'exists:users,id'],
+        ]);
+
+        $newOwner = User::query()->findOrFail($validated['instructor_id']);
+        abort_unless($newOwner->hasRole(Role::Instructor->value), 422, 'المستخدم المحدّد ليس مدرّساً.');
+
+        $course->update(['instructor_id' => $newOwner->getKey()]);
+
+        $activity->log('course.transferred', $request->user(), $course, [
+            'instructor_id' => $newOwner->getKey(),
+        ]);
+
+        return response()->json(['data' => ['instructor_id' => $newOwner->getKey()]]);
     }
 }

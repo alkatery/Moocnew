@@ -32,6 +32,7 @@ final class LearningPath extends Model
         'title',
         'slug',
         'summary',
+        'cover_image',
         'description',
         'published_at',
     ];
