@@ -39,7 +39,12 @@ export default function CourseDetailPage() {
       await api(`/catalog/courses/${slug}/enroll`, { method: 'POST' });
       router.push(`/learn/${slug}`);
     } catch (err) {
-      setMsg(err instanceof ApiError ? err.message : t('common.error'));
+      // Surface the real reason so issues are diagnosable in a trial rather
+      // than hidden behind a generic message (network/CORS errors are not
+      // ApiError instances and carry their detail on `.message`).
+      const detail = err instanceof ApiError ? err.message : err instanceof Error ? err.message : String(err);
+      setMsg(detail || t('common.error'));
+      if (!(err instanceof ApiError)) console.error('enroll failed:', err);
     } finally { setBusy(false); }
   }
 

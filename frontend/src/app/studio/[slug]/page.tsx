@@ -7,6 +7,7 @@ import type { Course } from '@/lib/types';
 import { t } from '@/i18n/dictionary';
 import { PageHeader } from '@/components/PageHeader';
 import { LessonTypeIcon } from '@/components/LessonTypeIcon';
+import { HelpGuide } from '@/components/HelpGuide';
 import { badgeTone, statusLabel } from '@/lib/labels';
 
 export default function ManageCoursePage() {
@@ -93,6 +94,18 @@ export default function ManageCoursePage() {
             <button className="btn" onClick={() => void submit()}>{t('studio.submit')}</button>
           </>
         }
+      />
+
+      <HelpGuide
+        title="دليل بناء هذه الدورة"
+        intro="هذه صفحة بناء الدورة. ابنِ المحتوى من اليمين، واضبط الإعدادات وصورة الغلاف من البطاقات الجانبية، ثم أرسلها للمراجعة."
+        steps={[
+          { title: 'صورة الغلاف', body: 'ارفع صورة معبّرة من بطاقة «صورة غلاف الدورة» — تظهر في الكتالوج وصفحة الدورة.' },
+          { title: 'إعدادات الدورة', body: 'اضبط «درجة النجاح المطلوبة». 0 تعني دورة بلا تقييم تُمنح شهادتها بإكمال الدروس فقط؛ أي قيمة أكبر تشترط اجتياز الاختبارات بتلك الدرجة.' },
+          { title: 'أضف الأقسام', body: 'من بطاقة «إضافة قسم» أنشئ وحدات الدورة بالترتيب (مثل: مقدمة، الأساسيات، تطبيقات...).' },
+          { title: 'أضف الدروس داخل كل قسم', body: 'استخدم حقل «إضافة درس» أسفل كل قسم. تُنشأ الدروس كمقالات، ويمكن لاحقاً جعلها فيديو أو ملفاً أو جلسة مباشرة.' },
+          { title: 'إرسال للمراجعة', body: 'حين يكتمل المنهج اضغط «إرسال للمراجعة» في الأعلى؛ بعد موافقة الإدارة تُنشر الدورة وتصبح متاحة للالتحاق.' },
+        ]}
       />
 
       <div className="grid gap-6 lg:grid-cols-3">

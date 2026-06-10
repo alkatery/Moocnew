@@ -8,6 +8,7 @@ import { formatMinor } from '@/lib/format';
 import { t } from '@/i18n/dictionary';
 import { PageHeader } from '@/components/PageHeader';
 import { EmptyState } from '@/components/EmptyState';
+import { HelpGuide } from '@/components/HelpGuide';
 import { badgeTone, statusLabel } from '@/lib/labels';
 
 export default function StudioPage() {
@@ -42,6 +43,19 @@ export default function StudioPage() {
         title={t('studio.title')}
         subtitle="أنشئ دوراتك، ابنِ المنهج، وأرسلها للمراجعة والنشر."
         crumbs={[{ label: t('nav.studio') }]}
+      />
+
+      <HelpGuide
+        title="كيف أضيف دورة كمدرّس؟ (دليل سريع)"
+        defaultOpen
+        intro="إنشاء دورة يمرّ بخطوات بسيطة: تنشئ الدورة، تبني منهجها بأقسام ودروس، ثم ترسلها للمراجعة لتُنشر. إليك التفصيل:"
+        steps={[
+          { title: 'أنشئ الدورة', body: 'من النموذج المجاور «دورة جديدة»: اكتب عنوان الدورة، واختر التسعير (مجانية أو مدفوعة بسعر بالريال)، ثم اضغط «إنشاء». ستظهر الدورة في القائمة بحالة «مسودّة».' },
+          { title: 'افتح صفحة بناء الدورة', body: 'اضغط على اسم الدورة في القائمة لتفتح صفحة الإدارة، حيث تبني المحتوى وتضبط الإعدادات وترفع صورة الغلاف.' },
+          { title: 'ارفع صورة الغلاف واضبط الإعدادات', body: 'ارفع صورة جذّابة للدورة، وحدّد «درجة النجاح المطلوبة» (اتركها 0 لدورة بلا تقييم، أو اجعلها مثلاً 60% لاشتراط اجتياز الاختبارات للحصول على الشهادة).' },
+          { title: 'ابنِ المنهج: أقسام ثم دروس', body: 'أضف الأقسام (وحدات الدورة)، ثم أضف داخل كل قسم دروسه. كل درس يمكن أن يكون مقالاً أو فيديو أو ملفاً أو جلسة مباشرة.' },
+          { title: 'أرسل للمراجعة', body: 'بعد اكتمال المحتوى اضغط «إرسال للمراجعة» أعلى صفحة الدورة. تراجعها الإدارة ثم تُنشَر لتظهر للطلاب في الكتالوج.' },
+        ]}
       />
 
       <div className="grid gap-6 lg:grid-cols-3">
