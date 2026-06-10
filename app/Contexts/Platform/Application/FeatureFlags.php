@@ -54,4 +54,20 @@ final class FeatureFlags
 
         return (string) config('ai.default_mode', 'off');
     }
+
+    /**
+     * The platform's NELC licence number, or null when not configured.
+     * When set it is printed on certificates and exposed on the public
+     * certificate-verification endpoint.
+     */
+    public function nelcLicenseNumber(): ?string
+    {
+        $stored = $this->settings->get(SettingKey::NelcLicenseNumber);
+
+        if (is_string($stored) && trim($stored) !== '') {
+            return $stored;
+        }
+
+        return null;
+    }
 }

@@ -18,12 +18,13 @@ use Illuminate\Support\Carbon;
  * @property string|null $join_url
  * @property Carbon $starts_at
  * @property int|null $capacity
+ * @property int $max_participants
  */
 final class LiveSession extends Model
 {
     protected $fillable = [
         'course_id', 'title', 'provider', 'join_url', 'external_id',
-        'starts_at', 'ends_at', 'capacity', 'reminded_at',
+        'starts_at', 'ends_at', 'capacity', 'max_participants', 'reminded_at',
     ];
 
     protected function casts(): array
@@ -34,16 +35,29 @@ final class LiveSession extends Model
             'ends_at' => 'datetime',
             'reminded_at' => 'datetime',
             'capacity' => 'integer',
+            'max_participants' => 'integer',
         ];
+    }
+
+    /**
+     * The effective seat ceiling: the smaller of the instructor-chosen
+     * capacity and the NELC regulatory cap (`max_participants`, default 35).
+     */
+    public function effectiveCapacity(): ?int
+    {
+        $limits = array_filter([$this->capacity, $this->max_participants], fn (?int $v): bool => $v !== null);
+
+        return $limits === [] ? null : min($limits);
     }
 
     public function seatsRemaining(): ?int
     {
-        if ($this->capacity === null) {
+        $limit = $this->effectiveCapacity();
+        if ($limit === null) {
             return null;
         }
 
-        return max(0, $this->capacity - $this->registrations()->count());
+        return max(0, $limit - $this->registrations()->count());
     }
 
     /** @return BelongsTo<Course, $this> */

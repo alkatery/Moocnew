@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Api\V1\Certification;
 
 use App\Contexts\Certification\Application\CertificateService;
 use App\Contexts\Certification\Infrastructure\Persistence\Certificate;
+use App\Contexts\Platform\Application\FeatureFlags;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -19,7 +20,7 @@ final class CertificateController extends Controller
      * can confirm a certificate is genuine. Returns only non-sensitive
      * attestation data.
      */
-    public function verify(string $uuid): JsonResponse
+    public function verify(string $uuid, FeatureFlags $features): JsonResponse
     {
         $certificate = Certificate::query()
             ->with(['user', 'course', 'path'])
@@ -38,6 +39,8 @@ final class CertificateController extends Controller
             'course_title' => $certificate->subjectTitle(),
             'grade' => $certificate->grade,
             'issued_at' => $certificate->issued_at->toIso8601String(),
+            // NELC licence number, when the platform has configured one.
+            'nelc_license' => $features->nelcLicenseNumber(),
         ]);
     }
 

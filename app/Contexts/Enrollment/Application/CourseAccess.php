@@ -27,6 +27,19 @@ final class CourseAccess
             ->exists();
     }
 
+    /**
+     * Whether the learner finished the course — required before answering
+     * the NELC satisfaction survey.
+     */
+    public function hasCompletedEnrollment(User $user, int $courseId): bool
+    {
+        return Enrollment::query()
+            ->where('user_id', $user->getKey())
+            ->where('course_id', $courseId)
+            ->where('status', EnrollmentStatus::Completed->value)
+            ->exists();
+    }
+
     public function isStaffFor(User $user, Course $course): bool
     {
         return $course->instructor_id === $user->getKey()

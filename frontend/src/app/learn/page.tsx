@@ -55,26 +55,35 @@ export default function MyLearningPage() {
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {items.map((e) => (
-            <Link key={e.id} href={e.course ? `/learn/${e.course.slug}` : '#'}
-              className="card mb-0 flex flex-col transition hover:-translate-y-0.5 hover:shadow-lg">
-              <div className="mb-2 flex items-start justify-between gap-2">
-                <strong className="line-clamp-2 text-slate-900">{e.course?.title ?? `#${e.course_id}`}</strong>
-                <span className={`badge shrink-0 ${badgeTone(e.status)}`}>{statusLabel(e.status)}</span>
-              </div>
-              <div className="mt-auto pt-3">
-                <div className="mb-1 flex items-center justify-between text-sm">
-                  <span className="text-slate-500">{t('learn.progress')}</span>
-                  <span className="font-bold text-brand-700">{e.progress_percent}%</span>
+            <div key={e.id} className="relative">
+              <Link href={e.course ? `/learn/${e.course.slug}` : '#'}
+                className="card mb-0 flex h-full flex-col transition hover:-translate-y-0.5 hover:shadow-lg">
+                <div className="mb-2 flex items-start justify-between gap-2">
+                  <strong className="line-clamp-2 text-slate-900">{e.course?.title ?? `#${e.course_id}`}</strong>
+                  <span className={`badge shrink-0 ${badgeTone(e.status)}`}>{statusLabel(e.status)}</span>
                 </div>
-                <div className="progress"><span style={{ width: `${e.progress_percent}%` }} /></div>
-                <span className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-brand-700">
-                  متابعة التعلّم
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="rtl:rotate-180" aria-hidden>
-                    <path d="M5 12h14m0 0-6-6m6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </span>
-              </div>
-            </Link>
+                <div className="mt-auto pt-3">
+                  <div className="mb-1 flex items-center justify-between text-sm">
+                    <span className="text-slate-500">{t('learn.progress')}</span>
+                    <span className="font-bold text-brand-700">{e.progress_percent}%</span>
+                  </div>
+                  <div className="progress"><span style={{ width: `${e.progress_percent}%` }} /></div>
+                  <span className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-brand-700">
+                    متابعة التعلّم
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="rtl:rotate-180" aria-hidden>
+                      <path d="M5 12h14m0 0-6-6m6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </span>
+                </div>
+              </Link>
+              {/* NELC satisfaction survey — completed courses only */}
+              {e.status === 'completed' && e.course && (
+                <Link href={`/survey/${e.course.slug}`}
+                  className="absolute bottom-5 left-5 z-10 text-sm font-semibold text-amber-600 hover:underline">
+                  قيّم الدورة
+                </Link>
+              )}
+            </div>
           ))}
         </div>
       )}

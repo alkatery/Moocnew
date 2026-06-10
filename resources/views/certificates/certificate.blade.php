@@ -40,6 +40,12 @@
             تاريخ الإصدار: {{ $issuedAt->format('Y-m-d') }}
         </div>
 
+        @if (! empty($nelcLicense ?? null))
+            <div class="meta" style="margin-top:6px;">
+                ترخيص المركز الوطني للتعليم الإلكتروني رقم: {{ $nelcLicense }}
+            </div>
+        @endif
+
         <div class="qr">
             <img src="{{ $qrDataUri }}" alt="QR">
             <div style="font-size:10px;color:#777;margin-top:4px;">للتحقق امسح الرمز</div>

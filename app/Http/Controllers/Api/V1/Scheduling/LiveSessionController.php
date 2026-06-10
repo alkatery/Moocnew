@@ -38,6 +38,7 @@ final class LiveSessionController extends Controller
             $request->filled('ends_at') ? Carbon::parse($request->validated('ends_at')) : null,
             $request->validated('capacity'),
             $request->validated('join_url'),
+            $request->validated('max_participants'),
         );
 
         return (new LiveSessionResource($session))->response()->setStatusCode(201);

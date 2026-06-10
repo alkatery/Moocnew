@@ -32,6 +32,7 @@ final class LiveSessionService
         ?Carbon $endsAt = null,
         ?int $capacity = null,
         ?string $providedUrl = null,
+        ?int $maxParticipants = null,
     ): LiveSession {
         $meeting = $this->providers->for($provider)->create(
             new MeetingRequest($title, $startsAt, $endsAt, $providedUrl),
@@ -46,6 +47,8 @@ final class LiveSessionService
             'starts_at' => $startsAt,
             'ends_at' => $endsAt,
             'capacity' => $capacity,
+            // NELC: synchronous sessions are capped at 35 learners.
+            'max_participants' => min($maxParticipants ?? 35, 35),
         ]);
     }
 
@@ -67,9 +70,11 @@ final class LiveSessionService
                 return $existing;
             }
 
-            if ($locked->capacity !== null) {
+            // Effective ceiling = min(instructor capacity, NELC 35-seat cap).
+            $limit = $locked->effectiveCapacity();
+            if ($limit !== null) {
                 $taken = SessionRegistration::query()->where('live_session_id', $locked->getKey())->count();
-                if ($taken >= $locked->capacity) {
+                if ($taken >= $limit) {
                     throw ValidationException::withMessages(['session' => ['اكتمل عدد المقاعد.']]);
                 }
             }

@@ -15,6 +15,7 @@ const learnLinks = [
 
 const platformLinks = [
   { href: '/about', label: 'عن المنصة' },
+  { href: '/policies', label: 'السياسات' },
   { href: '/contact', label: 'تواصل معنا' },
   { href: '/register', label: 'انضم كمتعلّم' },
   { href: '/register', label: 'درّس معنا' },
