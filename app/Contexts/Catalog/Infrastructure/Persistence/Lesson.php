@@ -29,6 +29,7 @@ final class Lesson extends Model
         'title',
         'type',
         'content',
+        'transcript',
         'asset_path',
         'video_provider',
         'video_id',

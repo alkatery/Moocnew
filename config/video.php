@@ -25,6 +25,10 @@ return [
         'library_id' => env('BUNNY_STREAM_LIBRARY_ID'),
         'token_key' => env('BUNNY_STREAM_TOKEN_KEY'),
         'embed_host' => env('BUNNY_STREAM_EMBED_HOST', 'iframe.mediadelivery.net'),
+        // Management API key (video.bunnycdn.com) — used to request
+        // automatic transcription/captions for lesson videos.
+        'api_key' => env('BUNNY_STREAM_API_KEY'),
+        'api_base' => env('BUNNY_STREAM_API_BASE', 'https://video.bunnycdn.com'),
         // Shared secret used to verify inbound status webhooks.
         'webhook_secret' => env('BUNNY_STREAM_WEBHOOK_SECRET'),
     ],

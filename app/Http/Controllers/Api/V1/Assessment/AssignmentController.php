@@ -29,10 +29,12 @@ final class AssignmentController extends Controller
     {
         $assignment = Assignment::query()->create([
             'course_id' => $course->getKey(),
+            'section_id' => $request->validated('section_id'),
             'title' => $request->validated('title'),
             'description' => $request->validated('description'),
             'due_at' => $request->validated('due_at'),
             'points' => (int) $request->validated('points', 100),
+            'weight' => (int) $request->validated('weight', 1),
         ]);
 
         return (new AssignmentResource($assignment))->response()->setStatusCode(201);

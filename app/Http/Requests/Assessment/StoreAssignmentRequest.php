@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Requests\Assessment;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 final class StoreAssignmentRequest extends FormRequest
 {
@@ -23,6 +24,11 @@ final class StoreAssignmentRequest extends FormRequest
             'description' => ['nullable', 'string'],
             'due_at' => ['nullable', 'date'],
             'points' => ['nullable', 'integer', 'min:1'],
+            'weight' => ['nullable', 'integer', 'min:1', 'max:100'],
+            'section_id' => [
+                'nullable', 'integer',
+                Rule::exists('sections', 'id')->where('course_id', $this->route('course')?->getKey()),
+            ],
         ];
     }
 }

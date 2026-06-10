@@ -23,6 +23,9 @@ final class StoreCourseRequest extends FormRequest
     {
         return [
             'title' => ['required', 'string', 'max:255'],
+            // Staff (course reviewers/admins) may create on behalf of an
+            // instructor; the controller ignores this for non-staff callers.
+            'instructor_id' => ['nullable', 'integer', 'exists:users,id'],
             'category_id' => ['nullable', 'integer', 'exists:categories,id'],
             'summary' => ['nullable', 'string', 'max:500'],
             'description' => ['nullable', 'string'],

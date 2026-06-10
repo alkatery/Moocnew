@@ -42,11 +42,13 @@ final class QuizController extends Controller
     {
         $quiz = Quiz::query()->create([
             'course_id' => $course->getKey(),
+            'section_id' => $request->validated('section_id'),
             'title' => $request->validated('title'),
             'time_limit_minutes' => $request->validated('time_limit_minutes'),
             'shuffle' => (bool) $request->validated('shuffle', true),
             'max_attempts' => $request->validated('max_attempts'),
             'pass_mark' => (int) $request->validated('pass_mark', 60),
+            'weight' => (int) $request->validated('weight', 1),
         ]);
 
         $this->syncQuestions($quiz, $request->validated('question_ids'));
@@ -58,10 +60,12 @@ final class QuizController extends Controller
     {
         $quiz->update([
             'title' => $request->validated('title'),
+            'section_id' => $request->validated('section_id', $quiz->section_id),
             'time_limit_minutes' => $request->validated('time_limit_minutes'),
             'shuffle' => (bool) $request->validated('shuffle', $quiz->shuffle),
             'max_attempts' => $request->validated('max_attempts'),
             'pass_mark' => (int) $request->validated('pass_mark', $quiz->pass_mark),
+            'weight' => (int) $request->validated('weight', $quiz->weight),
         ]);
 
         $this->syncQuestions($quiz, $request->validated('question_ids'));

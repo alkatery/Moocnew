@@ -26,11 +26,13 @@ final class Quiz extends Model
 {
     protected $fillable = [
         'course_id',
+        'section_id',
         'title',
         'time_limit_minutes',
         'shuffle',
         'max_attempts',
         'pass_mark',
+        'weight',
     ];
 
     protected function casts(): array
@@ -40,6 +42,7 @@ final class Quiz extends Model
             'time_limit_minutes' => 'integer',
             'max_attempts' => 'integer',
             'pass_mark' => 'integer',
+            'weight' => 'integer',
         ];
     }
 

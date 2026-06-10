@@ -8,12 +8,15 @@ use App\Contexts\Catalog\Domain\Course\CourseStatus;
 use App\Contexts\Catalog\Domain\Course\PricingType;
 use App\Contexts\Catalog\Infrastructure\Persistence\Category;
 use App\Contexts\Catalog\Infrastructure\Persistence\Course;
+use App\Contexts\Identity\Domain\Permission;
+use App\Contexts\Identity\Domain\Role;
 use App\Contexts\Shared\Application\ImageUploader;
 use App\Contexts\Shared\Application\SlugGenerator;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Catalog\StoreCourseRequest;
 use App\Http\Requests\Catalog\UpdateCourseRequest;
 use App\Http\Resources\CourseResource;
+use App\Models\User;
 use Illuminate\Contracts\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -23,12 +26,16 @@ final class CourseController extends Controller
 {
     /**
      * Courses authored by the current instructor, in any status — powers the
-     * instructor studio.
+     * instructor studio. Staff (courses.review) see every course so they can
+     * manage work they created on behalf of instructors.
      */
     public function mine(Request $request): AnonymousResourceCollection
     {
         $courses = Course::query()
-            ->where('instructor_id', $request->user()->getKey())
+            ->unless(
+                $request->user()->can(Permission::ReviewCourses->value),
+                fn ($q) => $q->where('instructor_id', $request->user()->getKey()),
+            )
             ->with(['category', 'instructor'])
             ->latest()
             ->paginate(20);
@@ -78,7 +85,7 @@ final class CourseController extends Controller
         $pricingType = PricingType::from($request->validated('pricing_type'));
 
         $course = Course::query()->create([
-            'instructor_id' => $request->user()->getKey(),
+            'instructor_id' => $this->resolveInstructorId($request, $request->validated('instructor_id')),
             'category_id' => $request->validated('category_id'),
             'title' => $request->validated('title'),
             'slug' => $slugs->forTitle($request->validated('title'), 'courses'),
@@ -105,6 +112,11 @@ final class CourseController extends Controller
             'passing_grade',
         ]);
 
+        // Staff may reassign the course to another instructor.
+        if ($request->filled('instructor_id')) {
+            $data['instructor_id'] = $this->resolveInstructorId($request, (int) $request->validated('instructor_id'));
+        }
+
         // A free course always carries a zero price.
         if (($data['pricing_type'] ?? $course->pricing_type->value) === PricingType::Free->value) {
             $data['price_minor'] = 0;
@@ -113,6 +125,30 @@ final class CourseController extends Controller
         $course->update($data);
 
         return new CourseResource($course->fresh(['category', 'instructor']));
+    }
+
+    /**
+     * Staff (courses.review) may author on behalf of any instructor-capable
+     * user; everyone else owns what they create. Assigning to a user who
+     * cannot manage courses is rejected so courses never become orphaned.
+     */
+    private function resolveInstructorId(Request $request, ?int $requested): int
+    {
+        $actor = $request->user();
+
+        if ($requested === null || $requested === $actor->getKey() || ! $actor->can(Permission::ReviewCourses->value)) {
+            return $actor->getKey();
+        }
+
+        $target = User::query()->findOrFail($requested);
+
+        abort_unless(
+            $target->hasRole(Role::Instructor->value) || $target->can(Permission::ManageCourses->value),
+            422,
+            'المستخدم المحدد ليس مدرّباً.',
+        );
+
+        return $target->getKey();
     }
 
     public function destroy(Request $request, Course $course): JsonResponse

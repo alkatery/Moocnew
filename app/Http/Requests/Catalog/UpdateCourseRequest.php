@@ -22,6 +22,7 @@ final class UpdateCourseRequest extends FormRequest
     {
         return [
             'title' => ['sometimes', 'required', 'string', 'max:255'],
+            'instructor_id' => ['sometimes', 'integer', 'exists:users,id'],
             'category_id' => ['nullable', 'integer', 'exists:categories,id'],
             'summary' => ['nullable', 'string', 'max:500'],
             'description' => ['nullable', 'string'],

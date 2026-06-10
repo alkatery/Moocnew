@@ -24,6 +24,7 @@ use App\Http\Controllers\Api\V1\Catalog\CategoryController;
 use App\Http\Controllers\Api\V1\Catalog\CourseController;
 use App\Http\Controllers\Api\V1\Catalog\CoursePublishingController;
 use App\Http\Controllers\Api\V1\Catalog\LessonController;
+use App\Http\Controllers\Api\V1\Catalog\LessonTranscriptController;
 use App\Http\Controllers\Api\V1\Catalog\SectionController;
 use App\Http\Controllers\Api\V1\Certification\CertificateController;
 use App\Http\Controllers\Api\V1\Communication\ForumController;
@@ -35,6 +36,7 @@ use App\Http\Controllers\Api\V1\Engagement\GamificationController;
 use App\Http\Controllers\Api\V1\Engagement\ReviewController;
 use App\Http\Controllers\Api\V1\Enrollment\CourseProgressController;
 use App\Http\Controllers\Api\V1\Enrollment\EnrollmentController;
+use App\Http\Controllers\Api\V1\Enrollment\LessonContentController;
 use App\Http\Controllers\Api\V1\Enrollment\LessonProgressController;
 use App\Http\Controllers\Api\V1\Enrollment\MediaStreamController;
 use App\Http\Controllers\Api\V1\Enrollment\PlaybackController;
@@ -189,13 +191,18 @@ Route::prefix('catalog')->name('api.catalog.')->group(function () {
         // Sections (shallow-nested under courses).
         Route::post('courses/{course}/cover', [CourseController::class, 'uploadCover'])->name('courses.cover');
         Route::post('courses/{course}/sections', [SectionController::class, 'store'])->name('sections.store');
+        Route::put('courses/{course}/sections/order', [SectionController::class, 'reorder'])->name('sections.reorder');
         Route::patch('sections/{section}', [SectionController::class, 'update'])->name('sections.update');
         Route::delete('sections/{section}', [SectionController::class, 'destroy'])->name('sections.destroy');
 
         // Lessons (shallow-nested under sections).
         Route::post('sections/{section}/lessons', [LessonController::class, 'store'])->name('lessons.store');
+        Route::put('sections/{section}/lessons/order', [LessonController::class, 'reorder'])->name('lessons.reorder');
+        Route::get('lessons/{lesson}', [LessonController::class, 'show'])->name('lessons.show');
         Route::patch('lessons/{lesson}', [LessonController::class, 'update'])->name('lessons.update');
         Route::delete('lessons/{lesson}', [LessonController::class, 'destroy'])->name('lessons.destroy');
+        Route::post('lessons/{lesson}/asset', [LessonController::class, 'uploadAsset'])->name('lessons.asset');
+        Route::post('lessons/{lesson}/transcript/auto', [LessonTranscriptController::class, 'auto'])->name('lessons.transcript.auto');
     });
 });
 
@@ -244,6 +251,7 @@ Route::middleware('auth:sanctum')->name('api.enrollment.')->group(function () {
 
     Route::post('lessons/{lesson}/progress', [LessonProgressController::class, 'store'])->name('progress');
     Route::get('lessons/{lesson}/playback', [PlaybackController::class, 'show'])->name('playback');
+    Route::get('lessons/{lesson}/content', [LessonContentController::class, 'show'])->name('lesson.content');
     Route::get('catalog/courses/{course}/progress', [CourseProgressController::class, 'show'])->name('course.progress');
 });
 

@@ -35,6 +35,7 @@ final class LessonRequest extends FormRequest
             'title' => [$required, 'string', 'max:255'],
             'type' => [$required, Rule::enum(LessonType::class)],
             'content' => ['nullable', 'string'],
+            'transcript' => ['nullable', 'string'],
             'video_provider' => ['nullable', 'required_with:video_id', Rule::enum(VideoProvider::class)],
             'video_id' => ['nullable', 'string', 'max:255', 'required_with:video_provider'],
             'position' => ['nullable', 'integer', 'min:0'],

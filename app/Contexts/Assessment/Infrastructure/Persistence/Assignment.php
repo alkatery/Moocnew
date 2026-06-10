@@ -22,10 +22,12 @@ final class Assignment extends Model
 {
     protected $fillable = [
         'course_id',
+        'section_id',
         'title',
         'description',
         'due_at',
         'points',
+        'weight',
     ];
 
     protected function casts(): array
@@ -33,6 +35,7 @@ final class Assignment extends Model
         return [
             'due_at' => 'datetime',
             'points' => 'integer',
+            'weight' => 'integer',
         ];
     }
 

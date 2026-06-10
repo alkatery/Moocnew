@@ -8,6 +8,7 @@ use App\Contexts\Assessment\Infrastructure\Persistence\Question;
 use App\Contexts\Assessment\Infrastructure\Persistence\Quiz;
 use App\Contexts\Catalog\Infrastructure\Persistence\Course;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
 
 /**
@@ -45,6 +46,11 @@ final class StoreQuizRequest extends FormRequest
             'shuffle' => ['nullable', 'boolean'],
             'max_attempts' => ['nullable', 'integer', 'min:1'],
             'pass_mark' => ['nullable', 'integer', 'min:0', 'max:100'],
+            'weight' => ['nullable', 'integer', 'min:1', 'max:100'],
+            'section_id' => [
+                'nullable', 'integer',
+                Rule::exists('sections', 'id')->where('course_id', $this->course()?->getKey()),
+            ],
             'question_ids' => ['required', 'array', 'min:1'],
             'question_ids.*' => ['integer', 'distinct'],
         ];
