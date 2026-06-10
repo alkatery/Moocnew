@@ -3,9 +3,13 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\Api\V1\Admin\ActivityLogController;
+use App\Http\Controllers\Api\V1\Admin\CourseCloneController;
+use App\Http\Controllers\Api\V1\Admin\EnrollmentCodeController;
+use App\Http\Controllers\Api\V1\Admin\ReportController;
 use App\Http\Controllers\Api\V1\Admin\SettingsController;
 use App\Http\Controllers\Api\V1\Admin\SiteContentController as AdminSiteContentController;
 use App\Http\Controllers\Api\V1\Admin\UserController;
+use App\Http\Controllers\Api\V1\Admin\UserImportController;
 use App\Http\Controllers\Api\V1\Analytics\AnalyticsController;
 use App\Http\Controllers\Api\V1\Analytics\PresenceController;
 use App\Http\Controllers\Api\V1\Assessment\AssignmentController;
@@ -35,6 +39,7 @@ use App\Http\Controllers\Api\V1\Content\SiteContentController;
 use App\Http\Controllers\Api\V1\Engagement\GamificationController;
 use App\Http\Controllers\Api\V1\Engagement\ReviewController;
 use App\Http\Controllers\Api\V1\Enrollment\CourseProgressController;
+use App\Http\Controllers\Api\V1\Enrollment\EnrollmentCodeRedeemController;
 use App\Http\Controllers\Api\V1\Enrollment\EnrollmentController;
 use App\Http\Controllers\Api\V1\Enrollment\LessonContentController;
 use App\Http\Controllers\Api\V1\Enrollment\LessonProgressController;
@@ -373,4 +378,37 @@ Route::middleware('auth:sanctum')->prefix('community')->name('api.community.')->
     Route::get('tickets/{ticket}', [TicketController::class, 'show'])->name('tickets.show');
     Route::post('tickets/{ticket}/messages', [TicketController::class, 'reply'])->name('tickets.reply');
     Route::post('tickets/{ticket}/close', [TicketController::class, 'close'])->name('tickets.close');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Admin tools — bulk CSV import, enrollment codes, cloning, CSV reports
+|--------------------------------------------------------------------------
+| Staff utilities: onboard a cohort from a CSV, issue/revoke self-enrollment
+| codes, deep-copy a course for a new term, and export CSV reports. The
+| learner-facing redeem endpoint only requires authentication.
+*/
+Route::middleware('auth:sanctum')->group(function () {
+    Route::prefix('admin')->name('api.admin.tools.')->group(function () {
+        Route::post('users/import', [UserImportController::class, 'store'])
+            ->name('users.import');
+
+        Route::get('courses/{course}/enrollment-codes', [EnrollmentCodeController::class, 'index'])
+            ->name('codes.index');
+        Route::post('courses/{course}/enrollment-codes', [EnrollmentCodeController::class, 'store'])
+            ->name('codes.store');
+        Route::delete('enrollment-codes/{code}', [EnrollmentCodeController::class, 'destroy'])
+            ->name('codes.destroy');
+
+        Route::post('courses/{course}/clone', CourseCloneController::class)
+            ->name('courses.clone');
+
+        Route::get('reports/enrollments.csv', [ReportController::class, 'enrollments'])
+            ->name('reports.enrollments');
+        Route::get('reports/courses.csv', [ReportController::class, 'courses'])
+            ->name('reports.courses');
+    });
+
+    Route::post('enrollment-codes/redeem', EnrollmentCodeRedeemController::class)
+        ->name('api.enrollment-codes.redeem');
 });

@@ -377,3 +377,29 @@ export interface AssignmentItem {
 }
 
 export interface InstructorOption { id: number; name: string; email: string }
+
+// ---- Admin tools ----
+
+export interface ImportSummary {
+  created: number;
+  skipped: number;
+  enrolled: number;
+  errors: { line: number; message: string }[];
+}
+
+export interface EnrollmentCodeItem {
+  id: number;
+  course_id: number;
+  code: string;
+  max_uses: number | null;
+  used_count: number;
+  expires_at: string | null;
+  is_expired: boolean;
+  is_exhausted: boolean;
+  created_at: string | null;
+}
+
+export interface RedeemResult {
+  slug: string;
+  title: string;
+}

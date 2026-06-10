@@ -70,6 +70,7 @@ export default function AdminPage() {
           <Link className="btn btn-ghost" href="/admin/content">{t('admin.content')}</Link>
           <Link className="btn btn-ghost" href="/admin/paths">إدارة المسارات</Link>
           <Link className="btn btn-ghost" href="/admin/news">{t('admin.news')}</Link>
+          <Link className="btn btn-ghost" href="/admin/tools">أدوات الإدارة</Link>
         </div>
       </div>
       {error && <p className="error mb-4">{error}</p>}
