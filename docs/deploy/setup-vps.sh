@@ -40,10 +40,26 @@ if [ ! -d "${APP_DIR}/.git" ]; then
 fi
 cd "${APP_DIR}"
 
+# Lightweight trial mode (LIGHT=1): drop Meilisearch and run queues inline so
+# the whole stack fits a 2GB VPS. Docker Compose honours COMPOSE_FILE, so
+# every `docker compose` call below targets the right stack automatically.
+if [ "${LIGHT:-0}" = "1" ]; then
+  export COMPOSE_FILE="docker-compose.light.yml"
+  echo "==> LIGHT trial mode: Meilisearch off, search in-memory, queues sync."
+else
+  export COMPOSE_FILE="docker-compose.yml"
+fi
+
 if [ ! -f .env ]; then
   cp .env.example .env
+  if [ "${LIGHT:-0}" = "1" ]; then
+    # Make search work without Meilisearch on the trial box.
+    sed -i 's/^SCOUT_DRIVER=.*/SCOUT_DRIVER=collection/' .env
+    sed -i 's/^SCOUT_QUEUE=.*/SCOUT_QUEUE=false/' .env
+    sed -i 's/^QUEUE_CONNECTION=.*/QUEUE_CONNECTION=sync/' .env
+  fi
   echo "!! Edit ${APP_DIR}/.env with production secrets, then re-run this script."
-  echo "   Required: APP_KEY (php artisan key:generate), DB_*, MEILISEARCH_KEY,"
+  echo "   Required: APP_KEY (php artisan key:generate), DB_*,"
   echo "   MOYASAR_*/BUNNY_* (when going live), MAIL_*, SENTRY_LARAVEL_DSN."
 fi
 
@@ -51,16 +67,19 @@ echo "==> Building & starting containers…"
 docker compose build
 docker compose up -d
 
-echo "==> Migrating, seeding, linking storage, caching, search index…"
+echo "==> Migrating, seeding, linking storage, caching…"
 docker compose exec -T app php artisan key:generate --force || true
 docker compose exec -T app php artisan migrate --force
 docker compose exec -T app php artisan db:seed --force
 docker compose exec -T app php artisan storage:link || true
 docker compose exec -T app php artisan config:cache route:cache
-docker compose exec -T app php artisan scout:sync-index-settings || true
+# Meilisearch index settings only matter in the full stack.
+if [ "${LIGHT:-0}" != "1" ]; then
+  docker compose exec -T app php artisan scout:sync-index-settings || true
+fi
 
 echo "==> Installing the scheduler cron (every minute)…"
-CRON="* * * * * cd ${APP_DIR} && docker compose exec -T app php artisan schedule:run >> /var/log/mooc-schedule.log 2>&1"
+CRON="* * * * * cd ${APP_DIR} && COMPOSE_FILE=${COMPOSE_FILE} docker compose exec -T app php artisan schedule:run >> /var/log/mooc-schedule.log 2>&1"
 ( crontab -l 2>/dev/null | grep -v 'artisan schedule:run' ; echo "${CRON}" ) | crontab -
 
 echo "==> Nightly database backup to local + (optional) S3/R2…"
@@ -75,20 +94,22 @@ find /var/backups -name 'mooc-*.sql.gz' -mtime +14 -delete
 command -v rclone >/dev/null && rclone copy "/var/backups/mooc-${TS}.sql.gz" r2:mooc-backups/ || true
 EOF
 chmod +x /usr/local/bin/mooc-backup
+# Pin the backup to the same stack the box is running.
+sed -i "2i export COMPOSE_FILE=${COMPOSE_FILE}" /usr/local/bin/mooc-backup
 mkdir -p /var/backups
 ( crontab -l 2>/dev/null | grep -v mooc-backup ; echo "30 2 * * * /usr/local/bin/mooc-backup" ) | crontab -
 
 cat <<EOF
 
-==> Done.
+==> Done. The API/web is live on  http://<server-ip>:8080  (stack: ${COMPOSE_FILE}).
 Next:
-  1) Point DNS:  ${APP_DOMAIN} and ${WEB_DOMAIN}  ->  this server's IP.
-  2) Caddy (in docker-compose) will issue HTTPS automatically once DNS resolves.
-  3) Deploy the Next.js frontend (Vercel or 'npm run build && npm start' on
+  1) HTTPS: put a reverse proxy in front (Caddy/Nginx + Let's Encrypt) and
+     point ${APP_DOMAIN} -> :8080. For a quick trial you may use IP:8080 directly.
+  2) Deploy the Next.js frontend (Vercel, or 'npm run build && npm start' on
      this box) with NEXT_PUBLIC_API_BASE=https://${APP_DOMAIN}/api/v1
      and NEXT_PUBLIC_SITE_URL=https://${WEB_DOMAIN}.
-  4) Create the first Super Admin:
-       docker compose exec app php artisan tinker --execute "\\
+  3) Create the first Super Admin:
+       COMPOSE_FILE=${COMPOSE_FILE} docker compose exec app php artisan tinker --execute "\\
          \\\$u=App\\Models\\User::factory()->create(['email'=>'you@${WEB_DOMAIN}','password'=>'CHANGE-ME']); \\
          \\\$u->assignRole('super_admin');"
 EOF

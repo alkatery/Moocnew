@@ -8,6 +8,21 @@
 > وربط التخزين والكاش وفهرس البحث، ويضيف cron للمجدول ونسخاً احتياطياً ليلياً
 > لقاعدة البيانات (مع نسخ اختياري إلى R2/S3). أنشئ أول حساب إدارة عليا كما في
 > نهاية السكربت.
+>
+> ### وضع التجربة الخفيف (يناسب VPS بسعة 2GB)
+> أضف `LIGHT=1` فيعمل بلا Meilisearch (البحث يتحوّل تلقائياً لمحرّك Scout
+> `collection` في الذاكرة) وبطوابير متزامنة، فلا تعمل سوى أربع خدمات:
+> `app · web · pgsql · redis`.
+> ```bash
+> LIGHT=1 APP_DOMAIN=api.example.com WEB_DOMAIN=example.com bash docs/deploy/setup-vps.sh
+> ```
+> يضبط السكربت تلقائياً `SCOUT_DRIVER=collection` و`QUEUE_CONNECTION=sync`
+> ويُبقي المساعد الذكي معطّلاً (`AI_DEFAULT_MODE=off`). للتشغيل اليدوي:
+> ```bash
+> docker compose -f docker-compose.light.yml up -d
+> ```
+> ملاحظة: الوضع الخفيف للتجربة فقط؛ للإنتاج عُد إلى الحزمة الكاملة (Meilisearch
+> + عامل طوابير Horizon) بإزالة `LIGHT=1`.
 
 
 > الهدف: تشغيل المنصة على **VPS من هوستنقر** (أو أي خادم KVM) بـ Docker، دون
