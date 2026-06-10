@@ -104,11 +104,12 @@ final class DemoContentSeeder extends Seeder
             ]);
 
         // -- Specialised learning path ---------------------------------
-        $path = LearningPath::factory()->published()->create([
+        $path = LearningPath::query()->create([
             'title' => 'مسار مطوّر الويب المتكامل',
             'slug' => 'web-developer-path',
             'summary' => 'ثلاث دورات متدرّجة تنقلك من أساسيات البرمجة إلى تطوير الويب وإدارة مشاريعك التقنية، وتحصل في نهايتها على شهادة المسار.',
             'description' => 'صُمّم هذا المسار التخصصي ليأخذك خطوة بخطوة: تبدأ بأساسيات البرمجة بلغة بايثون، ثم تنتقل إلى تطوير تطبيقات الويب الحديثة، وتختم بمهارات إدارة المشاريع لتدير عملك التقني باحتراف. أكمل المستويات بالترتيب لتحصل على شهادة إتمام المسار.',
+            'published_at' => now()->subMinute(),
         ]);
         foreach ([[1, $python], [2, $web], [3, $pm]] as [$level, $course]) {
             LearningPathItem::query()->firstOrCreate(
@@ -118,19 +119,21 @@ final class DemoContentSeeder extends Seeder
         }
 
         // -- News --------------------------------------------------------
-        NewsPost::factory()->published()->create([
+        NewsPost::query()->create([
             'author_id' => $instructor->id,
             'title' => 'انطلاق المنصة التعليمية رسمياً',
             'slug' => 'platform-launch',
             'excerpt' => 'نعلن اليوم عن الإطلاق الرسمي للمنصة بباقة من الدورات المجانية في البرمجة وإدارة الأعمال واللغات.',
             'body' => "يسعدنا الإعلان عن الإطلاق الرسمي للمنصة التعليمية، ببنية حديثة وتجربة استخدام عربية متكاملة.\n\nتنطلق المنصة بدورات مجانية في البرمجة وإدارة الأعمال واللغات، مع شهادات إتمام موثّقة برمز تحقق، ومسارات تخصصية تجمع الدورات في رحلة تعلم متدرّجة.\n\nسجّل اليوم وابدأ رحلتك التعليمية.",
+            'published_at' => now()->subMinutes(30),
         ]);
-        NewsPost::factory()->published()->create([
+        NewsPost::query()->create([
             'author_id' => $instructor->id,
             'title' => 'إطلاق المسارات التخصصية وخطط الدراسة',
             'slug' => 'learning-paths-launch',
             'excerpt' => 'ميزتان جديدتان: مسارات تخصصية متدرّجة بشهادة مسار، وخطط دراسة شخصية بتذكيرات مستمرة.',
             'body' => "أطلقنا ميزتين جديدتين لتنظيم رحلتك التعليمية:\n\nالمسارات التخصصية: دورات مرتّبة على مستويات تأخذها بالتسلسل، وتحصل عند إتمامها كاملة على شهادة المسار.\n\nخطط الدراسة الشخصية: اجمع الدورات التي تهمك في خطة واحدة، وحدّد إيقاعك الأسبوعي، وستذكّرك المنصة باستمرار حتى تُنهيها.",
+            'published_at' => now()->subMinutes(10),
         ]);
 
         // -- Student activity --------------------------------------------
@@ -177,7 +180,7 @@ final class DemoContentSeeder extends Seeder
      */
     private function course(User $instructor, Category $category, string $slug, string $title, string $summary, array $sections): Course
     {
-        $course = Course::factory()->published()->create([
+        $course = Course::query()->create([
             'instructor_id' => $instructor->id,
             'category_id' => $category->id,
             'title' => $title,
@@ -186,7 +189,9 @@ final class DemoContentSeeder extends Seeder
             'description' => $summary."\n\nهذه الدورة مجانية بالكامل، وتمنحك شهادة إتمام موثّقة عند إنهاء جميع الدروس. يمكنك التعلم بالوتيرة التي تناسبك ومن أي جهاز.",
             'pricing_type' => PricingType::Free,
             'price_minor' => 0,
+            'passing_grade' => 0,
             'status' => CourseStatus::Published,
+            'published_at' => now()->subMinute(),
         ]);
 
         $sectionPosition = 0;
