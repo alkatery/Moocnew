@@ -1,20 +1,30 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { api } from '@/lib/api';
-import type { Course, Lesson } from '@/lib/types';
+import type { Course, Lesson, LessonContent } from '@/lib/types';
 import { t } from '@/i18n/dictionary';
 import { PageHeader } from '@/components/PageHeader';
 import { LessonTypeIcon } from '@/components/LessonTypeIcon';
 import { Gradebook } from '@/components/Gradebook';
 import { TutorWidget } from '@/components/TutorWidget';
 
+const TYPE_BADGES: Record<string, string> = {
+  video: 'درس فيديو',
+  article: 'درس قراءة',
+  image: 'درس مصوّر',
+  file: 'ملف مرفق',
+  live: 'جلسة مباشرة',
+};
+
 export default function PlayerPage() {
   const { slug } = useParams<{ slug: string }>();
   const [course, setCourse] = useState<Course | null>(null);
   const [active, setActive] = useState<Lesson | null>(null);
   const [playback, setPlayback] = useState<{ kind: string; url: string } | null>(null);
+  const [content, setContent] = useState<LessonContent | null>(null);
   const [note, setNote] = useState('');
 
   useEffect(() => {
@@ -26,10 +36,17 @@ export default function PlayerPage() {
   async function open(lesson: Lesson) {
     setActive(lesson);
     setPlayback(null);
+    setContent(null);
     setNote('');
     try {
-      const res = await api<{ playback: { kind: string; url: string } }>(`/lessons/${lesson.id}/playback`);
-      setPlayback(res.playback);
+      // Unified content (article text, image/file asset, transcript)…
+      const c = await api<{ data: LessonContent }>(`/lessons/${lesson.id}/content`);
+      setContent(c.data);
+      // …plus signed playback for video lessons.
+      if (lesson.type === 'video') {
+        const res = await api<{ playback: { kind: string; url: string } }>(`/lessons/${lesson.id}/playback`);
+        setPlayback(res.playback);
+      }
     } catch {
       setNote(t('common.error'));
     }
@@ -42,39 +59,82 @@ export default function PlayerPage() {
 
   if (!course) return <p className="label">{t('common.loading')}</p>;
 
+  const isPdf = content?.asset_path?.toLowerCase().endsWith('.pdf') ?? false;
+
   return (
     <section>
       <PageHeader
         title={course.title}
         crumbs={[{ href: '/learn', label: t('learn.title') }, { label: course.title }]}
+        actions={
+          <Link className="btn btn-ghost" href={`/community/${slug}`}>
+            💬 اسأل المدرّب في مجتمع الدورة
+          </Link>
+        }
       />
 
       <div className="grid gap-6 lg:grid-cols-3">
-        {/* Player area */}
+        {/* Player / content area */}
         <div className="lg:col-span-2">
           <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-card">
-            <div className="aspect-video w-full bg-slate-900">
-              {active && playback?.kind === 'embed' && (
-                <iframe title={active.title} src={playback.url} className="h-full w-full border-0" allowFullScreen />
-              )}
-              {active && playback?.kind === 'signed_url' && (
-                <video controls src={playback.url} className="h-full w-full" />
-              )}
-              {(!active || !playback) && (
-                <div className="flex h-full w-full flex-col items-center justify-center gap-3 text-slate-400">
-                  <svg width="52" height="52" viewBox="0 0 24 24" fill="none" aria-hidden>
-                    <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.4" />
-                    <path d="M10 9l5 3-5 3z" fill="currentColor" />
-                  </svg>
-                  <span className="text-sm">{active ? t('common.loading') : 'اختر درساً من قائمة المحتوى لبدء التعلّم'}</span>
-                </div>
-              )}
-            </div>
+            {/* Video stage (and the idle state before any selection) */}
+            {(!active || active.type === 'video') && (
+              <div className="aspect-video w-full bg-slate-900">
+                {active && playback?.kind === 'embed' && (
+                  <iframe title={active.title} src={playback.url} className="h-full w-full border-0" allowFullScreen />
+                )}
+                {active && playback?.kind === 'signed_url' && (
+                  <video controls src={playback.url} className="h-full w-full" />
+                )}
+                {(!active || !playback) && (
+                  <div className="flex h-full w-full flex-col items-center justify-center gap-3 text-slate-400">
+                    <svg width="52" height="52" viewBox="0 0 24 24" fill="none" aria-hidden>
+                      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.4" />
+                      <path d="M10 9l5 3-5 3z" fill="currentColor" />
+                    </svg>
+                    <span className="text-sm">{active ? t('common.loading') : 'اختر درساً من قائمة المحتوى لبدء التعلّم'}</span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Article / live notes */}
+            {active && (active.type === 'article' || active.type === 'live') && (
+              <div className="min-h-64 whitespace-pre-wrap p-6 leading-relaxed text-slate-700">
+                {content?.content ?? t('common.loading')}
+              </div>
+            )}
+
+            {/* Image lesson */}
+            {active && active.type === 'image' && (
+              <div className="bg-slate-50 p-4 text-center">
+                {content?.asset_path
+                  // eslint-disable-next-line @next/next/no-img-element
+                  ? <img src={content.asset_path} alt={active.title} className="mx-auto max-h-[70vh] rounded-xl" />
+                  : <p className="label py-16">{t('common.loading')}</p>}
+              </div>
+            )}
+
+            {/* File (PDF…) lesson */}
+            {active && active.type === 'file' && (
+              <div className="p-4">
+                {content?.asset_path ? (
+                  <>
+                    {isPdf && (
+                      <iframe title={active.title} src={content.asset_path} className="mb-3 h-[70vh] w-full rounded-xl border border-slate-200" />
+                    )}
+                    <a className="btn btn-ghost" href={content.asset_path} target="_blank" rel="noreferrer" download>
+                      ⬇ تحميل الملف المرفق
+                    </a>
+                  </>
+                ) : <p className="label py-16 text-center">{t('common.loading')}</p>}
+              </div>
+            )}
 
             {active && (
-              <div className="flex flex-wrap items-center justify-between gap-3 p-5">
+              <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 p-5">
                 <div>
-                  <span className="badge mb-1">{active.type === 'video' ? 'درس فيديو' : active.type === 'live' ? 'جلسة مباشرة' : 'درس قراءة'}</span>
+                  <span className="badge mb-1">{TYPE_BADGES[active.type] ?? TYPE_BADGES.article}</span>
                   <h2 className="text-xl">{active.title}</h2>
                 </div>
                 <div className="flex items-center gap-3">
@@ -84,6 +144,14 @@ export default function PlayerPage() {
               </div>
             )}
           </div>
+
+          {/* Transcript panel (video lessons with a saved transcript) */}
+          {active?.type === 'video' && content?.transcript && (
+            <details className="card mt-4" open>
+              <summary className="cursor-pointer font-bold text-slate-900">📝 التفريغ النصي للدرس</summary>
+              <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-slate-600">{content.transcript}</p>
+            </details>
+          )}
         </div>
 
         {/* Curriculum sidebar */}

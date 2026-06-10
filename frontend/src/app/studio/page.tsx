@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { api } from '@/lib/api';
-import type { Course, Paginated } from '@/lib/types';
+import { useAuth } from '@/lib/auth';
+import type { Course, InstructorOption, Paginated } from '@/lib/types';
 import { formatMinor } from '@/lib/format';
 import { t } from '@/i18n/dictionary';
 import { PageHeader } from '@/components/PageHeader';
@@ -12,11 +13,15 @@ import { HelpGuide } from '@/components/HelpGuide';
 import { badgeTone, statusLabel } from '@/lib/labels';
 
 export default function StudioPage() {
+  const { user } = useAuth();
+  const isStaff = (user?.roles ?? []).some((r) => r === 'super_admin' || r === 'supervisor');
   const [courses, setCourses] = useState<Course[]>([]);
   const [title, setTitle] = useState('');
   const [pricing, setPricing] = useState<'free' | 'one_time'>('free');
   const [price, setPrice] = useState('0');
   const [loading, setLoading] = useState(true);
+  const [instructors, setInstructors] = useState<InstructorOption[]>([]);
+  const [instructorId, setInstructorId] = useState('');
 
   function load() {
     api<Paginated<Course>>('/catalog/mine')
@@ -26,11 +31,24 @@ export default function StudioPage() {
   }
   useEffect(load, []);
 
+  // Staff can author on behalf of an instructor — load the candidates.
+  useEffect(() => {
+    if (!isStaff) return;
+    api<Paginated<InstructorOption>>('/admin/users?role=instructor')
+      .then((r) => setInstructors(r.data))
+      .catch(() => setInstructors([]));
+  }, [isStaff]);
+
   async function create(e: React.FormEvent) {
     e.preventDefault();
     await api('/catalog/courses', {
       method: 'POST',
-      body: { title, pricing_type: pricing, price_minor: pricing === 'free' ? 0 : Math.round(parseFloat(price) * 100) },
+      body: {
+        title,
+        pricing_type: pricing,
+        price_minor: pricing === 'free' ? 0 : Math.round(parseFloat(price) * 100),
+        ...(isStaff && instructorId ? { instructor_id: parseInt(instructorId, 10) } : {}),
+      },
     });
     setTitle('');
     setPrice('0');
@@ -63,6 +81,16 @@ export default function StudioPage() {
           <strong className="text-slate-900">{t('studio.newCourse')}</strong>
           <label className="label mt-3 block" htmlFor="st-title">{t('common.title')}</label>
           <input id="st-title" className="input" value={title} onChange={(e) => setTitle(e.target.value)} required />
+          {isStaff && instructors.length > 0 && (
+            <>
+              <label className="label" htmlFor="st-instructor">إسناد إلى مدرّب</label>
+              <select id="st-instructor" className="input" value={instructorId}
+                onChange={(e) => setInstructorId(e.target.value)}>
+                <option value="">أنا (حسابي الحالي)</option>
+                {instructors.map((i) => <option key={i.id} value={i.id}>{i.name} — {i.email}</option>)}
+              </select>
+            </>
+          )}
           <label className="label" htmlFor="st-pricing">التسعير</label>
           <select id="st-pricing" className="input" value={pricing}
             onChange={(e) => setPricing(e.target.value as 'free' | 'one_time')}>

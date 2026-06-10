@@ -33,7 +33,7 @@ export interface Section {
 export interface Lesson {
   id: number;
   title: string;
-  type: 'video' | 'article' | 'file' | 'live';
+  type: 'video' | 'article' | 'image' | 'file' | 'live';
   position: number;
   is_free_preview: boolean;
   video_provider: string | null;
@@ -310,3 +310,70 @@ export interface ContactMessageItem {
   status: 'new' | 'handled';
   created_at: string | null;
 }
+
+// ---- Studio v2: authoring & assessments ----
+
+export type LessonKind = 'video' | 'article' | 'image' | 'file' | 'live';
+
+export interface LessonAuthoring {
+  id: number;
+  section_id: number;
+  title: string;
+  type: LessonKind;
+  content: string | null;
+  transcript: string | null;
+  asset_path: string | null;
+  video_provider: string | null;
+  video_id: string | null;
+  video_status: string;
+  position: number;
+  is_free_preview: boolean;
+}
+
+export interface LessonContent {
+  id: number;
+  title: string;
+  type: LessonKind;
+  content: string | null;
+  asset_path: string | null;
+  transcript: string | null;
+}
+
+export type QuestionKind = 'mcq' | 'true_false' | 'short_answer';
+
+export interface QuestionChoice { id: string; text: string }
+
+export interface BankQuestion {
+  id: number;
+  type: QuestionKind;
+  body: string;
+  choices: QuestionChoice[] | null;
+  correct?: unknown;
+  points: number;
+}
+
+export interface QuizItem {
+  id: number;
+  course_id: number;
+  section_id: number | null;
+  title: string;
+  time_limit_minutes: number | null;
+  shuffle: boolean;
+  max_attempts: number | null;
+  pass_mark: number;
+  weight: number;
+  questions_count?: number;
+}
+
+export interface AssignmentItem {
+  id: number;
+  course_id: number;
+  section_id: number | null;
+  title: string;
+  description: string | null;
+  due_at: string | null;
+  points: number;
+  weight: number;
+}
+
+export interface InstructorOption { id: number; name: string; email: string }

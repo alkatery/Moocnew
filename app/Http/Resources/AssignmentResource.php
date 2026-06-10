@@ -21,10 +21,12 @@ final class AssignmentResource extends JsonResource
         return [
             'id' => $this->id,
             'course_id' => $this->course_id,
+            'section_id' => $this->section_id,
             'title' => $this->title,
             'description' => $this->description,
             'due_at' => $this->due_at?->toIso8601String(),
             'points' => $this->points,
+            'weight' => $this->weight,
         ];
     }
 }

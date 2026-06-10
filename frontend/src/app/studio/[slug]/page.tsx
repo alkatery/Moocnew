@@ -1,29 +1,43 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { API_BASE, api, getToken } from '@/lib/api';
-import type { Course } from '@/lib/types';
+import type { Course, LessonKind, Section } from '@/lib/types';
 import { t } from '@/i18n/dictionary';
 import { PageHeader } from '@/components/PageHeader';
 import { LessonTypeIcon } from '@/components/LessonTypeIcon';
 import { HelpGuide } from '@/components/HelpGuide';
+import { LessonEditor } from '@/components/studio/LessonEditor';
+import { AssessmentsPanel } from '@/components/studio/AssessmentsPanel';
 import { badgeTone, statusLabel } from '@/lib/labels';
+
+const LESSON_KINDS: { value: LessonKind; label: string }[] = [
+  { value: 'article', label: 'مقال' },
+  { value: 'video', label: 'فيديو' },
+  { value: 'image', label: 'صورة' },
+  { value: 'file', label: 'ملف PDF' },
+  { value: 'live', label: 'جلسة مباشرة' },
+];
 
 export default function ManageCoursePage() {
   const { slug } = useParams<{ slug: string }>();
   const [course, setCourse] = useState<Course | null>(null);
+  const [tab, setTab] = useState<'curriculum' | 'assessments'>('curriculum');
   const [sectionTitle, setSectionTitle] = useState('');
   const [passingGrade, setPassingGrade] = useState('0');
   const [note, setNote] = useState('');
   const [cover, setCover] = useState<string | null>(null);
+  const [openLesson, setOpenLesson] = useState<number | null>(null);
 
-  function load() {
+  const load = useCallback(() => {
     api<{ data: Course }>(`/catalog/courses/${slug}`, { auth: false })
       .then((r) => { setCourse(r.data); setPassingGrade(String(r.data.passing_grade ?? 0)); setCover(r.data.cover_image ?? null); })
       .catch(() => setCourse(null));
-  }
-  useEffect(load, [slug]);
+  }, [slug]);
+  useEffect(load, [load]);
+
+  const sections: Section[] = course?.sections ?? [];
 
   async function uploadCover(file: File) {
     setNote('');
@@ -39,9 +53,7 @@ export default function ManageCoursePage() {
       const json = await res.json();
       setCover(json.data.cover_image as string);
       setNote(t('common.save') + ' ✓');
-    } catch {
-      setNote(t('common.error'));
-    }
+    } catch { setNote(t('common.error')); }
   }
 
   async function saveSettings(e: React.FormEvent) {
@@ -53,20 +65,46 @@ export default function ManageCoursePage() {
       });
       setNote(t('common.save') + ' ✓');
       load();
-    } catch {
-      setNote(t('common.error'));
-    }
+    } catch { setNote(t('common.error')); }
   }
 
   async function addSection(e: React.FormEvent) {
     e.preventDefault();
-    await api(`/catalog/courses/${slug}/sections`, { method: 'POST', body: { title: sectionTitle } });
+    await api(`/catalog/courses/${slug}/sections`, {
+      method: 'POST', body: { title: sectionTitle, position: sections.length + 1 },
+    }).catch(() => setNote(t('common.error')));
     setSectionTitle('');
     load();
   }
 
-  async function addLesson(sectionId: number, title: string) {
-    await api(`/catalog/sections/${sectionId}/lessons`, { method: 'POST', body: { title, type: 'article' } });
+  async function renameSection(s: Section) {
+    const title = window.prompt('اسم القسم الجديد:', s.title);
+    if (!title || title === s.title) return;
+    await api(`/catalog/sections/${s.id}`, { method: 'PATCH', body: { title } }).catch(() => setNote(t('common.error')));
+    load();
+  }
+
+  async function deleteSection(s: Section) {
+    if (!window.confirm(`حذف القسم «${s.title}» وكل دروسه؟`)) return;
+    await api(`/catalog/sections/${s.id}`, { method: 'DELETE' }).catch(() => setNote(t('common.error')));
+    load();
+  }
+
+  async function moveSection(index: number, dir: -1 | 1) {
+    const ids = sections.map((s) => s.id);
+    const j = index + dir;
+    if (j < 0 || j >= ids.length) return;
+    [ids[index], ids[j]] = [ids[j], ids[index]];
+    await api(`/catalog/courses/${slug}/sections/order`, { method: 'PUT', body: { ids } }).catch(() => setNote(t('common.error')));
+    load();
+  }
+
+  async function moveLesson(s: Section, index: number, dir: -1 | 1) {
+    const ids = s.lessons.map((l) => l.id);
+    const j = index + dir;
+    if (j < 0 || j >= ids.length) return;
+    [ids[index], ids[j]] = [ids[j], ids[index]];
+    await api(`/catalog/sections/${s.id}/lessons/order`, { method: 'PUT', body: { ids } }).catch(() => setNote(t('common.error')));
     load();
   }
 
@@ -75,9 +113,7 @@ export default function ManageCoursePage() {
       await api(`/catalog/courses/${slug}/submit`, { method: 'POST' });
       setNote(t('studio.submit') + ' ✓');
       load();
-    } catch {
-      setNote(t('common.error'));
-    }
+    } catch { setNote(t('common.error')); }
   }
 
   if (!course) return <p className="label">{t('common.loading')}</p>;
@@ -98,91 +134,143 @@ export default function ManageCoursePage() {
 
       <HelpGuide
         title="دليل بناء هذه الدورة"
-        intro="هذه صفحة بناء الدورة. ابنِ المحتوى من اليمين، واضبط الإعدادات وصورة الغلاف من البطاقات الجانبية، ثم أرسلها للمراجعة."
+        intro="ابنِ المنهج من تبويب «المنهج»، وأنشئ بنك الأسئلة والاختبارات والواجبات من تبويب «التقييمات والدرجات»، ثم أرسل الدورة للمراجعة."
         steps={[
-          { title: 'صورة الغلاف', body: 'ارفع صورة معبّرة من بطاقة «صورة غلاف الدورة» — تظهر في الكتالوج وصفحة الدورة.' },
-          { title: 'إعدادات الدورة', body: 'اضبط «درجة النجاح المطلوبة». 0 تعني دورة بلا تقييم تُمنح شهادتها بإكمال الدروس فقط؛ أي قيمة أكبر تشترط اجتياز الاختبارات بتلك الدرجة.' },
-          { title: 'أضف الأقسام', body: 'من بطاقة «إضافة قسم» أنشئ وحدات الدورة بالترتيب (مثل: مقدمة، الأساسيات، تطبيقات...).' },
-          { title: 'أضف الدروس داخل كل قسم', body: 'استخدم حقل «إضافة درس» أسفل كل قسم. تُنشأ الدروس كمقالات، ويمكن لاحقاً جعلها فيديو أو ملفاً أو جلسة مباشرة.' },
-          { title: 'إرسال للمراجعة', body: 'حين يكتمل المنهج اضغط «إرسال للمراجعة» في الأعلى؛ بعد موافقة الإدارة تُنشر الدورة وتصبح متاحة للالتحاق.' },
+          { title: 'المنهج', body: 'أضف الأقسام ثم الدروس داخلها. اضغط على أي درس لفتح محرره الكامل: نوع المادة (مقال/فيديو/صورة/PDF/جلسة)، المحتوى، رفع الملفات، التفريغ النصي، والمعاينة المجانية. رتّب بالأسهم ▲▼.' },
+          { title: 'التقييمات والدرجات', body: 'أنشئ أسئلة في البنك (اختيار من متعدد، صح/خطأ، إجابة قصيرة)، ثم جمّعها في اختبارات بمدة ومحاولات ووزن، وأضف واجبات تصححها يدوياً. وزن كل تقييم يحدد أثره في الدرجة النهائية.' },
+          { title: 'درجة النجاح', body: 'من «إعدادات الدورة» حدد الدرجة المطلوبة للشهادة — تُحسب من متوسط الاختبارات والواجبات الموزون.' },
+          { title: 'النشر', body: 'اضغط «إرسال للمراجعة» وستنشرها الإدارة بعد الاعتماد.' },
         ]}
       />
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        <div className="lg:order-2">
-          <div className="card mb-4">
-            <strong className="text-slate-900">{t('studio.cover')}</strong>
-            {cover && (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={cover} alt="" className="mt-3 h-28 w-full rounded-xl object-cover" />
-            )}
-            <label className="btn btn-ghost mt-3 w-full cursor-pointer">
-              {cover ? 'استبدال الصورة' : 'رفع صورة'}
-              <input type="file" accept="image/*" className="hidden"
-                onChange={(e) => { const f = e.target.files?.[0]; if (f) void uploadCover(f); }} />
-            </label>
+      {/* Tabs */}
+      <div className="mb-6 flex gap-2 border-b border-slate-200">
+        {([['curriculum', 'المنهج'], ['assessments', 'التقييمات والدرجات']] as const).map(([k, label]) => (
+          <button key={k} onClick={() => setTab(k)}
+            className={`-mb-px border-b-2 px-4 py-2.5 text-sm font-bold transition ${
+              tab === k ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-400 hover:text-slate-600'
+            }`}>
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {tab === 'assessments' ? (
+        <AssessmentsPanel courseSlug={slug} sections={sections} />
+      ) : (
+        <div className="grid gap-6 lg:grid-cols-3">
+          <div className="lg:order-2">
+            <div className="card mb-4">
+              <strong className="text-slate-900">{t('studio.cover')}</strong>
+              {cover && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={cover} alt="" className="mt-3 h-28 w-full rounded-xl object-cover" />
+              )}
+              <label className="btn btn-ghost mt-3 w-full cursor-pointer">
+                {cover ? 'استبدال الصورة' : 'رفع صورة'}
+                <input type="file" accept="image/*" className="hidden"
+                  onChange={(e) => { const f = e.target.files?.[0]; if (f) void uploadCover(f); }} />
+              </label>
+            </div>
+
+            <form className="card mb-4" onSubmit={(e) => void saveSettings(e)}>
+              <strong className="text-slate-900">إعدادات الدورة</strong>
+              <label className="label mt-3 block" htmlFor="passing-grade">{t('studio.passingGrade')}</label>
+              <input id="passing-grade" className="input" type="number" min="0" max="100" dir="ltr"
+                value={passingGrade} onChange={(e) => setPassingGrade(e.target.value)} />
+              <p className="mb-3 text-xs text-slate-400">
+                عند ضبطها أكبر من صفر، لن تُمنح الشهادة إلا بتحقيق هذه الدرجة في متوسط التقييمات الموزون.
+              </p>
+              <button className="btn w-full">{t('common.save')}</button>
+            </form>
+
+            <form className="card mb-0" onSubmit={(e) => void addSection(e)}>
+              <strong className="text-slate-900">{t('studio.addSection')}</strong>
+              <label className="label mt-3 block" htmlFor="sec-title">{t('common.title')}</label>
+              <input id="sec-title" className="input" value={sectionTitle}
+                onChange={(e) => setSectionTitle(e.target.value)} required />
+              <button className="btn w-full">{t('common.save')}</button>
+            </form>
           </div>
 
-          <form className="card mb-4" onSubmit={(e) => void saveSettings(e)}>
-            <strong className="text-slate-900">إعدادات الدورة</strong>
-            <label className="label mt-3 block" htmlFor="passing-grade">{t('studio.passingGrade')}</label>
-            <input id="passing-grade" className="input" type="number" min="0" max="100" dir="ltr"
-              value={passingGrade} onChange={(e) => setPassingGrade(e.target.value)} />
-            <p className="mb-3 text-xs text-slate-400">
-              عند ضبطها أكبر من صفر، لن تُمنح الشهادة إلا باجتياز اختبارات وواجبات الدورة بهذه الدرجة.
-            </p>
-            <button className="btn w-full">{t('common.save')}</button>
-          </form>
+          <div className="lg:col-span-2 lg:order-1">
+            {!sections.length ? (
+              <div className="card text-slate-500">ابدأ ببناء المنهج: أضف القسم الأول من النموذج المجاور.</div>
+            ) : (
+              sections.map((s, si) => (
+                <div key={s.id} className="card p-0">
+                  <div className="flex items-center justify-between gap-2 border-b border-slate-100 px-5 py-3.5">
+                    <strong className="min-w-0 truncate text-slate-900">القسم {si + 1}: {s.title}</strong>
+                    <div className="flex shrink-0 items-center gap-1 text-slate-400">
+                      <button title="تحريك لأعلى" className="rounded p-1 hover:bg-slate-100 disabled:opacity-30"
+                        disabled={si === 0} onClick={() => void moveSection(si, -1)}>▲</button>
+                      <button title="تحريك لأسفل" className="rounded p-1 hover:bg-slate-100 disabled:opacity-30"
+                        disabled={si === sections.length - 1} onClick={() => void moveSection(si, 1)}>▼</button>
+                      <button title="إعادة تسمية" className="rounded p-1 hover:bg-slate-100" onClick={() => void renameSection(s)}>✎</button>
+                      <button title="حذف القسم" className="rounded p-1 text-red-500 hover:bg-red-50" onClick={() => void deleteSection(s)}>✕</button>
+                    </div>
+                  </div>
 
-          <form className="card mb-0" onSubmit={addSection}>
-            <strong className="text-slate-900">{t('studio.addSection')}</strong>
-            <label className="label mt-3 block" htmlFor="sec-title">{t('common.title')}</label>
-            <input id="sec-title" className="input" value={sectionTitle}
-              onChange={(e) => setSectionTitle(e.target.value)} required />
-            <button className="btn w-full">{t('common.save')}</button>
-          </form>
-        </div>
+                  <ul className="divide-y divide-slate-50">
+                    {s.lessons.map((l, li) => (
+                      <li key={l.id}>
+                        <div className="flex items-center gap-2 px-5 py-3 text-sm text-slate-600">
+                          <span className="text-slate-400"><LessonTypeIcon type={l.type} /></span>
+                          <button className="min-w-0 flex-1 truncate text-start hover:text-brand-700"
+                            onClick={() => setOpenLesson(openLesson === l.id ? null : l.id)}>
+                            {l.title}
+                            {l.is_free_preview && <span className="badge ms-2">معاينة</span>}
+                          </button>
+                          <span className="flex shrink-0 items-center gap-1 text-slate-300">
+                            <button title="لأعلى" className="rounded p-1 hover:bg-slate-100 disabled:opacity-30"
+                              disabled={li === 0} onClick={() => void moveLesson(s, li, -1)}>▲</button>
+                            <button title="لأسفل" className="rounded p-1 hover:bg-slate-100 disabled:opacity-30"
+                              disabled={li === s.lessons.length - 1} onClick={() => void moveLesson(s, li, 1)}>▼</button>
+                            <button className="rounded px-1.5 py-1 text-xs text-brand-600 hover:bg-brand-50"
+                              onClick={() => setOpenLesson(openLesson === l.id ? null : l.id)}>
+                              {openLesson === l.id ? 'إغلاق' : 'تحرير'}
+                            </button>
+                          </span>
+                        </div>
+                        {openLesson === l.id && (
+                          <LessonEditor lessonId={l.id} onSaved={load} onDeleted={() => { setOpenLesson(null); load(); }} />
+                        )}
+                      </li>
+                    ))}
+                  </ul>
 
-        <div className="lg:col-span-2 lg:order-1">
-          {!course.sections?.length ? (
-            <div className="card text-slate-500">ابدأ ببناء المنهج: أضف القسم الأول من النموذج المجاور.</div>
-          ) : (
-            course.sections.map((s, si) => (
-              <div key={s.id} className="card p-0">
-                <div className="flex items-center justify-between border-b border-slate-100 px-5 py-3.5">
-                  <strong className="text-slate-900">القسم {si + 1}: {s.title}</strong>
-                  <span className="text-xs text-slate-400">{s.lessons.length} دروس</span>
+                  <div className="border-t border-slate-100 p-4">
+                    <LessonAdder onAdd={(title, kind) => {
+                      void api(`/catalog/sections/${s.id}/lessons`, {
+                        method: 'POST',
+                        body: { title, type: kind, position: s.lessons.length + 1 },
+                      }).then(load).catch(() => setNote(t('common.error')));
+                    }} />
+                  </div>
                 </div>
-                <ul className="divide-y divide-slate-50">
-                  {s.lessons.map((l) => (
-                    <li key={l.id} className="flex items-center gap-3 px-5 py-3 text-sm text-slate-600">
-                      <span className="text-slate-400"><LessonTypeIcon type={l.type} /></span>
-                      {l.title}
-                    </li>
-                  ))}
-                </ul>
-                <div className="border-t border-slate-100 p-4">
-                  <LessonAdder onAdd={(title) => void addLesson(s.id, title)} />
-                </div>
-              </div>
-            ))
-          )}
+              ))
+            )}
+          </div>
         </div>
-      </div>
+      )}
     </section>
   );
 }
 
-function LessonAdder({ onAdd }: { onAdd: (title: string) => void }) {
+function LessonAdder({ onAdd }: { onAdd: (title: string, kind: LessonKind) => void }) {
   const [title, setTitle] = useState('');
+  const [kind, setKind] = useState<LessonKind>('article');
   return (
     <form
-      onSubmit={(e) => { e.preventDefault(); if (title) { onAdd(title); setTitle(''); } }}
-      className="flex gap-2"
+      onSubmit={(e) => { e.preventDefault(); if (title) { onAdd(title, kind); setTitle(''); } }}
+      className="flex flex-wrap gap-2"
     >
-      <input className="input m-0 flex-1" placeholder={t('studio.addLesson')}
+      <input className="input m-0 min-w-40 flex-1" placeholder={t('studio.addLesson')}
         value={title} onChange={(e) => setTitle(e.target.value)} />
-      <button className="btn shrink-0">+</button>
+      <select className="input m-0 w-auto" value={kind} onChange={(e) => setKind(e.target.value as LessonKind)} aria-label="نوع الدرس">
+        {LESSON_KINDS.map((k) => <option key={k.value} value={k.value}>{k.label}</option>)}
+      </select>
+      <button className="btn shrink-0">+ إضافة</button>
     </form>
   );
 }
