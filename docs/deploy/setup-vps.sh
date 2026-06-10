@@ -32,8 +32,20 @@ ufw allow OpenSSH
 ufw allow 80/tcp
 ufw allow 443/tcp
 ufw allow 8080/tcp   # web container is published on :8080 (direct trial access)
+ufw allow 3000/tcp   # Next.js frontend (FULL mode)
 ufw --force enable
 systemctl enable --now fail2ban
+
+# FULL mode builds the Next.js bundle, which is memory-hungry. Add swap so a
+# small (2–4GB) box does not OOM during the build. Idempotent.
+if [ "${FULL:-0}" = "1" ] && [ ! -f /swapfile ]; then
+  echo "==> Creating 4G swapfile for the frontend build…"
+  fallocate -l 4G /swapfile || dd if=/dev/zero of=/swapfile bs=1M count=4096
+  chmod 600 /swapfile
+  mkswap /swapfile
+  swapon /swapfile
+  grep -q '/swapfile' /etc/fstab || echo '/swapfile none swap sw 0 0' >> /etc/fstab
+fi
 
 echo "==> Fetching application into ${APP_DIR}…"
 if [ ! -d "${APP_DIR}/.git" ]; then
@@ -42,10 +54,18 @@ if [ ! -d "${APP_DIR}/.git" ]; then
 fi
 cd "${APP_DIR}"
 
-# Lightweight trial mode (LIGHT=1): drop Meilisearch and run queues inline so
-# the whole stack fits a 2GB VPS. Docker Compose honours COMPOSE_FILE, so
-# every `docker compose` call below targets the right stack automatically.
-if [ "${LIGHT:-0}" = "1" ]; then
+# Pick the stack. Docker Compose honours COMPOSE_FILE, so every `docker
+# compose` call below targets the right stack automatically.
+#   FULL=1  → everything + Next.js UI + Horizon + Meilisearch (one box)
+#   LIGHT=1 → no Meilisearch, in-memory search, inline queues (fits 2GB)
+#   (default) → backend dev stack
+if [ "${FULL:-0}" = "1" ]; then
+  export COMPOSE_FILE="docker-compose.full.yml"
+  # The browser talks to the API directly on :8080, so bake that public URL
+  # into the frontend build. Override NEXT_PUBLIC_API_BASE to use HTTPS/domain.
+  export NEXT_PUBLIC_API_BASE="${NEXT_PUBLIC_API_BASE:-http://${APP_DOMAIN}:8080/api/v1}"
+  echo "==> FULL mode: UI + Horizon + Meilisearch. API for the UI: ${NEXT_PUBLIC_API_BASE}"
+elif [ "${LIGHT:-0}" = "1" ]; then
   export COMPOSE_FILE="docker-compose.light.yml"
   echo "==> LIGHT trial mode: Meilisearch off, search in-memory, queues sync."
 else
@@ -54,6 +74,7 @@ fi
 
 if [ ! -f .env ]; then
   cp .env.example .env
+  sed -i "s#^APP_URL=.*#APP_URL=http://${APP_DOMAIN}:8080#" .env
   if [ "${LIGHT:-0}" = "1" ]; then
     # Make search work without Meilisearch on the trial box.
     sed -i 's/^SCOUT_DRIVER=.*/SCOUT_DRIVER=collection/' .env
@@ -81,9 +102,12 @@ docker compose exec -T app php artisan migrate --force
 docker compose exec -T app php artisan db:seed --force
 docker compose exec -T app php artisan storage:link || true
 docker compose exec -T app php artisan config:cache route:cache
-# Meilisearch index settings only matter in the full stack.
+# Meilisearch index settings only matter when Meilisearch is running.
 if [ "${LIGHT:-0}" != "1" ]; then
   docker compose exec -T app php artisan scout:sync-index-settings || true
+  # Index the seeded courses so search returns results immediately.
+  docker compose exec -T app php artisan scout:import \
+    "App\\Contexts\\Catalog\\Infrastructure\\Persistence\\Course" || true
 fi
 
 echo "==> Installing the scheduler cron (every minute)…"
@@ -109,15 +133,15 @@ mkdir -p /var/backups
 
 cat <<EOF
 
-==> Done. The API/web is live on  http://<server-ip>:8080  (stack: ${COMPOSE_FILE}).
+==> Done. (stack: ${COMPOSE_FILE})
+   API:  http://${APP_DOMAIN}:8080
+$( [ "${FULL:-0}" = "1" ] && echo "   UI :  http://${APP_DOMAIN}:3000   <-- open this in your browser" )
 Next:
-  1) HTTPS: put a reverse proxy in front (Caddy/Nginx + Let's Encrypt) and
-     point ${APP_DOMAIN} -> :8080. For a quick trial you may use IP:8080 directly.
-  2) Deploy the Next.js frontend (Vercel, or 'npm run build && npm start' on
-     this box) with NEXT_PUBLIC_API_BASE=https://${APP_DOMAIN}/api/v1
-     and NEXT_PUBLIC_SITE_URL=https://${WEB_DOMAIN}.
-  3) Create the first Super Admin:
-       COMPOSE_FILE=${COMPOSE_FILE} docker compose exec app php artisan tinker --execute "\\
-         \\\$u=App\\Models\\User::factory()->create(['email'=>'you@${WEB_DOMAIN}','password'=>'CHANGE-ME']); \\
-         \\\$u->assignRole('super_admin');"
+  1) Create the first Super Admin (login for the UI/admin panel):
+       COMPOSE_FILE=${COMPOSE_FILE} docker compose exec -T app php artisan tinker --execute "\\
+         \\\$u=App\\Models\\User::factory()->create(['email'=>'admin@${WEB_DOMAIN}','password'=>'ChangeMe2026']); \\
+         \\\$u->assignRole('super_admin'); echo 'OK';"
+  2) For production: front the API with HTTPS (Caddy/Nginx + Let's Encrypt),
+     point ${APP_DOMAIN} -> :8080, and rebuild the UI with
+     NEXT_PUBLIC_API_BASE=https://${APP_DOMAIN}/api/v1.
 EOF
