@@ -19,6 +19,12 @@ enum SettingKey: string
     case PaymentsEnabled = 'payments.enabled';
 
     /**
+     * Which AI-assistant engine is active platform-wide: `off`, `rules`
+     * (deterministic, no LLM) or `claude` (Anthropic). Stored as a string.
+     */
+    case AssistantMode = 'assistant.mode';
+
+    /**
      * The expected PHP value type for this key, used by the repository to
      * cast values consistently on the way in and out of storage.
      */
@@ -26,6 +32,7 @@ enum SettingKey: string
     {
         return match ($this) {
             self::PaymentsEnabled => SettingValueType::Boolean,
+            self::AssistantMode => SettingValueType::String,
         };
     }
 }

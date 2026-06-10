@@ -1,6 +1,7 @@
 <?php
 
 use App\Contexts\Catalog\Domain\Course\InvalidCourseTransition;
+use App\Http\Middleware\EnsureAssistantEnabled;
 use App\Http\Middleware\EnsurePaymentsEnabled;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -17,6 +18,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->alias([
             'payments.enabled' => EnsurePaymentsEnabled::class,
+            'assistant.enabled' => EnsureAssistantEnabled::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

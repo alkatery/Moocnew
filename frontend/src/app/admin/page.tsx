@@ -3,9 +3,10 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
-import type { ContactMessageItem, Paginated } from '@/lib/types';
+import type { AssistantMode, ContactMessageItem, Paginated } from '@/lib/types';
 import { formatDate } from '@/lib/format';
 import { t } from '@/i18n/dictionary';
+import { ChatPanel } from '@/components/ChatPanel';
 
 type Overview = Record<string, number | boolean>;
 
@@ -22,6 +23,7 @@ const LABELS: Record<string, string> = {
 export default function AdminPage() {
   const [overview, setOverview] = useState<Overview | null>(null);
   const [payments, setPayments] = useState(false);
+  const [assistantMode, setAssistantMode] = useState<AssistantMode>('off');
   const [messages, setMessages] = useState<ContactMessageItem[]>([]);
   const [error, setError] = useState('');
 
@@ -29,6 +31,9 @@ export default function AdminPage() {
     api<{ data: Overview }>('/analytics/overview')
       .then((r) => { setOverview(r.data); setPayments(Boolean(r.data.commerce_enabled)); })
       .catch(() => setError(t('common.error')));
+    api<{ payments_enabled: boolean; assistant_mode: AssistantMode }>('/admin/settings')
+      .then((r) => setAssistantMode(r.assistant_mode))
+      .catch(() => undefined);
     api<Paginated<ContactMessageItem>>('/admin/contact-messages?status=new')
       .then((r) => setMessages(r.data))
       .catch(() => undefined);
@@ -38,6 +43,13 @@ export default function AdminPage() {
     try {
       const res = await api<{ payments_enabled: boolean }>('/admin/settings/payments', { method: 'PATCH', body: { enabled: !payments } });
       setPayments(res.payments_enabled);
+    } catch { setError(t('common.error')); }
+  }
+
+  async function changeAssistantMode(mode: AssistantMode) {
+    try {
+      const res = await api<{ assistant_mode: AssistantMode }>('/admin/settings/assistant', { method: 'PATCH', body: { mode } });
+      setAssistantMode(res.assistant_mode);
     } catch { setError(t('common.error')); }
   }
 
@@ -82,6 +94,35 @@ export default function AdminPage() {
           <span className={`absolute top-0.5 h-6 w-6 rounded-full bg-white shadow transition-all ${payments ? 'start-0.5' : 'start-5.5'}`} />
         </button>
       </div>
+
+      {/* AI assistant engine selector */}
+      <div className="card">
+        <strong className="text-slate-900">{t('admin.assistantMode')}</strong>
+        <p className="mb-3 text-sm text-slate-500">اختر محرّك المساعد الذكي (للطلاب والإدارة) أو عطّله.</p>
+        <div className="flex flex-wrap gap-2">
+          {(['off', 'rules', 'claude'] as const).map((m) => (
+            <button key={m}
+              onClick={() => void changeAssistantMode(m)}
+              className={`chip ${assistantMode === m ? 'chip-active' : ''}`}>
+              {m === 'off' ? t('admin.modeOff') : m === 'rules' ? t('admin.modeRules') : t('admin.modeClaude')}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Admin analyst chat — only when the assistant is enabled */}
+      {assistantMode !== 'off' && (
+        <div className="card">
+          <strong className="text-slate-900">{t('assistant.analyst')}</strong>
+          <div className="mt-3 h-80">
+            <ChatPanel
+              endpoint="/admin/assistant/chat"
+              placeholder={t('assistant.askAdmin')}
+              intro={t('assistant.adminIntro')}
+            />
+          </div>
+        </div>
+      )}
 
       <div className="card">
         <div className="mb-3 flex items-center justify-between">

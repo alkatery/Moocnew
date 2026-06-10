@@ -8,6 +8,7 @@ import { t } from '@/i18n/dictionary';
 import { PageHeader } from '@/components/PageHeader';
 import { LessonTypeIcon } from '@/components/LessonTypeIcon';
 import { Gradebook } from '@/components/Gradebook';
+import { TutorWidget } from '@/components/TutorWidget';
 
 export default function PlayerPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -126,6 +127,8 @@ export default function PlayerPage() {
           </div>
         </aside>
       </div>
+
+      <TutorWidget courseSlug={slug} />
     </section>
   );
 }

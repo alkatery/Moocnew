@@ -38,4 +38,20 @@ final class FeatureFlags
 
         return (bool) config('platform.payments.enabled_default', false);
     }
+
+    /**
+     * The active AI-assistant engine: 'off', 'rules' or 'claude'. The stored
+     * setting wins; config supplies the default before an admin has chosen.
+     * Returned as a raw string to keep this context free of Assistant types.
+     */
+    public function assistantMode(): string
+    {
+        $stored = $this->settings->get(SettingKey::AssistantMode);
+
+        if (is_string($stored) && $stored !== '') {
+            return $stored;
+        }
+
+        return (string) config('ai.default_mode', 'off');
+    }
 }

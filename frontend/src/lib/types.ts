@@ -268,6 +268,20 @@ export interface CourseProgress {
   lessons: { lesson_id: number; video_position: number; completed: boolean }[];
 }
 
+export type AssistantMode = 'off' | 'rules' | 'claude';
+
+export interface AssistantReply {
+  text: string;
+  sources: string[];
+  suggestions: string[];
+}
+
+export interface AssistantTurn {
+  role: 'user' | 'assistant';
+  content: string;
+  meta?: { sources?: string[]; suggestions?: string[] } | null;
+}
+
 export interface ActivityLogRow {
   id: number;
   event: string;

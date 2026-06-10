@@ -14,6 +14,8 @@ use App\Http\Controllers\Api\V1\Assessment\CourseGradeController;
 use App\Http\Controllers\Api\V1\Assessment\QuestionController;
 use App\Http\Controllers\Api\V1\Assessment\QuizAttemptController;
 use App\Http\Controllers\Api\V1\Assessment\QuizController;
+use App\Http\Controllers\Api\V1\Assistant\AnalystController;
+use App\Http\Controllers\Api\V1\Assistant\TutorController;
 use App\Http\Controllers\Api\V1\Auth\LoginController;
 use App\Http\Controllers\Api\V1\Auth\LogoutController;
 use App\Http\Controllers\Api\V1\Auth\MeController;
@@ -79,6 +81,13 @@ Route::middleware('auth:sanctum')->prefix('admin')->name('api.admin.')->group(fu
     Route::patch('settings/payments', [SettingsController::class, 'updatePayments'])
         ->name('settings.payments.update');
 
+    // AI assistant engine selection (off / rules / claude).
+    Route::patch('settings/assistant', [SettingsController::class, 'updateAssistant'])->name('settings.assistant.update');
+
+    // Admin analyst «بصيرة» (analytics access + assistant enabled).
+    Route::post('assistant/chat', [AnalystController::class, 'chat'])
+        ->middleware('assistant.enabled')->name('assistant.chat');
+
     // Contact-form triage (community.moderate permission).
     Route::get('contact-messages', [ContactController::class, 'index'])->name('contact.index');
     Route::post('contact-messages/{message}/handle', [ContactController::class, 'handle'])->name('contact.handle');
@@ -129,6 +138,12 @@ Route::get('profiles/instructors/{user}', [ProfileController::class, 'instructor
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('catalog/courses/{course}/reviews', [ReviewController::class, 'store'])->name('api.reviews.store');
     Route::get('engagement/me', [GamificationController::class, 'me'])->name('api.engagement.me');
+
+    // Learner tutor «مُعين» — course-scoped, gated by assistant mode.
+    Route::middleware('assistant.enabled')->group(function () {
+        Route::post('assistant/courses/{course}/chat', [TutorController::class, 'chat'])->name('api.assistant.tutor.chat');
+        Route::get('assistant/courses/{course}/history', [TutorController::class, 'history'])->name('api.assistant.tutor.history');
+    });
 });
 
 Route::post('contact', [ContactController::class, 'store'])

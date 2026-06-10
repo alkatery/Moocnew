@@ -10,6 +10,7 @@ use App\Contexts\Platform\Application\FeatureFlags;
 use App\Contexts\Platform\Domain\Settings\SettingKey;
 use App\Contexts\Platform\Domain\Settings\SettingsRepository;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\UpdateAssistantRequest;
 use App\Http\Requests\Admin\UpdatePaymentsRequest;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -26,7 +27,24 @@ final class SettingsController extends Controller
 
         return response()->json([
             'payments_enabled' => $features->paymentsEnabled(),
+            'assistant_mode' => $features->assistantMode(),
         ]);
+    }
+
+    public function updateAssistant(
+        UpdateAssistantRequest $request,
+        SettingsRepository $settings,
+        ActivityLogger $activity,
+    ): JsonResponse {
+        $mode = $request->validated('mode');
+
+        $settings->set(SettingKey::AssistantMode, $mode);
+
+        $activity->log('settings.assistant_mode_changed', $request->user(), properties: [
+            'mode' => $mode,
+        ]);
+
+        return response()->json(['assistant_mode' => $mode]);
     }
 
     public function updatePayments(
