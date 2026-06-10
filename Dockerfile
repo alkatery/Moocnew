@@ -17,17 +17,24 @@ RUN apk add --no-cache \
         libzip-dev \
         oniguruma-dev \
         postgresql-dev \
+        freetype-dev \
+        libjpeg-turbo-dev \
+        libpng-dev \
         $PHPIZE_DEPS
 
 # PHP extensions: PostgreSQL (pdo_pgsql), intl (i18n), zip, bcmath
-# (integer-minor money math), opcache, plus Redis via PECL.
+# (integer-minor money math), opcache, gd (QR-code certificates),
+# pcntl (Horizon queue workers), plus Redis via PECL.
 RUN docker-php-ext-configure intl \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install -j"$(nproc)" \
         pdo_pgsql \
         intl \
         zip \
         bcmath \
         opcache \
+        gd \
+        pcntl \
     && pecl install redis \
     && docker-php-ext-enable redis
 
