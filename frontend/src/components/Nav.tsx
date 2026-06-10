@@ -4,6 +4,18 @@ import Link from 'next/link';
 import { useAuth } from '@/lib/auth';
 import { t } from '@/i18n/dictionary';
 
+function Logo() {
+  return (
+    <span className="brand">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" aria-hidden>
+        <path d="M12 3 2 8l10 5 8-4v6h2V8L12 3Z" fill="#1f3a93" />
+        <path d="M6 12.5V16c0 1.4 2.7 3 6 3s6-1.6 6-3v-3.5l-6 3-6-3Z" fill="#5b6ef5" />
+      </svg>
+      {t('app.name')}
+    </span>
+  );
+}
+
 export function Nav() {
   const { user, logout } = useAuth();
   const roles = user?.roles ?? [];
@@ -13,7 +25,7 @@ export function Nav() {
   return (
     <nav className="nav">
       <div className="inner">
-        <Link href="/" className="brand">{t('app.name')}</Link>
+        <Link href="/"><Logo /></Link>
         <Link href="/catalog">{t('nav.catalog')}</Link>
         {user && <Link href="/learn">{t('nav.myLearning')}</Link>}
         {user && <Link href="/calendar">{t('nav.calendar')}</Link>}
@@ -25,7 +37,7 @@ export function Nav() {
         ) : (
           <>
             <Link href="/login">{t('nav.login')}</Link>
-            <Link href="/register">{t('nav.register')}</Link>
+            <Link className="btn" href="/register">{t('nav.register')}</Link>
           </>
         )}
       </div>

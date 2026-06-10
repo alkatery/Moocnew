@@ -14,14 +14,9 @@ export default function MyLearningPage() {
 
   useEffect(() => {
     if (authLoading) return;
-    if (!user) {
-      setLoading(false);
-      return;
-    }
+    if (!user) { setLoading(false); return; }
     api<Paginated<Enrollment>>('/enrollments')
-      .then((res) => setItems(res.data))
-      .catch(() => setItems([]))
-      .finally(() => setLoading(false));
+      .then((res) => setItems(res.data)).catch(() => setItems([])).finally(() => setLoading(false));
   }, [user, authLoading]);
 
   if (authLoading || loading) return <p className="label">{t('common.loading')}</p>;
@@ -29,17 +24,22 @@ export default function MyLearningPage() {
 
   return (
     <section>
-      <h1>{t('learn.title')}</h1>
+      <h1 className="mb-5">{t('learn.title')}</h1>
       {items.length === 0 ? (
         <p className="label">{t('catalog.empty')}</p>
       ) : (
-        items.map((e) => (
-          <Link key={e.id} href={e.course ? `/learn/${e.course.slug}` : '#'} className="card" style={{ display: 'block' }}>
-            <strong>{e.course?.title ?? `#${e.course_id}`}</strong>
-            <div className="label">{t('learn.progress')}: {e.progress_percent}%</div>
-            <div className="progress"><span style={{ width: `${e.progress_percent}%` }} /></div>
-          </Link>
-        ))
+        <div className="grid gap-4 sm:grid-cols-2">
+          {items.map((e) => (
+            <Link key={e.id} href={e.course ? `/learn/${e.course.slug}` : '#'} className="card mb-0 transition hover:shadow-lg">
+              <div className="mb-2 flex items-center justify-between">
+                <strong className="text-slate-900">{e.course?.title ?? `#${e.course_id}`}</strong>
+                <span className="badge">{e.status}</span>
+              </div>
+              <div className="mb-1 text-sm text-slate-500">{t('learn.progress')}: {e.progress_percent}%</div>
+              <div className="progress"><span style={{ width: `${e.progress_percent}%` }} /></div>
+            </Link>
+          ))}
+        </div>
       )}
     </section>
   );
