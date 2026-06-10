@@ -76,10 +76,13 @@ services:
     volumes:
       - meili-data:/meili_data
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--spider", "http://localhost:7700/health"]
+      # The image is Alpine: busybox wget lacks --no-verbose, but curl is
+      # explicitly installed — use it (wget -q kept as a fallback).
+      test: ["CMD-SHELL", "curl -fs http://localhost:7700/health || wget -q --spider http://localhost:7700/health"]
       interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 10
+      start_period: 10s
 
 volumes:
   pgsql-data:

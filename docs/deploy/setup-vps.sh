@@ -117,8 +117,23 @@ echo "==> Migrating, seeding, linking storage, caching…"
 docker compose exec -T app php artisan key:generate --force || true
 docker compose exec -T app php artisan migrate --force
 docker compose exec -T app php artisan db:seed --force
+
+echo "==> Ensuring the Super Admin account exists…"
+ADMIN_EMAIL="${ADMIN_EMAIL:-admin@mooc.test}"
+ADMIN_PASSWORD="${ADMIN_PASSWORD:-AdminMooc2026}"
+docker compose exec -T -e ADMIN_EMAIL="${ADMIN_EMAIL}" -e ADMIN_PASSWORD="${ADMIN_PASSWORD}" \
+  app php artisan db:seed --class=SuperAdminSeeder --force
+
+# Demo content (Arabic courses, path, news, demo accounts) makes the trial
+# feel alive. Defaults to on in FULL mode; disable with DEMO=0.
+if [ "${DEMO:-${FULL:-0}}" = "1" ]; then
+  echo "==> Seeding Arabic demo content…"
+  docker compose exec -T app php artisan db:seed --class=DemoContentSeeder --force
+fi
+
 docker compose exec -T app php artisan storage:link || true
-docker compose exec -T app php artisan config:cache route:cache
+docker compose exec -T app php artisan config:cache
+docker compose exec -T app php artisan route:cache
 # Meilisearch index settings only matter when Meilisearch is running.
 if [ "${LIGHT:-0}" != "1" ]; then
   docker compose exec -T app php artisan scout:sync-index-settings || true
@@ -148,17 +163,36 @@ sed -i "2i export COMPOSE_FILE=${COMPOSE_FILE}" /usr/local/bin/mooc-backup
 mkdir -p /var/backups
 ( crontab -l 2>/dev/null | grep -v mooc-backup ; echo "30 2 * * * /usr/local/bin/mooc-backup" ) | crontab -
 
+echo "==> Verifying services…"
+sleep 3
+docker compose ps
+curl -fsS -o /dev/null -w "   API health -> HTTP %{http_code}\n" "http://127.0.0.1:8080/up" \
+  || echo "   API not answering yet — wait ~30s then: curl -i http://127.0.0.1:8080/up"
+if [ "${FULL:-0}" = "1" ]; then
+  curl -fsS -o /dev/null -w "   UI         -> HTTP %{http_code}\n" "http://127.0.0.1:3000/" \
+    || echo "   UI not answering yet — wait ~30s then: curl -i http://127.0.0.1:3000/"
+fi
+
 cat <<EOF
 
+============================================================
 ==> Done. (stack: ${COMPOSE_FILE})
+
    API:  http://${APP_DOMAIN}:8080
 $( [ "${FULL:-0}" = "1" ] && echo "   UI :  http://${APP_DOMAIN}:3000   <-- open this in your browser" )
-Next:
-  1) Create the first Super Admin (login for the UI/admin panel):
-       COMPOSE_FILE=${COMPOSE_FILE} docker compose exec -T app php artisan tinker --execute "\\
-         \\\$u=App\\Models\\User::factory()->create(['email'=>'admin@${WEB_DOMAIN}','password'=>'ChangeMe2026']); \\
-         \\\$u->assignRole('super_admin'); echo 'OK';"
-  2) For production: front the API with HTTPS (Caddy/Nginx + Let's Encrypt),
-     point ${APP_DOMAIN} -> :8080, and rebuild the UI with
-     NEXT_PUBLIC_API_BASE=https://${APP_DOMAIN}/api/v1.
+
+   Super Admin login:
+     email:    ${ADMIN_EMAIL}
+     password: ${ADMIN_PASSWORD}
+$( [ "${DEMO:-${FULL:-0}}" = "1" ] && cat <<DEMOEOF
+
+   Demo accounts (seeded content):
+     instructor@mooc.test / Instructor2026
+     student@mooc.test    / Student2026
+DEMOEOF
+)
+   For production: front the API with HTTPS (Caddy/Nginx + Let's Encrypt),
+   point ${APP_DOMAIN} -> :8080, and rebuild the UI with
+   NEXT_PUBLIC_API_BASE=https://${APP_DOMAIN}/api/v1.
+============================================================
 EOF

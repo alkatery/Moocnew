@@ -20,6 +20,12 @@
 > لاستخدام نطاق/HTTPS، مرّر `NEXT_PUBLIC_API_BASE=https://api.example.com/api/v1`.
 > يحتاج هذا الوضع خادماً بذاكرة **4GB** أو أكثر (أو 2GB مع الـ swap للبناء).
 >
+> ينشئ السكربت تلقائياً حساب **إدارة عليا** (`ADMIN_EMAIL`/`ADMIN_PASSWORD`،
+> افتراضياً `admin@mooc.test` / `AdminMooc2026` — غيّرها بعد الدخول)، ويبذر
+> **محتوى تجريبياً عربياً** (4 دورات، مسار تخصصي، أخبار، وحسابا
+> `instructor@mooc.test` و`student@mooc.test`). عطّل المحتوى التجريبي بـ
+> `DEMO=0`، أو ابذره يدوياً: `php artisan db:seed --class=DemoContentSeeder`.
+>
 > ### وضع التجربة الخفيف (يناسب VPS بسعة 2GB)
 > أضف `LIGHT=1` فيعمل بلا Meilisearch (البحث يتحوّل تلقائياً لمحرّك Scout
 > `collection` في الذاكرة) وبطوابير متزامنة، فلا تعمل سوى أربع خدمات:
