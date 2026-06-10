@@ -19,6 +19,6 @@ final class IssueCertificateOnCompletion
 
     public function handle(EnrollmentCompleted $event): void
     {
-        $this->certificates->issueFor($event->userId, $event->courseId);
+        $this->certificates->issueFor($event->userId, $event->courseId, $event->grade);
     }
 }

@@ -13,14 +13,29 @@ export default function ManageCoursePage() {
   const { slug } = useParams<{ slug: string }>();
   const [course, setCourse] = useState<Course | null>(null);
   const [sectionTitle, setSectionTitle] = useState('');
+  const [passingGrade, setPassingGrade] = useState('0');
   const [note, setNote] = useState('');
 
   function load() {
     api<{ data: Course }>(`/catalog/courses/${slug}`, { auth: false })
-      .then((r) => setCourse(r.data))
+      .then((r) => { setCourse(r.data); setPassingGrade(String(r.data.passing_grade ?? 0)); })
       .catch(() => setCourse(null));
   }
   useEffect(load, [slug]);
+
+  async function saveSettings(e: React.FormEvent) {
+    e.preventDefault();
+    try {
+      await api(`/catalog/courses/${slug}`, {
+        method: 'PATCH',
+        body: { passing_grade: Math.max(0, Math.min(100, parseInt(passingGrade || '0', 10))) },
+      });
+      setNote(t('common.save') + ' ✓');
+      load();
+    } catch {
+      setNote(t('common.error'));
+    }
+  }
 
   async function addSection(e: React.FormEvent) {
     e.preventDefault();
@@ -61,13 +76,26 @@ export default function ManageCoursePage() {
       />
 
       <div className="grid gap-6 lg:grid-cols-3">
-        <form className="card mb-0 self-start lg:order-2" onSubmit={addSection}>
-          <strong className="text-slate-900">{t('studio.addSection')}</strong>
-          <label className="label mt-3 block" htmlFor="sec-title">{t('common.title')}</label>
-          <input id="sec-title" className="input" value={sectionTitle}
-            onChange={(e) => setSectionTitle(e.target.value)} required />
-          <button className="btn w-full">{t('common.save')}</button>
-        </form>
+        <div className="lg:order-2">
+          <form className="card mb-4" onSubmit={(e) => void saveSettings(e)}>
+            <strong className="text-slate-900">إعدادات الدورة</strong>
+            <label className="label mt-3 block" htmlFor="passing-grade">{t('studio.passingGrade')}</label>
+            <input id="passing-grade" className="input" type="number" min="0" max="100" dir="ltr"
+              value={passingGrade} onChange={(e) => setPassingGrade(e.target.value)} />
+            <p className="mb-3 text-xs text-slate-400">
+              عند ضبطها أكبر من صفر، لن تُمنح الشهادة إلا باجتياز اختبارات وواجبات الدورة بهذه الدرجة.
+            </p>
+            <button className="btn w-full">{t('common.save')}</button>
+          </form>
+
+          <form className="card mb-0" onSubmit={addSection}>
+            <strong className="text-slate-900">{t('studio.addSection')}</strong>
+            <label className="label mt-3 block" htmlFor="sec-title">{t('common.title')}</label>
+            <input id="sec-title" className="input" value={sectionTitle}
+              onChange={(e) => setSectionTitle(e.target.value)} required />
+            <button className="btn w-full">{t('common.save')}</button>
+          </form>
+        </div>
 
         <div className="lg:col-span-2 lg:order-1">
           {!course.sections?.length ? (

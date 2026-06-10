@@ -10,7 +10,7 @@ import { formatMinor } from '@/lib/format';
 import { t } from '@/i18n/dictionary';
 import { LessonTypeIcon } from '@/components/LessonTypeIcon';
 
-const PERKS = [
+const BASE_PERKS = [
   'وصول كامل لكل دروس الدورة',
   'اختبارات وواجبات مع تصحيح',
   'شهادة إتمام موثّقة برمز QR',
@@ -45,6 +45,9 @@ export default function CourseDetailPage() {
 
   const sectionsCount = course.sections?.length ?? 0;
   const lessonsCount = course.sections?.reduce((n, s) => n + s.lessons.length, 0) ?? 0;
+  const perks = (course.passing_grade ?? 0) > 0
+    ? [...BASE_PERKS, `اجتياز التقييمات بدرجة ${course.passing_grade}% للحصول على الشهادة`]
+    : BASE_PERKS;
 
   return (
     <section>
@@ -138,7 +141,7 @@ export default function CourseDetailPage() {
             </div>
 
             <ul className="mt-5 space-y-2.5 border-t border-slate-100 pt-4 text-sm text-slate-600">
-              {PERKS.map((perk) => (
+              {perks.map((perk) => (
                 <li key={perk} className="flex items-center gap-2">
                   <svg className="shrink-0 text-emerald-500" width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden>
                     <path d="m5 13 4 4 10-10" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />

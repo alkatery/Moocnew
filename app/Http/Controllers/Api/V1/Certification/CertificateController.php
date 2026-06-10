@@ -36,6 +36,7 @@ final class CertificateController extends Controller
             'holder_name' => $certificate->user->name,
             'subject_type' => $certificate->learning_path_id !== null ? 'learning_path' : 'course',
             'course_title' => $certificate->subjectTitle(),
+            'grade' => $certificate->grade,
             'issued_at' => $certificate->issued_at->toIso8601String(),
         ]);
     }
@@ -55,6 +56,7 @@ final class CertificateController extends Controller
                 'verification_uuid' => $c->verification_uuid,
                 'subject_type' => $c->learning_path_id !== null ? 'learning_path' : 'course',
                 'course_title' => $c->subjectTitle(),
+                'grade' => $c->grade,
                 'issued_at' => $c->issued_at->toIso8601String(),
             ]);
 

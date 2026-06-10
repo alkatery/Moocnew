@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\V1\Analytics\AnalyticsController;
 use App\Http\Controllers\Api\V1\Analytics\PresenceController;
 use App\Http\Controllers\Api\V1\Assessment\AssignmentController;
 use App\Http\Controllers\Api\V1\Assessment\AssignmentSubmissionController;
+use App\Http\Controllers\Api\V1\Assessment\CourseGradeController;
 use App\Http\Controllers\Api\V1\Assessment\QuestionController;
 use App\Http\Controllers\Api\V1\Assessment\QuizAttemptController;
 use App\Http\Controllers\Api\V1\Assessment\QuizController;
@@ -237,6 +238,9 @@ Route::middleware('auth:sanctum')->prefix('assessment')->name('api.assessment.')
     Route::post('assignments/{assignment}/submissions', [AssignmentSubmissionController::class, 'store'])->name('submissions.store');
     Route::get('assignments/{assignment}/submissions', [AssignmentSubmissionController::class, 'index'])->name('submissions.index');
     Route::post('submissions/{submission}/grade', [AssignmentSubmissionController::class, 'grade'])->name('submissions.grade');
+
+    // The learner's gradebook for a course (overall grade + per-assessment).
+    Route::get('courses/{course}/grade', CourseGradeController::class)->name('courses.grade');
 });
 
 /*

@@ -32,6 +32,7 @@ final class Certificate extends Model
         'learning_path_id',
         'serial',
         'verification_uuid',
+        'grade',
         'pdf_path',
         'issued_at',
     ];
@@ -47,6 +48,7 @@ final class Certificate extends Model
     protected function casts(): array
     {
         return [
+            'grade' => 'integer',
             'issued_at' => 'datetime',
         ];
     }

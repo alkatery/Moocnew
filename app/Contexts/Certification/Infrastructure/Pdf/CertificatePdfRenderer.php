@@ -21,6 +21,7 @@ final class CertificatePdfRenderer
         string $courseTitle,
         string $verifyUrl,
         string $subjectLabel = 'دورة',
+        ?int $grade = null,
     ): string {
         $qrSvg = base64_encode(
             (string) QrCode::format('svg')->size(160)->margin(1)->generate($verifyUrl),
@@ -30,6 +31,7 @@ final class CertificatePdfRenderer
             'holderName' => $holderName,
             'courseTitle' => $courseTitle,
             'subjectLabel' => $subjectLabel,
+            'grade' => $grade,
             'serial' => $certificate->serial,
             'issuedAt' => $certificate->issued_at,
             'verifyUrl' => $verifyUrl,

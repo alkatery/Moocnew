@@ -83,6 +83,7 @@ final class CourseController extends Controller
             'status' => CourseStatus::Draft,
             'pricing_type' => $pricingType,
             'price_minor' => $pricingType === PricingType::Free ? 0 : (int) $request->validated('price_minor', 0),
+            'passing_grade' => (int) $request->validated('passing_grade', 0),
         ]);
 
         return (new CourseResource($course))->response()->setStatusCode(201);
@@ -97,6 +98,7 @@ final class CourseController extends Controller
             'description',
             'pricing_type',
             'price_minor',
+            'passing_grade',
         ]);
 
         // A free course always carries a zero price.

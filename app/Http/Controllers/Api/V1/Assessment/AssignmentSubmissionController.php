@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Api\V1\Assessment;
 use App\Contexts\Assessment\Infrastructure\Persistence\Assignment;
 use App\Contexts\Assessment\Infrastructure\Persistence\AssignmentSubmission;
 use App\Contexts\Enrollment\Application\CourseAccess;
+use App\Contexts\Enrollment\Application\CourseCompletionService;
 use App\Contexts\Identity\Application\ActivityLogger;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Assessment\GradeSubmissionRequest;
@@ -68,6 +69,7 @@ final class AssignmentSubmissionController extends Controller
         GradeSubmissionRequest $request,
         AssignmentSubmission $submission,
         ActivityLogger $activity,
+        CourseCompletionService $completion,
     ): AssignmentSubmissionResource {
         $submission->update([
             'grade' => (int) $request->validated('grade'),
@@ -79,6 +81,9 @@ final class AssignmentSubmissionController extends Controller
         $activity->log('assignment.graded', $request->user(), $submission, [
             'grade' => $submission->grade,
         ]);
+
+        // A passing grade can complete a course whose lessons are already done.
+        $completion->evaluateFor($submission->user_id, $submission->assignment->course_id);
 
         return new AssignmentSubmissionResource($submission);
     }

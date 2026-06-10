@@ -1,5 +1,6 @@
 <?php
 
+use App\Contexts\Assessment\Infrastructure\Providers\AssessmentServiceProvider;
 use App\Contexts\Catalog\Infrastructure\Providers\CatalogServiceProvider;
 use App\Contexts\Certification\Infrastructure\Providers\CertificationServiceProvider;
 use App\Contexts\Commerce\Infrastructure\Providers\CommerceServiceProvider;
@@ -17,6 +18,7 @@ return [
     IdentityServiceProvider::class,
     CatalogServiceProvider::class,
     EnrollmentServiceProvider::class,
+    AssessmentServiceProvider::class,
     CertificationServiceProvider::class,
     NotificationServiceProvider::class,
     CommerceServiceProvider::class,

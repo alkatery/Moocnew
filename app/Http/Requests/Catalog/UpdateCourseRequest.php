@@ -27,6 +27,7 @@ final class UpdateCourseRequest extends FormRequest
             'description' => ['nullable', 'string'],
             'pricing_type' => ['sometimes', 'required', Rule::enum(PricingType::class)],
             'price_minor' => ['nullable', 'integer', 'min:0'],
+            'passing_grade' => ['sometimes', 'nullable', 'integer', 'min:0', 'max:100'],
         ];
     }
 }

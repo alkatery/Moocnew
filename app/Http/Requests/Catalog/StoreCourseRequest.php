@@ -28,6 +28,7 @@ final class StoreCourseRequest extends FormRequest
             'description' => ['nullable', 'string'],
             'pricing_type' => ['required', Rule::enum(PricingType::class)],
             'price_minor' => ['nullable', 'integer', 'min:0'],
+            'passing_grade' => ['nullable', 'integer', 'min:0', 'max:100'],
         ];
     }
 }

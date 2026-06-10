@@ -44,6 +44,7 @@ final class Course extends Model
         'status',
         'pricing_type',
         'price_minor',
+        'passing_grade',
         'published_at',
     ];
 
@@ -53,6 +54,7 @@ final class Course extends Model
             'status' => CourseStatus::class,
             'pricing_type' => PricingType::class,
             'price_minor' => 'integer',
+            'passing_grade' => 'integer',
             'published_at' => 'datetime',
         ];
     }

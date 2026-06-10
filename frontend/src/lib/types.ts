@@ -14,6 +14,7 @@ export interface Course {
   status: string;
   pricing_type: 'free' | 'one_time' | 'subscription';
   price_minor: number;
+  passing_grade?: number;
   sections?: Section[];
   instructor?: { id: number; name: string };
   category?: Category | null;
@@ -181,7 +182,23 @@ export interface CertificateView {
   verification_uuid: string;
   subject_type: 'course' | 'learning_path';
   course_title: string;
+  grade: number | null;
   issued_at: string;
+}
+
+export interface GradeComponent {
+  type: 'quiz' | 'assignment';
+  title: string;
+  score: number | null;
+  pass_mark: number | null;
+  passed: boolean;
+}
+
+export interface CourseGrade {
+  passing_grade: number;
+  overall: number | null;
+  passed: boolean;
+  components: GradeComponent[];
 }
 
 export interface SiteContentField {

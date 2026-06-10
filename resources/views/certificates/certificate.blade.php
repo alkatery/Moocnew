@@ -32,6 +32,10 @@
         <div class="subtitle">قد أتمّ بنجاح {{ $subjectLabel ?? 'دورة' }}</div>
         <div class="course">{{ $courseTitle }}</div>
 
+        @if (! is_null($grade ?? null))
+            <div class="subtitle" style="margin-top:16px;">بتقدير {{ $grade }}%</div>
+        @endif
+
         <div class="meta">
             تاريخ الإصدار: {{ $issuedAt->format('Y-m-d') }}
         </div>

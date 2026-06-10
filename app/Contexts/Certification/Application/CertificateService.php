@@ -25,7 +25,7 @@ final class CertificateService
         private readonly CertificatePdfRenderer $renderer,
     ) {}
 
-    public function issueFor(int $userId, int $courseId): Certificate
+    public function issueFor(int $userId, int $courseId, ?int $grade = null): Certificate
     {
         $existing = Certificate::query()
             ->where('user_id', $userId)
@@ -44,6 +44,7 @@ final class CertificateService
             $user->name,
             $course->title,
             'دورة',
+            $grade,
         );
     }
 
@@ -76,17 +77,18 @@ final class CertificateService
     /**
      * @param  array<string, int>  $subject
      */
-    private function issue(array $subject, string $holderName, string $subjectTitle, string $subjectLabel): Certificate
+    private function issue(array $subject, string $holderName, string $subjectTitle, string $subjectLabel, ?int $grade = null): Certificate
     {
         $certificate = Certificate::query()->create([
             ...$subject,
             'serial' => $this->uniqueSerial(),
             'verification_uuid' => (string) Str::uuid(),
+            'grade' => $grade,
             'issued_at' => Date::now(),
         ]);
 
         $verifyUrl = $this->verifyUrl($certificate->verification_uuid);
-        $pdf = $this->renderer->render($certificate, $holderName, $subjectTitle, $verifyUrl, $subjectLabel);
+        $pdf = $this->renderer->render($certificate, $holderName, $subjectTitle, $verifyUrl, $subjectLabel, $grade);
 
         $path = "certificates/{$certificate->verification_uuid}.pdf";
         Storage::disk($this->disk())->put($path, $pdf);

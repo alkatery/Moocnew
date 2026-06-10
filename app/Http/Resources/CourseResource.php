@@ -27,6 +27,7 @@ final class CourseResource extends JsonResource
             'status' => $this->status->value,
             'pricing_type' => $this->pricing_type->value,
             'price_minor' => $this->price_minor,
+            'passing_grade' => $this->passing_grade,
             'published_at' => $this->published_at?->toIso8601String(),
             'category' => new CategoryResource($this->whenLoaded('category')),
             'instructor' => [

@@ -7,6 +7,7 @@ namespace App\Contexts\Assessment\Application;
 use App\Contexts\Assessment\Domain\AnswerGrader;
 use App\Contexts\Assessment\Infrastructure\Persistence\Quiz;
 use App\Contexts\Assessment\Infrastructure\Persistence\QuizAttempt;
+use App\Contexts\Enrollment\Application\CourseCompletionService;
 use App\Models\User;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
@@ -21,6 +22,7 @@ final class QuizAttemptService
 {
     public function __construct(
         private readonly AnswerGrader $grader,
+        private readonly CourseCompletionService $completion,
     ) {}
 
     public function start(Quiz $quiz, User $user): QuizAttempt
@@ -72,7 +74,7 @@ final class QuizAttemptService
             ]);
         }
 
-        return DB::transaction(function () use ($attempt, $answers): QuizAttempt {
+        $finalised = DB::transaction(function () use ($attempt, $answers): QuizAttempt {
             $quiz = $attempt->quiz()->with('questions')->firstOrFail();
             $expired = $this->isExpired($attempt, $quiz);
 
@@ -106,6 +108,12 @@ final class QuizAttemptService
 
             return $attempt->refresh();
         });
+
+        // Passing the final assessment can complete a course whose lessons
+        // are already done — re-evaluate the learner's enrollment.
+        $this->completion->evaluateFor($finalised->user_id, $finalised->quiz->course_id);
+
+        return $finalised;
     }
 
     private function isExpired(QuizAttempt $attempt, Quiz $quiz): bool

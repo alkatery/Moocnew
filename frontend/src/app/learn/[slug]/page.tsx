@@ -7,6 +7,7 @@ import type { Course, Lesson } from '@/lib/types';
 import { t } from '@/i18n/dictionary';
 import { PageHeader } from '@/components/PageHeader';
 import { LessonTypeIcon } from '@/components/LessonTypeIcon';
+import { Gradebook } from '@/components/Gradebook';
 
 export default function PlayerPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -118,6 +119,10 @@ export default function PlayerPage() {
                 </ul>
               </div>
             ))}
+          </div>
+
+          <div className="mt-6">
+            <Gradebook courseSlug={slug} />
           </div>
         </aside>
       </div>
