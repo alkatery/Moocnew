@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { api } from '@/lib/api';
@@ -47,7 +48,10 @@ function CatalogInner() {
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-3xl font-extrabold">{t('catalog.title')}</h1>
-          <p className="mt-1 text-sm text-slate-500">ابحث وصفِّ حسب المجال أو السعر.</p>
+          <p className="mt-1 text-sm text-slate-500">
+            ابحث وصفِّ حسب المجال أو السعر.{' '}
+            <Link className="font-bold text-brand-700 hover:underline" href="/redeem">لديك كود التحاق؟</Link>
+          </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <select className="input m-0 w-40" value={sort} onChange={(e) => setSort(e.target.value)} aria-label={t('catalog.sort')}>
