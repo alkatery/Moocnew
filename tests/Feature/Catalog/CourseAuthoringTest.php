@@ -129,3 +129,17 @@ it('lists only the current instructor’s own courses in the studio', function (
         ->assertOk()
         ->assertJsonCount(2, 'data');
 });
+
+it('serves a draft course to its authenticated owner but 404s for guests (studio contract)', function () {
+    $owner = userWithRole(Role::Instructor);
+    $course = Course::factory()->for($owner, 'instructor')->create(['status' => CourseStatus::Draft]);
+
+    // Guest (the bug): a draft must not leak.
+    $this->getJson("/api/v1/catalog/courses/{$course->slug}")->assertNotFound();
+
+    // Authenticated owner: the studio page must be able to load its draft.
+    Sanctum::actingAs($owner);
+    $this->getJson("/api/v1/catalog/courses/{$course->slug}")
+        ->assertOk()
+        ->assertJsonPath('data.slug', $course->slug);
+});

@@ -29,11 +29,14 @@ export default function ManageCoursePage() {
   const [note, setNote] = useState('');
   const [cover, setCover] = useState<string | null>(null);
   const [openLesson, setOpenLesson] = useState<number | null>(null);
+  const [loadError, setLoadError] = useState(false);
 
   const load = useCallback(() => {
-    api<{ data: Course }>(`/catalog/courses/${slug}`, { auth: false })
-      .then((r) => { setCourse(r.data); setPassingGrade(String(r.data.passing_grade ?? 0)); setCover(r.data.cover_image ?? null); })
-      .catch(() => setCourse(null));
+    // Authoring view: fetch WITH auth so the owner can load their own draft
+    // (drafts 404 for anonymous requests).
+    api<{ data: Course }>(`/catalog/courses/${slug}`)
+      .then((r) => { setCourse(r.data); setPassingGrade(String(r.data.passing_grade ?? 0)); setCover(r.data.cover_image ?? null); setLoadError(false); })
+      .catch(() => setLoadError(true));
   }, [slug]);
   useEffect(load, [load]);
 
@@ -116,6 +119,17 @@ export default function ManageCoursePage() {
     } catch { setNote(t('common.error')); }
   }
 
+  if (loadError) {
+    return (
+      <section>
+        <PageHeader title="تعذّر فتح الدورة" crumbs={[{ href: '/studio', label: t('nav.studio') }]} />
+        <div className="card text-slate-600">
+          لم نتمكّن من تحميل هذه الدورة. تأكّد أنك مالكها أو من الإدارة، ثم
+          <button className="btn btn-ghost ms-2" onClick={load}>أعد المحاولة</button>
+        </div>
+      </section>
+    );
+  }
   if (!course) return <p className="label">{t('common.loading')}</p>;
 
   return (
