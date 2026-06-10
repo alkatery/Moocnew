@@ -23,7 +23,8 @@ docker compose build
 docker compose up -d
 docker compose exec app php artisan key:generate
 docker compose exec app php artisan migrate --force
-docker compose exec app php artisan db:seed --force      # الأدوار والإعدادات
+docker compose exec app php artisan db:seed --force      # الأدوار والإعدادات ومحتوى الموقع
+docker compose exec app php artisan storage:link         # روابط الصور المرفوعة (الشعار والصور)
 docker compose exec app php artisan config:cache route:cache
 docker compose exec app php artisan scout:sync-index-settings   # Meilisearch
 ```

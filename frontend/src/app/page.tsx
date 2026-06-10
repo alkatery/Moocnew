@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import type { Category, Course, NewsPost, Paginated, PathSummary, PlatformStats } from '@/lib/types';
 import { formatCount } from '@/lib/format';
+import { useSiteContent } from '@/lib/siteContent';
 import { t } from '@/i18n/dictionary';
 import { CourseCard } from '@/components/CourseCard';
 import { NewsCard } from '@/components/NewsCard';
@@ -61,6 +62,7 @@ const CATEGORY_ICONS = [
 
 export default function HomePage() {
   const router = useRouter();
+  const { c } = useSiteContent();
   const [q, setQ] = useState('');
   const [stats, setStats] = useState<PlatformStats | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -107,21 +109,20 @@ export default function HomePage() {
         <div className="relative max-w-2xl">
           <span className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3.5 py-1.5 text-xs font-semibold backdrop-blur">
             <span className="h-1.5 w-1.5 rounded-full bg-emerald-300" aria-hidden />
-            منصة تعليم عربية مفتوحة — تعلّم في أي وقت ومن أي مكان
+            {c('home.hero_badge', 'منصة تعليم عربية مفتوحة — تعلّم في أي وقت ومن أي مكان')}
           </span>
           <h1 className="mt-5 text-4xl font-extrabold leading-tight text-white sm:text-5xl">
-            تعلّم مهارات المستقبل
-            <span className="block text-brand-100">بالعربية… وبشهادات موثّقة</span>
+            {c('home.hero_title', 'تعلّم مهارات المستقبل')}
+            <span className="block text-brand-100">{c('home.hero_title_accent', 'بالعربية… وبشهادات موثّقة')}</span>
           </h1>
           <p className="mt-4 max-w-xl text-lg leading-8 text-brand-50/90">
-            دورات فيديو تفاعلية مع اختبارات وواجبات وجلسات مباشرة ومجتمع نقاش،
-            تنتهي بشهادة إتمام برمز QR قابل للتحقق.
+            {c('home.hero_subtitle', 'دورات فيديو تفاعلية مع اختبارات وواجبات وجلسات مباشرة ومجتمع نقاش، تنتهي بشهادة إتمام برمز QR قابل للتحقق.')}
           </p>
 
           <form className="mt-7 flex max-w-xl gap-2" onSubmit={search} role="search">
             <input
               className="input m-0 flex-1 border-0 bg-white/95 py-3 text-slate-900"
-              placeholder={t('home.searchPlaceholder')}
+              placeholder={c('home.search_placeholder', t('home.searchPlaceholder'))}
               value={q}
               onChange={(e) => setQ(e.target.value)}
               aria-label={t('home.searchPlaceholder')}
@@ -252,10 +253,9 @@ export default function HomePage() {
         <div className="grid items-center gap-8 md:grid-cols-2">
           <div>
             <span className="badge">المكتبة المفتوحة</span>
-            <h2 className="mt-3 text-2xl font-extrabold">ابدأ مجاناً اليوم — دون أي التزام</h2>
+            <h2 className="mt-3 text-2xl font-extrabold">{c('home.library_title', 'ابدأ مجاناً اليوم — دون أي التزام')}</h2>
             <p className="mt-3 leading-7 text-slate-600">
-              مكتبة كاملة من الدورات المجانية بالفيديو والاختبارات، تشمل دروس
-              معاينة مفتوحة في الدورات المدفوعة. سجّل والتحق خلال دقيقة.
+              {c('home.library_body', 'مكتبة كاملة من الدورات المجانية بالفيديو والاختبارات، تشمل دروس معاينة مفتوحة في الدورات المدفوعة. سجّل والتحق خلال دقيقة.')}
             </p>
             <div className="page-actions mt-5">
               <Link className="btn" href="/catalog?pricing=free">تصفّح المكتبة المجانية</Link>
@@ -314,11 +314,9 @@ export default function HomePage() {
         <div className="grid gap-8 md:grid-cols-2">
           <div>
             <span className="badge">من نحن</span>
-            <h2 className="mt-3 text-2xl font-extrabold">منصة عربية للتعليم المفتوح</h2>
+            <h2 className="mt-3 text-2xl font-extrabold">{c('about.title', 'منصة عربية للتعليم المفتوح')}</h2>
             <p className="mt-3 leading-8 text-slate-600">
-              نبني تجربة تعلّم عربية متكاملة: محتوى عالي الجودة من مدرّبين خبراء،
-              تقييمات حقيقية تثبت إتقانك، وشهادات يمكن لأي جهة التحقق منها فوراً.
-              هدفنا أن يكون التعلّم الجاد متاحاً للجميع.
+              {c('about.intro', 'نبني تجربة تعلّم عربية متكاملة: محتوى عالي الجودة من مدرّبين خبراء، تقييمات حقيقية تثبت إتقانك، وشهادات يمكن لأي جهة التحقق منها فوراً. هدفنا أن يكون التعلّم الجاد متاحاً للجميع.')}
             </p>
             <Link className="btn btn-ghost mt-4" href="/about">اعرف المزيد عنا</Link>
 
@@ -332,7 +330,7 @@ export default function HomePage() {
                 </span>
                 <div>
                   <strong className="block text-sm text-slate-900">البريد الإلكتروني</strong>
-                  <a className="text-sm" href="mailto:support@mooc.example">support@mooc.example</a>
+                  <a className="text-sm" href={`mailto:${c('brand.support_email', 'support@mooc.example')}`}>{c('brand.support_email', 'support@mooc.example')}</a>
                 </div>
               </div>
               <div className="flex items-center gap-3">
@@ -344,7 +342,7 @@ export default function HomePage() {
                 </span>
                 <div>
                   <strong className="block text-sm text-slate-900">وقت الاستجابة</strong>
-                  <span className="text-sm text-slate-500">نرد على رسائلك خلال يوم عمل واحد</span>
+                  <span className="text-sm text-slate-500">{c('contact.response_time', 'نرد على رسائلك خلال يوم عمل واحد')}</span>
                 </div>
               </div>
             </div>
@@ -359,9 +357,9 @@ export default function HomePage() {
 
       {/* CTA */}
       <section className="section overflow-hidden rounded-3xl bg-gradient-to-bl from-brand-700 to-brand-500 px-8 py-12 text-center text-white shadow-card">
-        <h2 className="text-3xl font-extrabold text-white">ابدأ رحلتك التعليمية اليوم</h2>
+        <h2 className="text-3xl font-extrabold text-white">{c('home.cta_title', 'ابدأ رحلتك التعليمية اليوم')}</h2>
         <p className="mx-auto mt-3 max-w-xl text-brand-100">
-          أنشئ حسابك مجاناً خلال دقيقة، والتحق بأول دورة من المكتبة المفتوحة.
+          {c('home.cta_subtitle', 'أنشئ حسابك مجاناً خلال دقيقة، والتحق بأول دورة من المكتبة المفتوحة.')}
         </p>
         <div className="mt-6 flex justify-center gap-3">
           <Link className="btn bg-white text-brand-700 hover:bg-brand-50" href="/register">{t('nav.register')}</Link>

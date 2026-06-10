@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useSiteContent } from '@/lib/siteContent';
 import { t } from '@/i18n/dictionary';
 import { ContactForm } from '@/components/ContactForm';
 
@@ -11,12 +12,15 @@ const FAQS = [
 ];
 
 export default function ContactPage() {
+  const { c } = useSiteContent();
+  const email = c('brand.support_email', 'support@mooc.example');
+
   return (
     <>
       <section className="mb-8 text-center">
         <h1 className="text-3xl font-extrabold">{t('contact.title')}</h1>
         <p className="mx-auto mt-2 max-w-xl text-slate-500">
-          سؤال، اقتراح، أو مشكلة تقنية؟ راسلنا وسنرد عليك خلال يوم عمل واحد.
+          {c('contact.intro', 'سؤال، اقتراح، أو مشكلة تقنية؟ راسلنا وسنرد عليك خلال يوم عمل واحد.')}
         </p>
       </section>
 
@@ -36,7 +40,7 @@ export default function ContactPage() {
                     <path d="m4 7 8 6 8-6" stroke="currentColor" strokeWidth="1.7" />
                   </svg>
                 </span>
-                <a href="mailto:support@mooc.example">support@mooc.example</a>
+                <a href={`mailto:${email}`}>{email}</a>
               </li>
               <li className="flex items-center gap-2">
                 <span className="icon-tile h-9 w-9">

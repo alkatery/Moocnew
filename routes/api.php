@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\Api\V1\Admin\SettingsController;
+use App\Http\Controllers\Api\V1\Admin\SiteContentController as AdminSiteContentController;
 use App\Http\Controllers\Api\V1\Analytics\AnalyticsController;
 use App\Http\Controllers\Api\V1\Analytics\PresenceController;
 use App\Http\Controllers\Api\V1\Assessment\AssignmentController;
@@ -24,6 +25,7 @@ use App\Http\Controllers\Api\V1\Communication\ForumController;
 use App\Http\Controllers\Api\V1\Communication\TicketController;
 use App\Http\Controllers\Api\V1\Content\ContactController;
 use App\Http\Controllers\Api\V1\Content\NewsController;
+use App\Http\Controllers\Api\V1\Content\SiteContentController;
 use App\Http\Controllers\Api\V1\Enrollment\EnrollmentController;
 use App\Http\Controllers\Api\V1\Enrollment\LessonProgressController;
 use App\Http\Controllers\Api\V1\Enrollment\MediaStreamController;
@@ -73,6 +75,12 @@ Route::middleware('auth:sanctum')->prefix('admin')->name('api.admin.')->group(fu
     // Contact-form triage (community.moderate permission).
     Route::get('contact-messages', [ContactController::class, 'index'])->name('contact.index');
     Route::post('contact-messages/{message}/handle', [ContactController::class, 'handle'])->name('contact.handle');
+
+    // Editable site content — branding, copy, colours, images (content.manage).
+    Route::get('site-content', [AdminSiteContentController::class, 'index'])->name('site-content.index');
+    Route::patch('site-content', [AdminSiteContentController::class, 'update'])->name('site-content.update');
+    Route::post('site-content/{key}/image', [AdminSiteContentController::class, 'uploadImage'])->name('site-content.image.upload');
+    Route::delete('site-content/{key}/image', [AdminSiteContentController::class, 'clearImage'])->name('site-content.image.clear');
 });
 
 /*
@@ -83,6 +91,9 @@ Route::middleware('auth:sanctum')->prefix('admin')->name('api.admin.')->group(fu
 | (PDPL); the contact form is rate-limited and strictly validated.
 */
 Route::get('platform/stats', PublicStatsController::class)->name('api.platform.stats');
+
+// Public editable site content (branding, copy, colours, image URLs).
+Route::get('content/site', SiteContentController::class)->name('api.content.site');
 
 Route::post('contact', [ContactController::class, 'store'])
     ->middleware('throttle:10,1')

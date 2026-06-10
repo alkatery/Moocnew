@@ -184,6 +184,14 @@ export interface CertificateView {
   issued_at: string;
 }
 
+export interface SiteContentField {
+  key: string;
+  group: string;
+  type: 'text' | 'textarea' | 'color' | 'image' | 'url';
+  label: string;
+  value: string | null;
+}
+
 export interface ContactMessageItem {
   id: number;
   name: string;

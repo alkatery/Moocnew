@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import { AuthProvider } from '@/lib/auth';
+import { SiteContentProvider } from '@/lib/siteContent';
 import { Nav } from '@/components/Nav';
 import { Footer } from '@/components/Footer';
 
@@ -21,11 +22,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body className="flex min-h-screen flex-col">
-        <AuthProvider>
-          <Nav />
-          <main className="container flex-1">{children}</main>
-          <Footer />
-        </AuthProvider>
+        <SiteContentProvider>
+          <AuthProvider>
+            <Nav />
+            <main className="container flex-1">{children}</main>
+            <Footer />
+          </AuthProvider>
+        </SiteContentProvider>
       </body>
     </html>
   );

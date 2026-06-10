@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import type { PlatformStats } from '@/lib/types';
 import { formatCount } from '@/lib/format';
+import { useSiteContent } from '@/lib/siteContent';
 import { t } from '@/i18n/dictionary';
 
 const VALUES = [
@@ -21,6 +22,7 @@ const STEPS = [
 ];
 
 export default function AboutPage() {
+  const { c } = useSiteContent();
   const [stats, setStats] = useState<PlatformStats | null>(null);
 
   useEffect(() => {
@@ -33,12 +35,10 @@ export default function AboutPage() {
       <section className="overflow-hidden rounded-3xl bg-gradient-to-bl from-brand-900 via-brand-700 to-brand-500 px-8 py-14 text-white shadow-card">
         <span className="badge bg-white/15 text-white">{t('nav.about')}</span>
         <h1 className="mt-4 max-w-2xl text-4xl font-extrabold leading-tight text-white">
-          نفتح أبواب المعرفة لكل متحدث بالعربية
+          {c('about.title', 'نفتح أبواب المعرفة لكل متحدث بالعربية')}
         </h1>
         <p className="mt-4 max-w-2xl text-lg leading-8 text-brand-50/90">
-          منصة تعليم جماهيري مفتوح (MOOC) تجمع نخبة المدرّبين مع متعلّمين طموحين:
-          دورات فيديو تفاعلية، تقييمات حقيقية، جلسات مباشرة، وشهادات موثّقة —
-          في تجربة واحدة متكاملة.
+          {c('about.intro', 'منصة تعليم جماهيري مفتوح (MOOC) تجمع نخبة المدرّبين مع متعلّمين طموحين: دورات فيديو تفاعلية، تقييمات حقيقية، جلسات مباشرة، وشهادات موثّقة — في تجربة واحدة متكاملة.')}
         </p>
       </section>
 
