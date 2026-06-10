@@ -20,10 +20,12 @@ const TYPE_LABELS: Record<LessonKind, string> = {
  */
 export function LessonEditor({
   lessonId,
+  courseSlug,
   onSaved,
   onDeleted,
 }: {
   lessonId: number;
+  courseSlug: string;
   onSaved: () => void;
   onDeleted: () => void;
 }) {
@@ -31,12 +33,17 @@ export function LessonEditor({
   const [note, setNote] = useState('');
   const [err, setErr] = useState('');
   const [busy, setBusy] = useState(false);
+  const [checkpoints, setCheckpoints] = useState<{ at_seconds: number; question_id: number }[]>([]);
+  const [bank, setBank] = useState<{ id: number; body: string }[]>([]);
 
   useEffect(() => {
-    api<{ data: LessonAuthoring }>(`/catalog/lessons/${lessonId}`)
-      .then((r) => setLesson(r.data))
+    api<{ data: LessonAuthoring & { checkpoints?: { at_seconds: number; question_id: number }[] | null } }>(`/catalog/lessons/${lessonId}`)
+      .then((r) => { setLesson(r.data); setCheckpoints(r.data.checkpoints ?? []); })
       .catch(() => setErr(t('common.error')));
-  }, [lessonId]);
+    api<{ data: { id: number; body: string }[] }>(`/assessment/courses/${courseSlug}/questions`)
+      .then((r) => setBank(r.data))
+      .catch(() => setBank([]));
+  }, [lessonId, courseSlug]);
 
   function patch<K extends keyof LessonAuthoring>(key: K, value: LessonAuthoring[K]) {
     setLesson((prev) => (prev ? { ...prev, [key]: value } : prev));
@@ -53,6 +60,7 @@ export function LessonEditor({
           type: lesson.type,
           content: lesson.content,
           transcript: lesson.transcript,
+          checkpoints: lesson.type === 'video' && checkpoints.length > 0 ? checkpoints : null,
           video_provider: lesson.type === 'video' ? lesson.video_provider : null,
           video_id: lesson.type === 'video' ? lesson.video_id : null,
           is_free_preview: lesson.is_free_preview,
@@ -187,6 +195,35 @@ export function LessonEditor({
               value={lesson.transcript ?? ''} onChange={(e) => patch('transcript', e.target.value)} />
           </div>
         </>
+      )}
+
+      {lesson.type === 'video' && (
+        <div className="rounded-xl bg-white p-3 ring-1 ring-slate-200">
+          <div className="mb-1 flex items-center justify-between">
+            <span className="text-sm font-bold text-slate-700">🎯 أسئلة داخل الفيديو (نقاط تحقق)</span>
+            <button type="button" className="btn btn-ghost text-xs" disabled={bank.length === 0}
+              onClick={() => setCheckpoints((p) => [...p, { at_seconds: 60, question_id: bank[0]?.id ?? 0 }])}>
+              + نقطة تحقق
+            </button>
+          </div>
+          {bank.length === 0 && <p className="text-xs text-slate-400">أضف أسئلة لبنك الأسئلة أولاً (تبويب التقييمات).</p>}
+          {checkpoints.map((cp, i) => (
+            <div key={i} className="mb-1 flex items-center gap-2">
+              <input className="input m-0 w-24" type="number" min="0" dir="ltr" title="الثانية"
+                value={cp.at_seconds}
+                onChange={(e) => setCheckpoints((p) => p.map((x, j) => j === i ? { ...x, at_seconds: parseInt(e.target.value || '0', 10) } : x))} />
+              <select className="input m-0 flex-1" value={cp.question_id}
+                onChange={(e) => setCheckpoints((p) => p.map((x, j) => j === i ? { ...x, question_id: parseInt(e.target.value, 10) } : x))}>
+                {bank.map((q) => <option key={q.id} value={q.id}>{q.body}</option>)}
+              </select>
+              <button type="button" className="text-red-500" aria-label="حذف"
+                onClick={() => setCheckpoints((p) => p.filter((_, j) => j !== i))}>✕</button>
+            </div>
+          ))}
+          {checkpoints.length > 0 && (
+            <p className="text-xs text-slate-400">يتوقف الطالب عند الثانية المحددة ليجيب — تغذية راجعة فورية بلا تأثير على الدرجة.</p>
+          )}
+        </div>
       )}
 
       <label className="flex items-center gap-2 text-sm text-slate-600">

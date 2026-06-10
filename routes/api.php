@@ -36,11 +36,13 @@ use App\Http\Controllers\Api\V1\Engagement\GamificationController;
 use App\Http\Controllers\Api\V1\Engagement\ReviewController;
 use App\Http\Controllers\Api\V1\Enrollment\CourseProgressController;
 use App\Http\Controllers\Api\V1\Enrollment\EnrollmentController;
+use App\Http\Controllers\Api\V1\Enrollment\LessonCheckpointController;
 use App\Http\Controllers\Api\V1\Enrollment\LessonContentController;
 use App\Http\Controllers\Api\V1\Enrollment\LessonProgressController;
 use App\Http\Controllers\Api\V1\Enrollment\MediaStreamController;
 use App\Http\Controllers\Api\V1\Enrollment\PlaybackController;
 use App\Http\Controllers\Api\V1\HealthController;
+use App\Http\Controllers\Api\V1\Learning\LessonNoteController;
 use App\Http\Controllers\Api\V1\Learning\PathController;
 use App\Http\Controllers\Api\V1\Learning\PathEnrollmentController;
 use App\Http\Controllers\Api\V1\Learning\StudyPlanController;
@@ -252,6 +254,12 @@ Route::middleware('auth:sanctum')->name('api.enrollment.')->group(function () {
     Route::post('lessons/{lesson}/progress', [LessonProgressController::class, 'store'])->name('progress');
     Route::get('lessons/{lesson}/playback', [PlaybackController::class, 'show'])->name('playback');
     Route::get('lessons/{lesson}/content', [LessonContentController::class, 'show'])->name('lesson.content');
+    // Video interaction: time-anchored private notes + in-video checkpoints.
+    Route::get('lessons/{lesson}/notes', [LessonNoteController::class, 'index'])->name('lesson.notes.index');
+    Route::post('lessons/{lesson}/notes', [LessonNoteController::class, 'store'])->name('lesson.notes.store');
+    Route::delete('lesson-notes/{note}', [LessonNoteController::class, 'destroy'])->name('lesson.notes.destroy');
+    Route::get('lessons/{lesson}/checkpoints', [LessonCheckpointController::class, 'index'])->name('lesson.checkpoints');
+    Route::post('lessons/{lesson}/checkpoints/{question}/answer', [LessonCheckpointController::class, 'answer'])->name('lesson.checkpoints.answer');
     Route::get('catalog/courses/{course}/progress', [CourseProgressController::class, 'show'])->name('course.progress');
 });
 

@@ -30,6 +30,7 @@ final class Lesson extends Model
         'type',
         'content',
         'transcript',
+        'checkpoints',
         'asset_path',
         'video_provider',
         'video_id',
@@ -45,6 +46,7 @@ final class Lesson extends Model
             'video_provider' => VideoProvider::class,
             'video_status' => VideoStatus::class,
             'is_free_preview' => 'boolean',
+            'checkpoints' => 'array',
         ];
     }
 

@@ -233,7 +233,7 @@ export default function ManageCoursePage() {
                           </span>
                         </div>
                         {openLesson === l.id && (
-                          <LessonEditor lessonId={l.id} onSaved={load} onDeleted={() => { setOpenLesson(null); load(); }} />
+                          <LessonEditor lessonId={l.id} courseSlug={slug} onSaved={load} onDeleted={() => { setOpenLesson(null); load(); }} />
                         )}
                       </li>
                     ))}

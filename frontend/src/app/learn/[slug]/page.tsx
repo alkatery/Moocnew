@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { api } from '@/lib/api';
@@ -9,6 +9,7 @@ import { t } from '@/i18n/dictionary';
 import { PageHeader } from '@/components/PageHeader';
 import { LessonTypeIcon } from '@/components/LessonTypeIcon';
 import { Gradebook } from '@/components/Gradebook';
+import { LessonInteraction } from '@/components/LessonInteraction';
 import { TutorWidget } from '@/components/TutorWidget';
 
 const TYPE_BADGES: Record<string, string> = {
@@ -26,6 +27,7 @@ export default function PlayerPage() {
   const [playback, setPlayback] = useState<{ kind: string; url: string } | null>(null);
   const [content, setContent] = useState<LessonContent | null>(null);
   const [note, setNote] = useState('');
+  const videoRef = useRef<HTMLVideoElement | null>(null);
 
   useEffect(() => {
     api<{ data: Course }>(`/catalog/courses/${slug}`, { auth: false })
@@ -84,7 +86,7 @@ export default function PlayerPage() {
                   <iframe title={active.title} src={playback.url} className="h-full w-full border-0" allowFullScreen />
                 )}
                 {active && playback?.kind === 'signed_url' && (
-                  <video controls src={playback.url} className="h-full w-full" />
+                  <video ref={videoRef} controls src={playback.url} className="h-full w-full" />
                 )}
                 {(!active || !playback) && (
                   <div className="flex h-full w-full flex-col items-center justify-center gap-3 text-slate-400">
@@ -144,6 +146,15 @@ export default function PlayerPage() {
               </div>
             )}
           </div>
+
+          {/* Notes + in-video checkpoints for the open lesson */}
+          {active && (
+            <LessonInteraction
+              lessonId={active.id}
+              getTime={() => videoRef.current?.currentTime ?? null}
+              seekTo={(s) => { if (videoRef.current) { videoRef.current.currentTime = s; void videoRef.current.play(); } }}
+            />
+          )}
 
           {/* Transcript panel (video lessons with a saved transcript) */}
           {active?.type === 'video' && content?.transcript && (
