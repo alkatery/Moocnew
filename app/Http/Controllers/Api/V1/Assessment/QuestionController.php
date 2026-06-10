@@ -33,6 +33,7 @@ final class QuestionController extends Controller
             'body' => $request->validated('body'),
             'choices' => $request->validated('choices'),
             'correct' => $request->validated('correct'),
+            'explanation' => $request->validated('explanation'),
             'points' => (int) $request->validated('points', 1),
         ]);
 
@@ -46,6 +47,7 @@ final class QuestionController extends Controller
             'body' => $request->validated('body'),
             'choices' => $request->validated('choices'),
             'correct' => $request->validated('correct'),
+            'explanation' => $request->validated('explanation', $question->explanation),
             'points' => (int) $request->validated('points', $question->points),
         ]);
 

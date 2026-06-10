@@ -34,6 +34,7 @@ final class AssignmentController extends Controller
             'description' => $request->validated('description'),
             'due_at' => $request->validated('due_at'),
             'points' => (int) $request->validated('points', 100),
+            'rubric' => $request->validated('rubric'),
             'weight' => (int) $request->validated('weight', 1),
         ]);
 

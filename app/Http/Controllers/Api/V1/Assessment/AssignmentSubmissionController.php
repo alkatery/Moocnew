@@ -71,8 +71,31 @@ final class AssignmentSubmissionController extends Controller
         ActivityLogger $activity,
         CourseCompletionService $completion,
     ): AssignmentSubmissionResource {
+        $assignment = $submission->assignment;
+        $rubricScores = $request->validated('rubric_scores');
+
+        // Rubric grading: clamp every criterion to its max and sum into the
+        // final grade (capped at the assignment's points).
+        if ($rubricScores !== null && is_array($assignment->rubric)) {
+            $clamped = [];
+            $total = 0;
+            foreach ($assignment->rubric as $criterion) {
+                $id = (string) ($criterion['id'] ?? '');
+                $maxPoints = (int) ($criterion['max_points'] ?? 0);
+                $awarded = max(0, min($maxPoints, (int) ($rubricScores[$id] ?? 0)));
+                $clamped[$id] = $awarded;
+                $total += $awarded;
+            }
+            $grade = min($total, (int) $assignment->points);
+            $rubricScores = $clamped;
+        } else {
+            $grade = (int) $request->validated('grade');
+            $rubricScores = null;
+        }
+
         $submission->update([
-            'grade' => (int) $request->validated('grade'),
+            'grade' => $grade,
+            'rubric_scores' => $rubricScores,
             'feedback' => $request->validated('feedback'),
             'graded_by' => $request->user()->getKey(),
             'graded_at' => Date::now(),

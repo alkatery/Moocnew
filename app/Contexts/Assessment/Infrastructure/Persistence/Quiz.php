@@ -30,6 +30,7 @@ final class Quiz extends Model
         'title',
         'time_limit_minutes',
         'shuffle',
+        'draw_count',
         'max_attempts',
         'pass_mark',
         'weight',
@@ -39,6 +40,7 @@ final class Quiz extends Model
     {
         return [
             'shuffle' => 'boolean',
+            'draw_count' => 'integer',
             'time_limit_minutes' => 'integer',
             'max_attempts' => 'integer',
             'pass_mark' => 'integer',

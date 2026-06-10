@@ -56,9 +56,31 @@ final class QuizAttemptService
             return QuizAttempt::query()->create([
                 'quiz_id' => $quiz->getKey(),
                 'user_id' => $user->getKey(),
+                // Random-draw quizzes freeze the learner's question subset on
+                // the attempt, so resume and grading see the same questions.
+                'question_ids' => $this->drawQuestionIds($quiz),
                 'started_at' => Date::now(),
             ]);
         });
+    }
+
+    /**
+     * When the quiz draws N random questions, pick them now; otherwise null
+     * (= the quiz's full ordered selection).
+     *
+     * @return list<int>|null
+     */
+    private function drawQuestionIds(Quiz $quiz): ?array
+    {
+        $all = $quiz->questions()->pluck('question_bank.id')->all();
+
+        if ($quiz->draw_count === null || $quiz->draw_count >= count($all)) {
+            return null;
+        }
+
+        shuffle($all);
+
+        return array_values(array_slice($all, 0, max(1, $quiz->draw_count)));
     }
 
     /**
@@ -78,10 +100,15 @@ final class QuizAttemptService
             $quiz = $attempt->quiz()->with('questions')->firstOrFail();
             $expired = $this->isExpired($attempt, $quiz);
 
+            // A random-draw attempt is graded against its frozen subset only.
+            $questions = $attempt->question_ids === null
+                ? $quiz->questions
+                : $quiz->questions->whereIn('id', $attempt->question_ids)->values();
+
             $totalPoints = 0;
             $earnedPoints = 0;
 
-            foreach ($quiz->questions as $question) {
+            foreach ($questions as $question) {
                 $submitted = $answers[$question->id] ?? null;
                 $correct = ! $expired && $this->grader->isCorrect($question->type, $question->correct, $submitted);
 

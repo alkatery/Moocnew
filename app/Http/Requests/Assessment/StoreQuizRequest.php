@@ -44,6 +44,7 @@ final class StoreQuizRequest extends FormRequest
             'title' => ['required', 'string', 'max:255'],
             'time_limit_minutes' => ['nullable', 'integer', 'min:1'],
             'shuffle' => ['nullable', 'boolean'],
+            'draw_count' => ['nullable', 'integer', 'min:1'],
             'max_attempts' => ['nullable', 'integer', 'min:1'],
             'pass_mark' => ['nullable', 'integer', 'min:0', 'max:100'],
             'weight' => ['nullable', 'integer', 'min:1', 'max:100'],

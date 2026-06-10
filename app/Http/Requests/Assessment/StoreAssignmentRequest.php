@@ -25,6 +25,10 @@ final class StoreAssignmentRequest extends FormRequest
             'due_at' => ['nullable', 'date'],
             'points' => ['nullable', 'integer', 'min:1'],
             'weight' => ['nullable', 'integer', 'min:1', 'max:100'],
+            'rubric' => ['nullable', 'array'],
+            'rubric.*.id' => ['required_with:rubric', 'string'],
+            'rubric.*.title' => ['required_with:rubric', 'string', 'max:255'],
+            'rubric.*.max_points' => ['required_with:rubric', 'integer', 'min:1'],
             'section_id' => [
                 'nullable', 'integer',
                 Rule::exists('sections', 'id')->where('course_id', $this->route('course')?->getKey()),

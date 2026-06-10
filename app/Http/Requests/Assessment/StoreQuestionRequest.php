@@ -38,6 +38,7 @@ final class StoreQuestionRequest extends FormRequest
             'type' => ['required', Rule::enum(QuestionType::class)],
             'body' => ['required', 'string'],
             'points' => ['nullable', 'integer', 'min:1'],
+            'explanation' => ['nullable', 'string'],
             'choices' => ['nullable', 'array'],
             'choices.*.id' => ['required_with:choices', 'string'],
             'choices.*.text' => ['required_with:choices', 'string'],

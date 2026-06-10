@@ -27,7 +27,11 @@ final class GradeSubmissionRequest extends FormRequest
         $max = $this->route('submission')?->assignment?->points ?? 100;
 
         return [
-            'grade' => ['required', 'integer', 'min:0', "max:{$max}"],
+            // Either a direct grade, or per-criterion rubric scores summed
+            // into the grade by the controller.
+            'grade' => ['required_without:rubric_scores', 'integer', 'min:0', "max:{$max}"],
+            'rubric_scores' => ['required_without:grade', 'array'],
+            'rubric_scores.*' => ['integer', 'min:0'],
             'feedback' => ['nullable', 'string'],
         ];
     }

@@ -33,6 +33,10 @@ final class QuizAttemptController extends Controller
         $attempt = $this->attempts->start($quiz, $request->user());
 
         $questions = $quiz->questions()->get();
+        // Random-draw quizzes: only the attempt's frozen subset is served.
+        if ($attempt->question_ids !== null) {
+            $questions = $questions->whereIn('id', $attempt->question_ids)->values();
+        }
         if ($quiz->shuffle) {
             $questions = $questions->shuffle()->values();
         }
@@ -58,6 +62,26 @@ final class QuizAttemptController extends Controller
         /** @var array<int, mixed> $answers */
         $answers = (array) $request->validated('answers', []);
 
-        return new QuizAttemptResource($this->attempts->submit($attempt, $answers));
+        $finalised = $this->attempts->submit($attempt, $answers);
+
+        // Instant formative feedback: per-question correctness, the answer
+        // key and the instructor's explanation — only AFTER submission.
+        $answersByQuestion = $finalised->answers()->get()->keyBy('question_id');
+        $questions = $finalised->quiz->questions()->get();
+        if ($finalised->question_ids !== null) {
+            $questions = $questions->whereIn('id', $finalised->question_ids)->values();
+        }
+
+        $feedback = $questions->map(fn ($q) => [
+            'question_id' => $q->id,
+            'body' => $q->body,
+            'is_correct' => (bool) ($answersByQuestion[$q->id]->is_correct ?? false),
+            'correct' => $q->correct,
+            'explanation' => $q->explanation,
+            'points' => $q->points,
+        ])->values();
+
+        return (new QuizAttemptResource($finalised))
+            ->additional(['feedback' => $feedback]);
     }
 }

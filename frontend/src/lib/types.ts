@@ -200,6 +200,7 @@ export interface CertificateView {
 }
 
 export interface GradeComponent {
+  id?: number;
   type: 'quiz' | 'assignment';
   title: string;
   score: number | null;

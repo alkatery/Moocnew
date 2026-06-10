@@ -25,6 +25,7 @@ final class AssignmentSubmissionResource extends JsonResource
             'content' => $this->content,
             'has_file' => $this->file_path !== null,
             'grade' => $this->grade,
+            'rubric_scores' => $this->rubric_scores,
             'feedback' => $this->feedback,
             'submitted_at' => $this->submitted_at?->toIso8601String(),
             'graded_at' => $this->graded_at?->toIso8601String(),

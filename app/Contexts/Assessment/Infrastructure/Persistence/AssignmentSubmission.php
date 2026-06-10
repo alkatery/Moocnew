@@ -27,6 +27,7 @@ final class AssignmentSubmission extends Model
         'content',
         'file_path',
         'grade',
+        'rubric_scores',
         'feedback',
         'graded_by',
         'graded_at',
@@ -37,6 +38,7 @@ final class AssignmentSubmission extends Model
     {
         return [
             'grade' => 'integer',
+            'rubric_scores' => 'array',
             'graded_at' => 'datetime',
             'submitted_at' => 'datetime',
         ];

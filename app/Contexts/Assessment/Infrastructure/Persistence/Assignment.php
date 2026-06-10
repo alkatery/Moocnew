@@ -27,6 +27,7 @@ final class Assignment extends Model
         'description',
         'due_at',
         'points',
+        'rubric',
         'weight',
     ];
 
@@ -35,6 +36,7 @@ final class Assignment extends Model
         return [
             'due_at' => 'datetime',
             'points' => 'integer',
+            'rubric' => 'array',
             'weight' => 'integer',
         ];
     }

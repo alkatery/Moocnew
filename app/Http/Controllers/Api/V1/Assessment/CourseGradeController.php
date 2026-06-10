@@ -42,6 +42,7 @@ final class CourseGradeController extends Controller
 
             return [
                 'type' => 'quiz',
+                'id' => $quiz->id,
                 'title' => $quiz->title,
                 'score' => $best === null ? null : (int) $best,
                 'pass_mark' => $quiz->pass_mark,
@@ -63,6 +64,7 @@ final class CourseGradeController extends Controller
 
             return [
                 'type' => 'assignment',
+                'id' => $assignment->id,
                 'title' => $assignment->title,
                 'score' => $score,
                 'pass_mark' => null,

@@ -28,6 +28,7 @@ final class QuestionAdminResource extends JsonResource
             'body' => $this->body,
             'choices' => $this->choices,
             'correct' => $this->correct,
+            'explanation' => $this->explanation,
             'points' => $this->points,
         ];
     }

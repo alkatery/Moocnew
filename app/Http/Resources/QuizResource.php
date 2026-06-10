@@ -25,6 +25,7 @@ final class QuizResource extends JsonResource
             'title' => $this->title,
             'time_limit_minutes' => $this->time_limit_minutes,
             'shuffle' => $this->shuffle,
+            'draw_count' => $this->draw_count,
             'max_attempts' => $this->max_attempts,
             'pass_mark' => $this->pass_mark,
             'weight' => $this->weight,

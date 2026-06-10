@@ -26,6 +26,7 @@ final class AssignmentResource extends JsonResource
             'description' => $this->description,
             'due_at' => $this->due_at?->toIso8601String(),
             'points' => $this->points,
+            'rubric' => $this->rubric,
             'weight' => $this->weight,
         ];
     }

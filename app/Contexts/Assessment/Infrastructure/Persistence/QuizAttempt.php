@@ -25,6 +25,7 @@ final class QuizAttempt extends Model
     protected $fillable = [
         'quiz_id',
         'user_id',
+        'question_ids',
         'score',
         'passed',
         'started_at',
@@ -35,6 +36,7 @@ final class QuizAttempt extends Model
     {
         return [
             'score' => 'integer',
+            'question_ids' => 'array',
             'passed' => 'boolean',
             'started_at' => 'datetime',
             'submitted_at' => 'datetime',

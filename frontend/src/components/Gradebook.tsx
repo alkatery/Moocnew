@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { api } from '@/lib/api';
 import type { CourseGrade } from '@/lib/types';
 import { t } from '@/i18n/dictionary';
@@ -50,7 +51,9 @@ export function Gradebook({ courseSlug }: { courseSlug: string }) {
           <li key={i} className="flex items-center justify-between py-2.5 text-sm">
             <span className="flex items-center gap-2 text-slate-700">
               <span className="badge">{c.type === 'quiz' ? 'اختبار' : 'واجب'}</span>
-              {c.title}
+              {c.type === 'quiz' && c.id
+                ? <Link className="hover:text-brand-700" href={`/quiz/${c.id}`}>{c.title} ←</Link>
+                : c.title}
             </span>
             <span className="flex items-center gap-2">
               {c.score === null ? (

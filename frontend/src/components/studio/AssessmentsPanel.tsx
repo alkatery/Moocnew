@@ -120,6 +120,7 @@ function QuestionForm({ courseSlug, onCreated }: { courseSlug: string; onCreated
   const [correctIds, setCorrectIds] = useState<string[]>([]);
   const [tfCorrect, setTfCorrect] = useState(true);
   const [accepted, setAccepted] = useState('');
+  const [explanation, setExplanation] = useState('');
   const [msg, setMsg] = useState('');
 
   async function submit(e: React.FormEvent) {
@@ -134,9 +135,10 @@ function QuestionForm({ courseSlug, onCreated }: { courseSlug: string; onCreated
           type: kind, body, points: parseInt(points || '1', 10),
           choices: kind === 'mcq' ? choices.filter((c) => c.text.trim() !== '') : null,
           correct,
+          explanation: explanation || null,
         },
       });
-      setBody(''); setChoices([{ id: 'a', text: '' }, { id: 'b', text: '' }]); setCorrectIds([]); setAccepted('');
+      setBody(''); setChoices([{ id: 'a', text: '' }, { id: 'b', text: '' }]); setCorrectIds([]); setAccepted(''); setExplanation('');
       setMsg('أُضيف السؤال ✓');
       onCreated();
     } catch (err) { setMsg(err instanceof Error ? err.message : t('common.error')); }
@@ -191,6 +193,8 @@ function QuestionForm({ courseSlug, onCreated }: { courseSlug: string; onCreated
           onChange={(e) => setAccepted(e.target.value)} />
       )}
 
+      <input className="input m-0" placeholder="شرح الإجابة (يظهر للطالب بعد التسليم — تغذية راجعة)" value={explanation}
+        onChange={(e) => setExplanation(e.target.value)} />
       <div className="flex items-center gap-2">
         <button className="btn">إضافة السؤال</button>
         {msg && <span className="text-xs text-slate-500">{msg}</span>}
@@ -207,6 +211,7 @@ function QuizForm({ courseSlug, questions, sections, onCreated }: {
   const [timeLimit, setTimeLimit] = useState('');
   const [attempts, setAttempts] = useState('');
   const [weight, setWeight] = useState('1');
+  const [drawCount, setDrawCount] = useState('');
   const [sectionId, setSectionId] = useState('');
   const [picked, setPicked] = useState<number[]>([]);
   const [msg, setMsg] = useState('');
@@ -223,6 +228,7 @@ function QuizForm({ courseSlug, questions, sections, onCreated }: {
           time_limit_minutes: timeLimit ? parseInt(timeLimit, 10) : null,
           max_attempts: attempts ? parseInt(attempts, 10) : null,
           weight: parseInt(weight || '1', 10),
+          draw_count: drawCount ? parseInt(drawCount, 10) : null,
           section_id: sectionId ? parseInt(sectionId, 10) : null,
           question_ids: picked,
         },
@@ -248,6 +254,10 @@ function QuizForm({ courseSlug, questions, sections, onCreated }: {
         </label>
         <label className="text-xs text-slate-500">أقصى محاولات (اختياري)
           <input className="input m-0 mt-1" type="number" min="1" dir="ltr" value={attempts} onChange={(e) => setAttempts(e.target.value)} />
+        </label>
+        <label className="text-xs text-slate-500">سحب عشوائي: عدد الأسئلة لكل طالب (اختياري)
+          <input className="input m-0 mt-1" type="number" min="1" dir="ltr" value={drawCount} onChange={(e) => setDrawCount(e.target.value)}
+            placeholder="فارغ = كل الأسئلة" />
         </label>
       </div>
       {sections.length > 0 && (
@@ -284,6 +294,7 @@ function AssignmentForm({ courseSlug, sections, onCreated }: {
   const [weight, setWeight] = useState('1');
   const [dueAt, setDueAt] = useState('');
   const [sectionId, setSectionId] = useState('');
+  const [rubric, setRubric] = useState<{ id: string; title: string; max_points: string }[]>([]);
   const [msg, setMsg] = useState('');
 
   async function submit(e: React.FormEvent) {
@@ -298,9 +309,12 @@ function AssignmentForm({ courseSlug, sections, onCreated }: {
           weight: parseInt(weight || '1', 10),
           due_at: dueAt || null,
           section_id: sectionId ? parseInt(sectionId, 10) : null,
+          rubric: rubric.length > 0
+            ? rubric.filter((r) => r.title.trim() !== '').map((r) => ({ id: r.id, title: r.title, max_points: parseInt(r.max_points || '1', 10) }))
+            : null,
         },
       });
-      setTitle(''); setDescription(''); setMsg('أُنشئ الواجب ✓');
+      setTitle(''); setDescription(''); setRubric([]); setMsg('أُنشئ الواجب ✓');
       onCreated();
     } catch (err) { setMsg(err instanceof Error ? err.message : t('common.error')); }
   }
@@ -327,6 +341,28 @@ function AssignmentForm({ courseSlug, sections, onCreated }: {
           {sections.map((s) => <option key={s.id} value={s.id}>القسم: {s.title}</option>)}
         </select>
       )}
+      <div className="rounded-lg bg-slate-50 p-2">
+        <div className="mb-1 flex items-center justify-between">
+          <span className="text-xs font-bold text-slate-600">معايير التصحيح (Rubric — اختياري)</span>
+          <button type="button" className="btn btn-ghost text-xs"
+            onClick={() => setRubric((p) => [...p, { id: 'c' + Date.now().toString(36) + p.length, title: '', max_points: '10' }])}>
+            + معيار
+          </button>
+        </div>
+        {rubric.map((r) => (
+          <div key={r.id} className="mb-1 flex items-center gap-2">
+            <input className="input m-0 flex-1" placeholder="المعيار (مثل: وضوح الفكرة)" value={r.title}
+              onChange={(e) => setRubric((p) => p.map((x) => x.id === r.id ? { ...x, title: e.target.value } : x))} />
+            <input className="input m-0 w-20" type="number" min="1" dir="ltr" title="الدرجة القصوى" value={r.max_points}
+              onChange={(e) => setRubric((p) => p.map((x) => x.id === r.id ? { ...x, max_points: e.target.value } : x))} />
+            <button type="button" className="text-red-500" aria-label="حذف المعيار"
+              onClick={() => setRubric((p) => p.filter((x) => x.id !== r.id))}>✕</button>
+          </div>
+        ))}
+        {rubric.length > 0 && (
+          <p className="text-xs text-slate-400">مجموع المعايير يصبح درجة الطالب (يُقصّ عند نقاط الواجب).</p>
+        )}
+      </div>
       <div className="flex items-center gap-2">
         <button className="btn">إنشاء الواجب</button>
         {msg && <span className="text-xs text-slate-500">{msg}</span>}

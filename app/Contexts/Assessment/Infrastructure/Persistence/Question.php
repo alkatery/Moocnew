@@ -30,6 +30,7 @@ final class Question extends Model
         'body',
         'choices',
         'correct',
+        'explanation',
         'points',
     ];
 
