@@ -11,6 +11,7 @@ use App\Contexts\Platform\Domain\Settings\SettingKey;
 use App\Contexts\Platform\Domain\Settings\SettingsRepository;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\UpdateAssistantRequest;
+use App\Http\Requests\Admin\UpdateNelcRequest;
 use App\Http\Requests\Admin\UpdatePaymentsRequest;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -28,7 +29,28 @@ final class SettingsController extends Controller
         return response()->json([
             'payments_enabled' => $features->paymentsEnabled(),
             'assistant_mode' => $features->assistantMode(),
+            'nelc_license_number' => $features->nelcLicenseNumber(),
         ]);
+    }
+
+    /**
+     * Sets the NELC licence number printed on certificates and shown on
+     * the public verification endpoint (settings.manage).
+     */
+    public function updateNelc(
+        UpdateNelcRequest $request,
+        SettingsRepository $settings,
+        ActivityLogger $activity,
+    ): JsonResponse {
+        $license = $request->validated('license_number');
+
+        $settings->set(SettingKey::NelcLicenseNumber, $license ?? '');
+
+        $activity->log('settings.nelc_license_changed', $request->user(), properties: [
+            'license_number' => $license,
+        ]);
+
+        return response()->json(['nelc_license_number' => ($license === null || trim($license) === '') ? null : $license]);
     }
 
     public function updateAssistant(

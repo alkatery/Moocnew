@@ -23,6 +23,7 @@ final class LiveSessionResource extends JsonResource
             'starts_at' => $this->starts_at?->toIso8601String(),
             'ends_at' => $this->ends_at?->toIso8601String(),
             'capacity' => $this->capacity,
+            'max_participants' => $this->max_participants,
             'seats_remaining' => $this->seatsRemaining(),
         ];
     }

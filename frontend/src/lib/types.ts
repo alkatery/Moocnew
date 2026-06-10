@@ -404,3 +404,39 @@ export interface RedeemResult {
   slug: string;
   title: string;
 }
+
+// ---- NELC compliance ----
+
+export interface SurveyAnswers {
+  overall: number;
+  content_quality: number;
+  instructor_quality: number;
+  platform_quality: number;
+  comment?: string | null;
+}
+
+export interface SurveyAverages {
+  overall: number;
+  content_quality: number;
+  instructor_quality: number;
+  platform_quality: number;
+}
+
+export interface SurveyComment {
+  comment: string;
+  created_at: string | null;
+}
+
+export interface SurveyCourseSummary {
+  course_id: number;
+  title: string;
+  slug: string;
+  count: number;
+  averages: SurveyAverages;
+}
+
+export interface SurveyDetailSummary {
+  averages: SurveyAverages;
+  count: number;
+  comments: SurveyComment[];
+}

@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\V1\Admin\EnrollmentCodeController;
 use App\Http\Controllers\Api\V1\Admin\ReportController;
 use App\Http\Controllers\Api\V1\Admin\SettingsController;
 use App\Http\Controllers\Api\V1\Admin\SiteContentController as AdminSiteContentController;
+use App\Http\Controllers\Api\V1\Admin\SurveySummaryController;
 use App\Http\Controllers\Api\V1\Admin\UserController;
 use App\Http\Controllers\Api\V1\Admin\UserImportController;
 use App\Http\Controllers\Api\V1\Analytics\AnalyticsController;
@@ -38,6 +39,7 @@ use App\Http\Controllers\Api\V1\Content\NewsController;
 use App\Http\Controllers\Api\V1\Content\SiteContentController;
 use App\Http\Controllers\Api\V1\Engagement\GamificationController;
 use App\Http\Controllers\Api\V1\Engagement\ReviewController;
+use App\Http\Controllers\Api\V1\Engagement\SurveyController;
 use App\Http\Controllers\Api\V1\Enrollment\CourseProgressController;
 use App\Http\Controllers\Api\V1\Enrollment\EnrollmentCodeRedeemController;
 use App\Http\Controllers\Api\V1\Enrollment\EnrollmentController;
@@ -419,4 +421,24 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::post('enrollment-codes/redeem', EnrollmentCodeRedeemController::class)
         ->name('api.enrollment-codes.redeem');
+});
+
+/*
+|--------------------------------------------------------------------------
+| NELC compliance — satisfaction surveys & licence settings
+|--------------------------------------------------------------------------
+| (maintained by: nelc-compliance worktree)
+| Learner satisfaction surveys (completers only), the admin quality
+| summary (analytics.view, anonymous comments — PDPL), and the NELC
+| licence number setting (settings.manage).
+*/
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('engagement/courses/{course}/survey', [SurveyController::class, 'store'])
+        ->name('api.engagement.surveys.store');
+
+    Route::get('admin/surveys/summary', SurveySummaryController::class)
+        ->name('api.admin.surveys.summary');
+
+    Route::patch('admin/settings/nelc', [SettingsController::class, 'updateNelc'])
+        ->name('api.admin.settings.nelc.update');
 });

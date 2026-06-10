@@ -23,9 +23,24 @@ final class ScheduleSessionRequest extends FormRequest
             'provider' => ['required', Rule::enum(MeetingProviderType::class)],
             'starts_at' => ['required', 'date'],
             'ends_at' => ['nullable', 'date', 'after:starts_at'],
-            'capacity' => ['nullable', 'integer', 'min:1'],
+            // NELC compliance: synchronous sessions are capped at 35 learners.
+            'capacity' => ['nullable', 'integer', 'min:1', 'max:35'],
+            'max_participants' => ['nullable', 'integer', 'min:1', 'max:35'],
             // Required only for the "paste a link" provider.
             'join_url' => ['nullable', 'url', 'required_if:provider,manual'],
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        $cap = 'الحد الأقصى 35 متعلماً للجلسة المتزامنة وفق معايير المركز الوطني للتعليم الإلكتروني';
+
+        return [
+            'capacity.max' => $cap,
+            'max_participants.max' => $cap,
         ];
     }
 }
