@@ -52,6 +52,14 @@ export interface AuthUser {
   roles: string[];
 }
 
+export interface AdminUser {
+  id: number;
+  name: string;
+  email: string;
+  roles: string[];
+  created_at: string | null;
+}
+
 export interface Paginated<T> {
   data: T[];
   meta?: { current_page: number; last_page: number; total?: number };

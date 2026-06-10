@@ -1,15 +1,21 @@
 'use client';
 
 import { createContext, useCallback, useContext, useEffect, useState } from 'react';
-import { api, setToken } from './api';
+import { api, getToken, setToken } from './api';
 import type { AuthUser } from './types';
+
+const ADMIN_TOKEN_KEY = 'mooc_admin_token';
+const IMPERSONATING_KEY = 'mooc_impersonating';
 
 interface AuthState {
   user: AuthUser | null;
   loading: boolean;
+  impersonating: string | null;
   login: (email: string, password: string) => Promise<void>;
   register: (payload: RegisterPayload) => Promise<void>;
   logout: () => Promise<void>;
+  impersonate: (token: string, name: string) => Promise<void>;
+  stopImpersonating: () => Promise<void>;
 }
 
 export interface RegisterPayload {
@@ -25,6 +31,7 @@ const AuthContext = createContext<AuthState | null>(null);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
+  const [impersonating, setImpersonating] = useState<string | null>(null);
 
   const loadMe = useCallback(async () => {
     try {
@@ -38,6 +45,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setImpersonating(window.localStorage.getItem(IMPERSONATING_KEY));
+    }
     void loadMe();
   }, [loadMe]);
 
@@ -67,12 +77,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch {
       // ignore
     }
+    window.localStorage.removeItem(ADMIN_TOKEN_KEY);
+    window.localStorage.removeItem(IMPERSONATING_KEY);
+    setImpersonating(null);
     setToken(null);
     setUser(null);
   }, []);
 
+  // Switch the session to the target user's token, stashing the admin's own
+  // token so it can be restored when impersonation ends.
+  const impersonate = useCallback(async (token: string, name: string) => {
+    const adminToken = getToken();
+    if (adminToken) window.localStorage.setItem(ADMIN_TOKEN_KEY, adminToken);
+    window.localStorage.setItem(IMPERSONATING_KEY, name);
+    setImpersonating(name);
+    setToken(token);
+    setLoading(true);
+    await loadMe();
+  }, [loadMe]);
+
+  const stopImpersonating = useCallback(async () => {
+    const adminToken = window.localStorage.getItem(ADMIN_TOKEN_KEY);
+    window.localStorage.removeItem(ADMIN_TOKEN_KEY);
+    window.localStorage.removeItem(IMPERSONATING_KEY);
+    setImpersonating(null);
+    setToken(adminToken);
+    setLoading(true);
+    await loadMe();
+  }, [loadMe]);
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout }}>
+    <AuthContext.Provider
+      value={{ user, loading, impersonating, login, register, logout, impersonate, stopImpersonating }}
+    >
       {children}
     </AuthContext.Provider>
   );

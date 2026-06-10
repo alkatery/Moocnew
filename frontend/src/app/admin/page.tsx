@@ -53,6 +53,7 @@ export default function AdminPage() {
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <h1>{t('admin.title')}</h1>
         <div className="page-actions">
+          <Link className="btn btn-ghost" href="/admin/users">{t('admin.users')}</Link>
           <Link className="btn btn-ghost" href="/admin/content">{t('admin.content')}</Link>
           <Link className="btn btn-ghost" href="/admin/paths">إدارة المسارات</Link>
           <Link className="btn btn-ghost" href="/admin/news">{t('admin.news')}</Link>

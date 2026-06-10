@@ -4,6 +4,7 @@ import { AuthProvider } from '@/lib/auth';
 import { SiteContentProvider } from '@/lib/siteContent';
 import { Nav } from '@/components/Nav';
 import { Footer } from '@/components/Footer';
+import { ImpersonationBanner } from '@/components/ImpersonationBanner';
 
 export const metadata: Metadata = {
   title: 'منصة MOOC — تعلّم مهارات المستقبل بالعربية',
@@ -24,6 +25,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="flex min-h-screen flex-col">
         <SiteContentProvider>
           <AuthProvider>
+            <ImpersonationBanner />
             <Nav />
             <main className="container flex-1">{children}</main>
             <Footer />

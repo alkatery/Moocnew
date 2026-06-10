@@ -21,6 +21,7 @@ enum Permission: string
     case Moderate = 'community.moderate';
     case ManageContent = 'content.manage';
     case ManagePaths = 'paths.manage';
+    case ManageUsers = 'users.manage';
 
     /**
      * Map of which roles are granted which permissions. Seeded into the
@@ -42,6 +43,7 @@ enum Permission: string
                 self::Moderate->value,
                 self::ManageContent->value,
                 self::ManagePaths->value,
+                self::ManageUsers->value,
             ],
             Role::Supervisor->value => [
                 self::ReviewCourses->value,

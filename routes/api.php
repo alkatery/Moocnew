@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Http\Controllers\Api\V1\Admin\SettingsController;
 use App\Http\Controllers\Api\V1\Admin\SiteContentController as AdminSiteContentController;
+use App\Http\Controllers\Api\V1\Admin\UserController;
 use App\Http\Controllers\Api\V1\Analytics\AnalyticsController;
 use App\Http\Controllers\Api\V1\Analytics\PresenceController;
 use App\Http\Controllers\Api\V1\Assessment\AssignmentController;
@@ -82,6 +83,12 @@ Route::middleware('auth:sanctum')->prefix('admin')->name('api.admin.')->group(fu
     Route::patch('site-content', [AdminSiteContentController::class, 'update'])->name('site-content.update');
     Route::post('site-content/{key}/image', [AdminSiteContentController::class, 'uploadImage'])->name('site-content.image.upload');
     Route::delete('site-content/{key}/image', [AdminSiteContentController::class, 'clearImage'])->name('site-content.image.clear');
+
+    // User management & impersonation (users.manage — Super Admin).
+    Route::get('users', [UserController::class, 'index'])->name('users.index');
+    Route::post('users', [UserController::class, 'store'])->name('users.store');
+    Route::patch('users/{user}/role', [UserController::class, 'updateRole'])->name('users.role.update');
+    Route::post('users/{user}/impersonate', [UserController::class, 'impersonate'])->name('users.impersonate');
 });
 
 /*
