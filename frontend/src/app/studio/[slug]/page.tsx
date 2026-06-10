@@ -5,6 +5,9 @@ import { useParams } from 'next/navigation';
 import { api } from '@/lib/api';
 import type { Course } from '@/lib/types';
 import { t } from '@/i18n/dictionary';
+import { PageHeader } from '@/components/PageHeader';
+import { LessonTypeIcon } from '@/components/LessonTypeIcon';
+import { badgeTone, statusLabel } from '@/lib/labels';
 
 export default function ManageCoursePage() {
   const { slug } = useParams<{ slug: string }>();
@@ -45,21 +48,53 @@ export default function ManageCoursePage() {
 
   return (
     <section>
-      <h1>{course.title} <span className="badge">{course.status}</span></h1>
-      <form className="card" onSubmit={addSection}>
-        <strong>{t('studio.addSection')}</strong>
-        <input className="input" value={sectionTitle} onChange={(e) => setSectionTitle(e.target.value)} required />
-        <button className="btn">{t('common.save')}</button>
-      </form>
-      {course.sections?.map((s) => (
-        <div key={s.id} className="card">
-          <strong>{s.title}</strong>
-          <ul>{s.lessons.map((l) => <li key={l.id}>{l.title}</li>)}</ul>
-          <LessonAdder onAdd={(title) => void addLesson(s.id, title)} />
+      <PageHeader
+        title={course.title}
+        badge={<span className={`badge ${badgeTone(course.status)}`}>{statusLabel(course.status)}</span>}
+        crumbs={[{ href: '/studio', label: t('nav.studio') }, { label: course.title }]}
+        actions={
+          <>
+            {note && <span className="success self-center">{note}</span>}
+            <button className="btn" onClick={() => void submit()}>{t('studio.submit')}</button>
+          </>
+        }
+      />
+
+      <div className="grid gap-6 lg:grid-cols-3">
+        <form className="card mb-0 self-start lg:order-2" onSubmit={addSection}>
+          <strong className="text-slate-900">{t('studio.addSection')}</strong>
+          <label className="label mt-3 block" htmlFor="sec-title">{t('common.title')}</label>
+          <input id="sec-title" className="input" value={sectionTitle}
+            onChange={(e) => setSectionTitle(e.target.value)} required />
+          <button className="btn w-full">{t('common.save')}</button>
+        </form>
+
+        <div className="lg:col-span-2 lg:order-1">
+          {!course.sections?.length ? (
+            <div className="card text-slate-500">ابدأ ببناء المنهج: أضف القسم الأول من النموذج المجاور.</div>
+          ) : (
+            course.sections.map((s, si) => (
+              <div key={s.id} className="card p-0">
+                <div className="flex items-center justify-between border-b border-slate-100 px-5 py-3.5">
+                  <strong className="text-slate-900">القسم {si + 1}: {s.title}</strong>
+                  <span className="text-xs text-slate-400">{s.lessons.length} دروس</span>
+                </div>
+                <ul className="divide-y divide-slate-50">
+                  {s.lessons.map((l) => (
+                    <li key={l.id} className="flex items-center gap-3 px-5 py-3 text-sm text-slate-600">
+                      <span className="text-slate-400"><LessonTypeIcon type={l.type} /></span>
+                      {l.title}
+                    </li>
+                  ))}
+                </ul>
+                <div className="border-t border-slate-100 p-4">
+                  <LessonAdder onAdd={(title) => void addLesson(s.id, title)} />
+                </div>
+              </div>
+            ))
+          )}
         </div>
-      ))}
-      <button className="btn" onClick={() => void submit()} style={{ marginTop: 12 }}>{t('studio.submit')}</button>
-      {note && <span style={{ marginInlineStart: 8 }}>{note}</span>}
+      </div>
     </section>
   );
 }
@@ -69,10 +104,11 @@ function LessonAdder({ onAdd }: { onAdd: (title: string) => void }) {
   return (
     <form
       onSubmit={(e) => { e.preventDefault(); if (title) { onAdd(title); setTitle(''); } }}
-      style={{ display: 'flex', gap: 8, marginTop: 8 }}
+      className="flex gap-2"
     >
-      <input className="input" style={{ margin: 0 }} placeholder={t('studio.addLesson')} value={title} onChange={(e) => setTitle(e.target.value)} />
-      <button className="btn">+</button>
+      <input className="input m-0 flex-1" placeholder={t('studio.addLesson')}
+        value={title} onChange={(e) => setTitle(e.target.value)} />
+      <button className="btn shrink-0">+</button>
     </form>
   );
 }

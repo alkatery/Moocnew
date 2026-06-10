@@ -22,6 +22,8 @@ use App\Http\Controllers\Api\V1\Catalog\SectionController;
 use App\Http\Controllers\Api\V1\Certification\CertificateController;
 use App\Http\Controllers\Api\V1\Communication\ForumController;
 use App\Http\Controllers\Api\V1\Communication\TicketController;
+use App\Http\Controllers\Api\V1\Content\ContactController;
+use App\Http\Controllers\Api\V1\Content\NewsController;
 use App\Http\Controllers\Api\V1\Enrollment\EnrollmentController;
 use App\Http\Controllers\Api\V1\Enrollment\LessonProgressController;
 use App\Http\Controllers\Api\V1\Enrollment\MediaStreamController;
@@ -29,6 +31,7 @@ use App\Http\Controllers\Api\V1\Enrollment\PlaybackController;
 use App\Http\Controllers\Api\V1\HealthController;
 use App\Http\Controllers\Api\V1\Notification\NotificationController;
 use App\Http\Controllers\Api\V1\Notification\PreferenceController;
+use App\Http\Controllers\Api\V1\Platform\PublicStatsController;
 use App\Http\Controllers\Api\V1\Scheduling\CalendarController;
 use App\Http\Controllers\Api\V1\Scheduling\LiveSessionController;
 use App\Http\Controllers\Api\V1\Webhooks\BunnyVideoWebhookController;
@@ -63,6 +66,34 @@ Route::middleware('auth:sanctum')->prefix('admin')->name('api.admin.')->group(fu
     Route::get('settings', [SettingsController::class, 'show'])->name('settings.show');
     Route::patch('settings/payments', [SettingsController::class, 'updatePayments'])
         ->name('settings.payments.update');
+
+    // Contact-form triage (community.moderate permission).
+    Route::get('contact-messages', [ContactController::class, 'index'])->name('contact.index');
+    Route::post('contact-messages/{message}/handle', [ContactController::class, 'handle'])->name('contact.handle');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Public site content — news, contact form, marketing stats
+|--------------------------------------------------------------------------
+| Powers the public home/news/about/contact pages. Aggregate stats only
+| (PDPL); the contact form is rate-limited and strictly validated.
+*/
+Route::get('platform/stats', PublicStatsController::class)->name('api.platform.stats');
+
+Route::post('contact', [ContactController::class, 'store'])
+    ->middleware('throttle:10,1')
+    ->name('api.contact.store');
+
+Route::prefix('content')->name('api.content.')->group(function () {
+    Route::get('news', [NewsController::class, 'index'])->name('news.index');
+    Route::get('news/{news}', [NewsController::class, 'show'])->name('news.show');
+
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::post('news', [NewsController::class, 'store'])->name('news.store');
+        Route::patch('news/{news}', [NewsController::class, 'update'])->name('news.update');
+        Route::delete('news/{news}', [NewsController::class, 'destroy'])->name('news.destroy');
+    });
 });
 
 /*

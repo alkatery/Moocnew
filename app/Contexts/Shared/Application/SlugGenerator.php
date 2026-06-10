@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Contexts\Catalog\Application;
+namespace App\Contexts\Shared\Application;
 
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -11,6 +11,9 @@ use Illuminate\Support\Str;
  * Produces a unique, URL-safe slug for a model. Falls back to a random
  * token when the source text transliterates to an empty slug (common for
  * Arabic-only titles), and appends a numeric suffix to resolve clashes.
+ *
+ * Lives in the shared kernel: Catalog (courses, categories) and Content
+ * (news) both rely on it.
  */
 final class SlugGenerator
 {

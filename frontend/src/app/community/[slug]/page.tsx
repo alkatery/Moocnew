@@ -6,6 +6,8 @@ import { useParams } from 'next/navigation';
 import { api } from '@/lib/api';
 import type { ForumThreadSummary } from '@/lib/types';
 import { t } from '@/i18n/dictionary';
+import { PageHeader } from '@/components/PageHeader';
+import { EmptyState } from '@/components/EmptyState';
 
 export default function CourseForumPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -29,19 +31,47 @@ export default function CourseForumPage() {
   }
 
   return (
-    <section>
-      <h1>{t('community.title')}</h1>
+    <section className="mx-auto max-w-3xl">
+      <PageHeader
+        title={t('community.title')}
+        subtitle="اسأل، شارك خبرتك، وتعلّم مع زملائك في الدورة."
+        crumbs={[{ href: `/catalog/${slug}`, label: 'الدورة' }, { label: t('community.title') }]}
+      />
+
       <form className="card" onSubmit={create}>
-        <strong>{t('community.newThread')}</strong>
-        <input className="input" placeholder={t('common.title')} value={title} onChange={(e) => setTitle(e.target.value)} required />
-        <textarea className="input" placeholder={t('common.body')} value={body} onChange={(e) => setBody(e.target.value)} required />
+        <strong className="text-slate-900">{t('community.newThread')}</strong>
+        <label className="label mt-3 block" htmlFor="th-title">{t('common.title')}</label>
+        <input id="th-title" className="input" value={title} onChange={(e) => setTitle(e.target.value)} required />
+        <label className="label" htmlFor="th-body">{t('common.body')}</label>
+        <textarea id="th-body" className="input min-h-24" value={body} onChange={(e) => setBody(e.target.value)} required />
         <button className="btn">{t('community.send')}</button>
       </form>
-      {loading ? <p className="label">{t('common.loading')}</p> : threads.map((th) => (
-        <Link key={th.id} href={`/community/thread/${th.id}`} className="card" style={{ display: 'block' }}>
-          <strong>{th.title}</strong> <span className="badge">{th.posts_count ?? 0}</span>
-        </Link>
-      ))}
+
+      {loading ? (
+        <p className="label">{t('common.loading')}</p>
+      ) : threads.length === 0 ? (
+        <EmptyState text="لا توجد مواضيع بعد — كن أول من يبدأ النقاش." />
+      ) : (
+        <div className="card p-0">
+          <ul className="divide-y divide-slate-100">
+            {threads.map((th) => (
+              <li key={th.id}>
+                <Link href={`/community/thread/${th.id}`}
+                  className="flex items-center gap-3 px-5 py-4 transition hover:bg-brand-50/50">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-100 font-extrabold text-brand-700">
+                    {th.title.slice(0, 1)}
+                  </span>
+                  <span className="flex-1 font-bold text-slate-800">{th.title}</span>
+                  <span className="badge">{th.posts_count ?? 0} ردود</span>
+                  <svg className="text-slate-300 rtl:rotate-180" width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
+                    <path d="m9 6 6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </section>
   );
 }

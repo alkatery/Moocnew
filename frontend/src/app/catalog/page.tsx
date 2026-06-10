@@ -1,53 +1,102 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import Link from 'next/link';
+import { Suspense, useEffect, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { api } from '@/lib/api';
-import type { Course, Paginated } from '@/lib/types';
-import { formatMinor } from '@/lib/format';
+import type { Category, Course, Paginated } from '@/lib/types';
 import { t } from '@/i18n/dictionary';
+import { CourseCard } from '@/components/CourseCard';
 
-export default function CatalogPage() {
+function CatalogInner() {
+  const router = useRouter();
+  const params = useSearchParams();
+
+  const [q, setQ] = useState(params.get('q') ?? '');
+  const [category, setCategory] = useState(params.get('category') ?? '');
+  const [pricing, setPricing] = useState(params.get('pricing') ?? '');
+  const [categories, setCategories] = useState<Category[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
-  const [q, setQ] = useState('');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    void api<Paginated<Category>>('/catalog/categories', { auth: false })
+      .then((res) => setCategories(res.data)).catch(() => undefined);
+  }, []);
+
+  useEffect(() => {
     setLoading(true);
-    const query = q ? `?q=${encodeURIComponent(q)}` : '';
-    api<Paginated<Course>>(`/catalog/courses${query}`, { auth: false })
+    const query = new URLSearchParams();
+    if (q) query.set('q', q);
+    if (category) query.set('category', category);
+    if (pricing) query.set('pricing', pricing);
+    const qs = query.toString();
+
+    router.replace(qs ? `/catalog?${qs}` : '/catalog', { scroll: false });
+
+    api<Paginated<Course>>(`/catalog/courses${qs ? `?${qs}` : ''}`, { auth: false })
       .then((res) => setCourses(res.data))
       .catch(() => setCourses([]))
       .finally(() => setLoading(false));
-  }, [q]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [q, category, pricing]);
 
   return (
     <section>
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-        <h1>{t('catalog.title')}</h1>
-        <input className="input m-0 w-72 max-w-full" placeholder={t('catalog.search')} value={q} onChange={(e) => setQ(e.target.value)} />
+        <div>
+          <h1 className="text-3xl font-extrabold">{t('catalog.title')}</h1>
+          <p className="mt-1 text-sm text-slate-500">ابحث وصفِّ حسب المجال أو السعر.</p>
+        </div>
+        <input
+          className="input m-0 w-72 max-w-full"
+          placeholder={t('catalog.search')}
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          aria-label={t('catalog.search')}
+        />
       </div>
+
+      <div className="mb-6 flex flex-wrap items-center gap-2">
+        <button className={`chip ${category === '' ? 'chip-active' : ''}`} onClick={() => setCategory('')}>
+          كل المجالات
+        </button>
+        {categories.map((c) => (
+          <button
+            key={c.id}
+            className={`chip ${category === c.slug ? 'chip-active' : ''}`}
+            onClick={() => setCategory(category === c.slug ? '' : c.slug)}
+          >
+            {c.name}
+          </button>
+        ))}
+        <span className="mx-1 hidden h-5 w-px bg-slate-200 sm:block" aria-hidden />
+        <button className={`chip ${pricing === 'free' ? 'chip-active' : ''}`}
+          onClick={() => setPricing(pricing === 'free' ? '' : 'free')}>
+          {t('course.free')}
+        </button>
+        <button className={`chip ${pricing === 'paid' ? 'chip-active' : ''}`}
+          onClick={() => setPricing(pricing === 'paid' ? '' : 'paid')}>
+          مدفوعة
+        </button>
+      </div>
+
       {loading ? (
         <p className="label">{t('common.loading')}</p>
       ) : courses.length === 0 ? (
-        <p className="label">{t('catalog.empty')}</p>
+        <div className="card text-center text-slate-500">{t('catalog.empty')}</div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {courses.map((c, i) => (
-            <Link key={c.id} href={`/catalog/${c.slug}`}
-              className="group overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-card transition hover:-translate-y-0.5 hover:shadow-lg">
-              <div className={`h-28 bg-gradient-to-bl ${['from-brand-500 to-brand-700','from-sky-500 to-indigo-700','from-emerald-500 to-teal-700'][i % 3]}`} />
-              <div className="p-4">
-                <div className="mb-1 flex items-center justify-between gap-2">
-                  <strong className="line-clamp-1 text-slate-900">{c.title}</strong>
-                  <span className="badge shrink-0">{c.pricing_type === 'free' ? t('course.free') : formatMinor(c.price_minor)}</span>
-                </div>
-                <p className="line-clamp-2 text-sm text-slate-500">{c.summary}</p>
-              </div>
-            </Link>
-          ))}
+          {courses.map((c, i) => <CourseCard key={c.id} course={c} index={i} />)}
         </div>
       )}
     </section>
+  );
+}
+
+export default function CatalogPage() {
+  return (
+    <Suspense fallback={<p className="label">{t('common.loading')}</p>}>
+      <CatalogInner />
+    </Suspense>
   );
 }

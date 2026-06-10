@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api\V1\Catalog;
 
-use App\Contexts\Catalog\Application\SlugGenerator;
 use App\Contexts\Catalog\Infrastructure\Persistence\Category;
+use App\Contexts\Shared\Application\SlugGenerator;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Catalog\StoreCategoryRequest;
 use App\Http\Resources\CategoryResource;
