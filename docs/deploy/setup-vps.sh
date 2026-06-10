@@ -69,6 +69,12 @@ echo "==> Building & starting containers…"
 docker compose build
 docker compose up -d
 
+# Both compose files bind-mount the host tree over /var/www/html, which
+# shadows the vendor/ baked into the image. Install dependencies into the
+# mounted tree so the running container can boot Laravel.
+echo "==> Installing PHP dependencies inside the container…"
+docker compose exec -T app composer install --no-dev --optimize-autoloader --no-interaction
+
 echo "==> Migrating, seeding, linking storage, caching…"
 docker compose exec -T app php artisan key:generate --force || true
 docker compose exec -T app php artisan migrate --force
