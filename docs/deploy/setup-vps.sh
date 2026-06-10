@@ -17,7 +17,7 @@ APP_DIR="${APP_DIR:-/opt/mooc}"
 echo "==> Installing base packages, Docker, firewall…"
 export DEBIAN_FRONTEND=noninteractive
 apt-get update -y
-apt-get install -y ca-certificates curl git ufw fail2ban
+apt-get install -y ca-certificates curl git ufw fail2ban openssl
 install -m 0755 -d /etc/apt/keyrings
 curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
 chmod a+r /etc/apt/keyrings/docker.asc
@@ -84,6 +84,23 @@ if [ ! -f .env ]; then
   echo "!! Edit ${APP_DIR}/.env with production secrets, then re-run this script."
   echo "   Required: APP_KEY (php artisan key:generate), DB_*,"
   echo "   MOYASAR_*/BUNNY_* (when going live), MAIL_*, SENTRY_LARAVEL_DSN."
+fi
+
+# Meilisearch runs in production mode in the full stack and refuses master
+# keys shorter than 16 bytes — the .env.example default ("masterKey") is too
+# short and the container crash-loops. Generate a strong key once. The same
+# .env feeds both Compose (container env) and Laravel (Scout client).
+if [ "${LIGHT:-0}" != "1" ]; then
+  MEILI_KEY="$(grep -E '^MEILISEARCH_KEY=' .env | head -1 | cut -d= -f2- || true)"
+  if [ "${#MEILI_KEY}" -lt 16 ]; then
+    NEW_KEY="$(openssl rand -hex 16)"
+    if grep -qE '^MEILISEARCH_KEY=' .env; then
+      sed -i "s/^MEILISEARCH_KEY=.*/MEILISEARCH_KEY=${NEW_KEY}/" .env
+    else
+      echo "MEILISEARCH_KEY=${NEW_KEY}" >> .env
+    fi
+    echo "==> Generated a strong MEILISEARCH_KEY in .env."
+  fi
 fi
 
 echo "==> Building & starting containers…"
