@@ -54,6 +54,7 @@ export default function AdminPage() {
         <h1>{t('admin.title')}</h1>
         <div className="page-actions">
           <Link className="btn btn-ghost" href="/admin/users">{t('admin.users')}</Link>
+          <Link className="btn btn-ghost" href="/admin/activity">{t('admin.activity')}</Link>
           <Link className="btn btn-ghost" href="/admin/content">{t('admin.content')}</Link>
           <Link className="btn btn-ghost" href="/admin/paths">إدارة المسارات</Link>
           <Link className="btn btn-ghost" href="/admin/news">{t('admin.news')}</Link>

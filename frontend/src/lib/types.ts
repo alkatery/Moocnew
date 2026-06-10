@@ -15,6 +15,9 @@ export interface Course {
   pricing_type: 'free' | 'one_time' | 'subscription';
   price_minor: number;
   passing_grade?: number;
+  cover_image?: string | null;
+  rating?: number | null;
+  reviews_count?: number;
   sections?: Section[];
   instructor?: { id: number; name: string };
   category?: Category | null;
@@ -57,6 +60,7 @@ export interface AdminUser {
   name: string;
   email: string;
   roles: string[];
+  disabled?: boolean;
   created_at: string | null;
 }
 
@@ -132,6 +136,7 @@ export interface PathSummary {
   title: string;
   slug: string;
   summary: string | null;
+  cover_image?: string | null;
   published_at: string | null;
   courses_count: number;
   levels_count: number;
@@ -207,6 +212,70 @@ export interface CourseGrade {
   overall: number | null;
   passed: boolean;
   components: GradeComponent[];
+}
+
+export interface Review {
+  id: number;
+  rating: number;
+  comment: string | null;
+  user: string | null;
+  created_at: string | null;
+}
+
+export interface ReviewSummary {
+  average: number;
+  count: number;
+  distribution: Record<string, number>;
+}
+
+export interface MyStats {
+  points: number;
+  current_streak: number;
+  longest_streak: number;
+  rank: number;
+  badges: string[];
+}
+
+export interface LeaderboardRow {
+  rank: number;
+  name: string;
+  points: number;
+  current_streak: number;
+}
+
+export interface LearnerProfile {
+  name: string;
+  joined_at: string | null;
+  points: number;
+  current_streak: number;
+  badges: string[];
+  certificates: { title: string; type: string; grade: number | null; issued_at: string; verification_uuid: string }[];
+}
+
+export interface InstructorProfile {
+  name: string;
+  bio: string | null;
+  social_links: Record<string, string>;
+  stats: { courses: number; learners: number; rating: number | null };
+  courses: { title: string; slug: string; cover_image: string | null; rating: number | null }[];
+}
+
+export interface CourseProgress {
+  enrolled: boolean;
+  status?: string;
+  percent: number;
+  completed?: boolean;
+  lessons: { lesson_id: number; video_position: number; completed: boolean }[];
+}
+
+export interface ActivityLogRow {
+  id: number;
+  event: string;
+  causer: string | null;
+  subject_type: string | null;
+  subject_id: number | null;
+  properties: Record<string, unknown> | null;
+  created_at: string | null;
 }
 
 export interface SiteContentField {

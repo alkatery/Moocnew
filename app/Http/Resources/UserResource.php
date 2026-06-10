@@ -29,6 +29,7 @@ final class UserResource extends JsonResource
             'locale' => $this->locale,
             'timezone' => $this->timezone,
             'roles' => $this->getRoleNames()->values(),
+            'disabled' => $this->disabled_at !== null,
             'created_at' => $this->created_at?->toIso8601String(),
         ];
     }

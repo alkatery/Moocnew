@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { api } from '@/lib/api';
+import { API_BASE, api, getToken } from '@/lib/api';
 import type { Course } from '@/lib/types';
 import { t } from '@/i18n/dictionary';
 import { PageHeader } from '@/components/PageHeader';
@@ -15,13 +15,33 @@ export default function ManageCoursePage() {
   const [sectionTitle, setSectionTitle] = useState('');
   const [passingGrade, setPassingGrade] = useState('0');
   const [note, setNote] = useState('');
+  const [cover, setCover] = useState<string | null>(null);
 
   function load() {
     api<{ data: Course }>(`/catalog/courses/${slug}`, { auth: false })
-      .then((r) => { setCourse(r.data); setPassingGrade(String(r.data.passing_grade ?? 0)); })
+      .then((r) => { setCourse(r.data); setPassingGrade(String(r.data.passing_grade ?? 0)); setCover(r.data.cover_image ?? null); })
       .catch(() => setCourse(null));
   }
   useEffect(load, [slug]);
+
+  async function uploadCover(file: File) {
+    setNote('');
+    try {
+      const form = new FormData();
+      form.append('image', file);
+      const res = await fetch(`${API_BASE}/catalog/courses/${slug}/cover`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${getToken() ?? ''}`, Accept: 'application/json' },
+        body: form,
+      });
+      if (!res.ok) throw new Error('upload failed');
+      const json = await res.json();
+      setCover(json.data.cover_image as string);
+      setNote(t('common.save') + ' ✓');
+    } catch {
+      setNote(t('common.error'));
+    }
+  }
 
   async function saveSettings(e: React.FormEvent) {
     e.preventDefault();
@@ -77,6 +97,19 @@ export default function ManageCoursePage() {
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:order-2">
+          <div className="card mb-4">
+            <strong className="text-slate-900">{t('studio.cover')}</strong>
+            {cover && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={cover} alt="" className="mt-3 h-28 w-full rounded-xl object-cover" />
+            )}
+            <label className="btn btn-ghost mt-3 w-full cursor-pointer">
+              {cover ? 'استبدال الصورة' : 'رفع صورة'}
+              <input type="file" accept="image/*" className="hidden"
+                onChange={(e) => { const f = e.target.files?.[0]; if (f) void uploadCover(f); }} />
+            </label>
+          </div>
+
           <form className="card mb-4" onSubmit={(e) => void saveSettings(e)}>
             <strong className="text-slate-900">إعدادات الدورة</strong>
             <label className="label mt-3 block" htmlFor="passing-grade">{t('studio.passingGrade')}</label>

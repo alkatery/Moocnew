@@ -14,6 +14,7 @@ function CatalogInner() {
   const [q, setQ] = useState(params.get('q') ?? '');
   const [category, setCategory] = useState(params.get('category') ?? '');
   const [pricing, setPricing] = useState(params.get('pricing') ?? '');
+  const [sort, setSort] = useState(params.get('sort') ?? 'newest');
   const [categories, setCategories] = useState<Category[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
@@ -29,6 +30,7 @@ function CatalogInner() {
     if (q) query.set('q', q);
     if (category) query.set('category', category);
     if (pricing) query.set('pricing', pricing);
+    if (sort && sort !== 'newest') query.set('sort', sort);
     const qs = query.toString();
 
     router.replace(qs ? `/catalog?${qs}` : '/catalog', { scroll: false });
@@ -38,7 +40,7 @@ function CatalogInner() {
       .catch(() => setCourses([]))
       .finally(() => setLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [q, category, pricing]);
+  }, [q, category, pricing, sort]);
 
   return (
     <section>
@@ -47,13 +49,20 @@ function CatalogInner() {
           <h1 className="text-3xl font-extrabold">{t('catalog.title')}</h1>
           <p className="mt-1 text-sm text-slate-500">ابحث وصفِّ حسب المجال أو السعر.</p>
         </div>
-        <input
-          className="input m-0 w-72 max-w-full"
-          placeholder={t('catalog.search')}
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          aria-label={t('catalog.search')}
-        />
+        <div className="flex flex-wrap items-center gap-2">
+          <select className="input m-0 w-40" value={sort} onChange={(e) => setSort(e.target.value)} aria-label={t('catalog.sort')}>
+            <option value="newest">{t('catalog.sortNewest')}</option>
+            <option value="top_rated">{t('catalog.sortTopRated')}</option>
+            <option value="popular">{t('catalog.sortPopular')}</option>
+          </select>
+          <input
+            className="input m-0 w-64 max-w-full"
+            placeholder={t('catalog.search')}
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            aria-label={t('catalog.search')}
+          />
+        </div>
       </div>
 
       <div className="mb-6 flex flex-wrap items-center gap-2">

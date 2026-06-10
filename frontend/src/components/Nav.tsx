@@ -44,6 +44,7 @@ export function Nav() {
         {!user && <Link className="hidden sm:inline" href="/about">{t('nav.about')}</Link>}
         {!user && <Link className="hidden sm:inline" href="/contact">{t('nav.contact')}</Link>}
         {user && <Link href="/learn">{t('nav.myLearning')}</Link>}
+        {user && <Link className="hidden sm:inline" href="/leaderboard">{t('nav.leaderboard')}</Link>}
         {user && <Link href="/calendar">{t('nav.calendar')}</Link>}
         {isInstructor && <Link href="/studio">{t('nav.studio')}</Link>}
         {isStaff && <Link href="/admin">{t('nav.admin')}</Link>}

@@ -8,6 +8,7 @@ import type { Enrollment, Paginated } from '@/lib/types';
 import { t } from '@/i18n/dictionary';
 import { PageHeader } from '@/components/PageHeader';
 import { EmptyState } from '@/components/EmptyState';
+import { AchievementsCard } from '@/components/AchievementsCard';
 import { badgeTone, statusLabel } from '@/lib/labels';
 
 export default function MyLearningPage() {
@@ -41,6 +42,10 @@ export default function MyLearningPage() {
           </>
         }
       />
+
+      <div className="mb-6">
+        <AchievementsCard />
+      </div>
 
       {items.length === 0 ? (
         <EmptyState

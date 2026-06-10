@@ -9,6 +9,8 @@ import type { Course } from '@/lib/types';
 import { formatMinor } from '@/lib/format';
 import { t } from '@/i18n/dictionary';
 import { LessonTypeIcon } from '@/components/LessonTypeIcon';
+import { Reviews } from '@/components/Reviews';
+import { Stars } from '@/components/Stars';
 
 const BASE_PERKS = [
   'وصول كامل لكل دروس الدورة',
@@ -83,6 +85,12 @@ export default function CourseDetailPage() {
             )}
             <span>{sectionsCount} أقسام</span>
             <span>{lessonsCount} درساً</span>
+            {(course.reviews_count ?? 0) > 0 && course.rating != null && (
+              <span className="flex items-center gap-1.5">
+                <Stars value={course.rating} size={14} />
+                <span>{course.rating} ({course.reviews_count})</span>
+              </span>
+            )}
             <span className="flex items-center gap-1">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden>
                 <path d="M12 14a5 5 0 1 0 0-10 5 5 0 0 0 0 10Zm-3 1.5L8 21l4-2 4 2-1-5.5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
@@ -116,6 +124,10 @@ export default function CourseDetailPage() {
           )) : (
             <div className="card text-slate-500">سيُنشر المنهج التفصيلي قريباً.</div>
           )}
+
+          <div className="mt-6">
+            <Reviews courseSlug={course.slug} />
+          </div>
         </div>
 
         {/* Sticky enrollment card */}
