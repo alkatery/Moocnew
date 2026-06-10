@@ -14,6 +14,8 @@ enum NotificationType: string
     case CourseCompleted = 'course_completed';
     case AssignmentGraded = 'assignment_graded';
     case SessionReminder = 'session_reminder';
+    case PathCompleted = 'path_completed';
+    case StudyPlanReminder = 'study_plan_reminder';
 
     public function label(): string
     {
@@ -22,6 +24,8 @@ enum NotificationType: string
             self::CourseCompleted => 'إتمام الدورة',
             self::AssignmentGraded => 'تصحيح الواجب',
             self::SessionReminder => 'تذكير بحصة مباشرة',
+            self::PathCompleted => 'إتمام مسار تخصصي',
+            self::StudyPlanReminder => 'تنبيهات الخطة الدراسية',
         };
     }
 }

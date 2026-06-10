@@ -10,3 +10,6 @@ Artisan::command('inspire', function () {
 
 // Live-session reminders (PRD §5.و) — runs every minute, idempotent per session.
 Schedule::command('scheduling:dispatch-reminders')->everyMinute()->withoutOverlapping();
+
+// Study-plan nudges — hourly; each plan is reminded once per its cadence.
+Schedule::command('learning:dispatch-plan-reminders')->hourly()->withoutOverlapping();

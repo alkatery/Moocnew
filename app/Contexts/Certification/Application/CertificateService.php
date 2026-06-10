@@ -7,6 +7,7 @@ namespace App\Contexts\Certification\Application;
 use App\Contexts\Catalog\Infrastructure\Persistence\Course;
 use App\Contexts\Certification\Infrastructure\Pdf\CertificatePdfRenderer;
 use App\Contexts\Certification\Infrastructure\Persistence\Certificate;
+use App\Contexts\Learning\Infrastructure\Persistence\LearningPath;
 use App\Models\User;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\Storage;
@@ -38,16 +39,54 @@ final class CertificateService
         $user = User::query()->findOrFail($userId);
         $course = Course::query()->findOrFail($courseId);
 
+        return $this->issue(
+            ['user_id' => $userId, 'course_id' => $courseId],
+            $user->name,
+            $course->title,
+            'دورة',
+        );
+    }
+
+    /**
+     * Issue a certificate for completing an entire learning path (PRD-MV2
+     * extension). Idempotent per (user, path).
+     */
+    public function issueForPath(int $userId, int $pathId): Certificate
+    {
+        $existing = Certificate::query()
+            ->where('user_id', $userId)
+            ->where('learning_path_id', $pathId)
+            ->first();
+
+        if ($existing !== null) {
+            return $existing;
+        }
+
+        $user = User::query()->findOrFail($userId);
+        $path = LearningPath::query()->findOrFail($pathId);
+
+        return $this->issue(
+            ['user_id' => $userId, 'learning_path_id' => $pathId],
+            $user->name,
+            $path->title,
+            'المسار التخصصي',
+        );
+    }
+
+    /**
+     * @param  array<string, int>  $subject
+     */
+    private function issue(array $subject, string $holderName, string $subjectTitle, string $subjectLabel): Certificate
+    {
         $certificate = Certificate::query()->create([
-            'user_id' => $userId,
-            'course_id' => $courseId,
+            ...$subject,
             'serial' => $this->uniqueSerial(),
             'verification_uuid' => (string) Str::uuid(),
             'issued_at' => Date::now(),
         ]);
 
         $verifyUrl = $this->verifyUrl($certificate->verification_uuid);
-        $pdf = $this->renderer->render($certificate, $user->name, $course->title, $verifyUrl);
+        $pdf = $this->renderer->render($certificate, $holderName, $subjectTitle, $verifyUrl, $subjectLabel);
 
         $path = "certificates/{$certificate->verification_uuid}.pdf";
         Storage::disk($this->disk())->put($path, $pdf);

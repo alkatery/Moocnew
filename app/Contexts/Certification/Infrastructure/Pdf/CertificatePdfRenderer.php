@@ -15,8 +15,13 @@ use SimpleSoftwareIO\QrCode\Facades\QrCode;
  */
 final class CertificatePdfRenderer
 {
-    public function render(Certificate $certificate, string $holderName, string $courseTitle, string $verifyUrl): string
-    {
+    public function render(
+        Certificate $certificate,
+        string $holderName,
+        string $courseTitle,
+        string $verifyUrl,
+        string $subjectLabel = 'دورة',
+    ): string {
         $qrSvg = base64_encode(
             (string) QrCode::format('svg')->size(160)->margin(1)->generate($verifyUrl),
         );
@@ -24,6 +29,7 @@ final class CertificatePdfRenderer
         return Pdf::loadView('certificates.certificate', [
             'holderName' => $holderName,
             'courseTitle' => $courseTitle,
+            'subjectLabel' => $subjectLabel,
             'serial' => $certificate->serial,
             'issuedAt' => $certificate->issued_at,
             'verifyUrl' => $verifyUrl,

@@ -22,7 +22,7 @@ final class CertificateController extends Controller
     public function verify(string $uuid): JsonResponse
     {
         $certificate = Certificate::query()
-            ->with(['user', 'course'])
+            ->with(['user', 'course', 'path'])
             ->where('verification_uuid', $uuid)
             ->first();
 
@@ -34,7 +34,8 @@ final class CertificateController extends Controller
             'valid' => true,
             'serial' => $certificate->serial,
             'holder_name' => $certificate->user->name,
-            'course_title' => $certificate->course->title,
+            'subject_type' => $certificate->learning_path_id !== null ? 'learning_path' : 'course',
+            'course_title' => $certificate->subjectTitle(),
             'issued_at' => $certificate->issued_at->toIso8601String(),
         ]);
     }
@@ -45,14 +46,15 @@ final class CertificateController extends Controller
     public function index(Request $request): JsonResponse
     {
         $certificates = Certificate::query()
-            ->with('course')
+            ->with(['course', 'path'])
             ->where('user_id', $request->user()->getKey())
             ->latest('issued_at')
             ->get()
             ->map(fn (Certificate $c): array => [
                 'serial' => $c->serial,
                 'verification_uuid' => $c->verification_uuid,
-                'course_title' => $c->course->title,
+                'subject_type' => $c->learning_path_id !== null ? 'learning_path' : 'course',
+                'course_title' => $c->subjectTitle(),
                 'issued_at' => $c->issued_at->toIso8601String(),
             ]);
 

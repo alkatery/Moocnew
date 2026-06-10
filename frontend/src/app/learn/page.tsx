@@ -33,7 +33,13 @@ export default function MyLearningPage() {
         title={t('learn.title')}
         subtitle="تابع تقدّمك وأكمل من حيث توقفت."
         crumbs={[{ label: t('learn.title') }]}
-        actions={<Link className="btn btn-ghost" href="/catalog">{t('nav.catalog')}</Link>}
+        actions={
+          <>
+            <Link className="btn btn-ghost" href="/plans">{t('nav.plans')}</Link>
+            <Link className="btn btn-ghost" href="/certificates">{t('nav.certificates')}</Link>
+            <Link className="btn btn-ghost" href="/catalog">{t('nav.catalog')}</Link>
+          </>
+        }
       />
 
       {items.length === 0 ? (

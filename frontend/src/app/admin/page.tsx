@@ -52,7 +52,10 @@ export default function AdminPage() {
     <section>
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <h1>{t('admin.title')}</h1>
-        <Link className="btn btn-ghost" href="/admin/news">{t('admin.news')}</Link>
+        <div className="page-actions">
+          <Link className="btn btn-ghost" href="/admin/paths">إدارة المسارات</Link>
+          <Link className="btn btn-ghost" href="/admin/news">{t('admin.news')}</Link>
+        </div>
       </div>
       {error && <p className="error mb-4">{error}</p>}
 

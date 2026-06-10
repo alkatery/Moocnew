@@ -27,6 +27,7 @@ export function Nav() {
       <div className="inner">
         <Link href="/"><Logo /></Link>
         <Link href="/catalog">{t('nav.catalog')}</Link>
+        <Link href="/paths">{t('nav.paths')}</Link>
         <Link href="/news">{t('nav.news')}</Link>
         {!user && <Link className="hidden sm:inline" href="/about">{t('nav.about')}</Link>}
         {!user && <Link className="hidden sm:inline" href="/contact">{t('nav.contact')}</Link>}

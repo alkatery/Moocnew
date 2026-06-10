@@ -29,7 +29,7 @@
         <div class="subtitle">تشهد المنصة بأن</div>
 
         <div class="holder">{{ $holderName }}</div>
-        <div class="subtitle">قد أتمّ بنجاح دورة</div>
+        <div class="subtitle">قد أتمّ بنجاح {{ $subjectLabel ?? 'دورة' }}</div>
         <div class="course">{{ $courseTitle }}</div>
 
         <div class="meta">

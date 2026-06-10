@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
-import type { Category, Course, NewsPost, Paginated, PlatformStats } from '@/lib/types';
+import type { Category, Course, NewsPost, Paginated, PathSummary, PlatformStats } from '@/lib/types';
 import { formatCount } from '@/lib/format';
 import { t } from '@/i18n/dictionary';
 import { CourseCard } from '@/components/CourseCard';
@@ -66,6 +66,7 @@ export default function HomePage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
   const [news, setNews] = useState<NewsPost[]>([]);
+  const [paths, setPaths] = useState<PathSummary[]>([]);
 
   useEffect(() => {
     void api<{ data: PlatformStats }>('/platform/stats', { auth: false })
@@ -76,6 +77,8 @@ export default function HomePage() {
       .then((r) => setCourses(r.data)).catch(() => undefined);
     void api<Paginated<NewsPost>>('/content/news?per_page=3', { auth: false })
       .then((r) => setNews(r.data)).catch(() => undefined);
+    void api<Paginated<PathSummary>>('/learning/paths', { auth: false })
+      .then((r) => setPaths(r.data.slice(0, 3))).catch(() => undefined);
   }, []);
 
   function search(e: React.FormEvent) {
@@ -190,6 +193,38 @@ export default function HomePage() {
           </div>
         )}
       </section>
+
+      {/* Learning paths */}
+      {paths.length > 0 && (
+        <section className="section">
+          <div className="section-head">
+            <h2>المسارات التخصصية</h2>
+            <Link className="text-sm font-semibold" href="/paths">{t('common.viewAll')}</Link>
+            <p>سلاسل دورات مرتّبة على مستويات، تنتهي بشهادة مسار موثّقة.</p>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {paths.map((p) => (
+              <Link key={p.id} href={`/paths/${p.slug}`}
+                className="card mb-0 flex flex-col transition hover:-translate-y-0.5 hover:border-brand-300 hover:shadow-lg">
+                <div className="flex items-center gap-3">
+                  <span className="icon-tile">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
+                      <path d="M4 5h6v6H4zM14 13h6v6h-6zM10 8h7v5" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
+                    </svg>
+                  </span>
+                  <strong className="line-clamp-1 text-slate-900">{p.title}</strong>
+                </div>
+                <p className="mt-2 line-clamp-2 flex-1 text-sm text-slate-500">{p.summary}</p>
+                <div className="mt-3 flex items-center gap-2 text-xs">
+                  <span className="badge">{p.levels_count} مستويات</span>
+                  <span className="badge">{p.courses_count} دورات</span>
+                  <span className="badge bg-emerald-50 text-emerald-700">شهادة مسار</span>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Why us */}
       <section className="section">

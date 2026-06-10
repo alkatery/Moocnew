@@ -3,9 +3,11 @@ import { t } from '@/i18n/dictionary';
 
 const learnLinks = [
   { href: '/catalog', label: 'كل الدورات' },
+  { href: '/paths', label: 'المسارات التخصصية' },
+  { href: '/plans', label: 'خططي الدراسية' },
+  { href: '/certificates', label: 'شهاداتي' },
   { href: '/catalog?pricing=free', label: 'المكتبة المجانية' },
   { href: '/news', label: 'أخبار المنصة' },
-  { href: '/calendar', label: 'الجلسات المباشرة' },
 ];
 
 const platformLinks = [

@@ -29,6 +29,9 @@ use App\Http\Controllers\Api\V1\Enrollment\LessonProgressController;
 use App\Http\Controllers\Api\V1\Enrollment\MediaStreamController;
 use App\Http\Controllers\Api\V1\Enrollment\PlaybackController;
 use App\Http\Controllers\Api\V1\HealthController;
+use App\Http\Controllers\Api\V1\Learning\PathController;
+use App\Http\Controllers\Api\V1\Learning\PathEnrollmentController;
+use App\Http\Controllers\Api\V1\Learning\StudyPlanController;
 use App\Http\Controllers\Api\V1\Notification\NotificationController;
 use App\Http\Controllers\Api\V1\Notification\PreferenceController;
 use App\Http\Controllers\Api\V1\Platform\PublicStatsController;
@@ -130,6 +133,39 @@ Route::prefix('catalog')->name('api.catalog.')->group(function () {
         Route::post('sections/{section}/lessons', [LessonController::class, 'store'])->name('lessons.store');
         Route::patch('lessons/{lesson}', [LessonController::class, 'update'])->name('lessons.update');
         Route::delete('lessons/{lesson}', [LessonController::class, 'destroy'])->name('lessons.destroy');
+    });
+});
+
+/*
+|--------------------------------------------------------------------------
+| Learning — specialised paths & personal study plans
+|--------------------------------------------------------------------------
+| Paths bundle courses into ordered levels taken in sequence and end with
+| a path certificate; study plans are the learner's own course lists with
+| recurring reminders until completion.
+*/
+Route::prefix('learning')->name('api.learning.')->group(function () {
+    Route::get('paths', [PathController::class, 'index'])->name('paths.index');
+    Route::get('paths/{path}', [PathController::class, 'show'])->name('paths.show');
+
+    Route::middleware('auth:sanctum')->group(function () {
+        // Staff authoring (paths.manage).
+        Route::post('paths', [PathController::class, 'store'])->name('paths.store');
+        Route::patch('paths/{path}', [PathController::class, 'update'])->name('paths.update');
+        Route::delete('paths/{path}', [PathController::class, 'destroy'])->name('paths.destroy');
+        Route::put('paths/{path}/items', [PathController::class, 'syncItems'])->name('paths.items.sync');
+
+        // Learner membership & sequential course enrollment.
+        Route::get('my/paths', [PathEnrollmentController::class, 'mine'])->name('paths.mine');
+        Route::post('paths/{path}/enroll', [PathEnrollmentController::class, 'enroll'])->name('paths.enroll');
+        Route::post('paths/{path}/courses/{course}/enroll', [PathEnrollmentController::class, 'enrollCourse'])
+            ->name('paths.courses.enroll');
+
+        // Personal study plans (owner-only).
+        Route::get('study-plans', [StudyPlanController::class, 'index'])->name('plans.index');
+        Route::post('study-plans', [StudyPlanController::class, 'store'])->name('plans.store');
+        Route::patch('study-plans/{plan}', [StudyPlanController::class, 'update'])->name('plans.update');
+        Route::delete('study-plans/{plan}', [StudyPlanController::class, 'destroy'])->name('plans.destroy');
     });
 });
 

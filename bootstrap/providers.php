@@ -5,6 +5,7 @@ use App\Contexts\Certification\Infrastructure\Providers\CertificationServiceProv
 use App\Contexts\Commerce\Infrastructure\Providers\CommerceServiceProvider;
 use App\Contexts\Enrollment\Infrastructure\Providers\EnrollmentServiceProvider;
 use App\Contexts\Identity\Infrastructure\Providers\IdentityServiceProvider;
+use App\Contexts\Learning\Infrastructure\Providers\LearningServiceProvider;
 use App\Contexts\Notification\Infrastructure\Providers\NotificationServiceProvider;
 use App\Contexts\Platform\Infrastructure\Providers\PlatformServiceProvider;
 use App\Contexts\Scheduling\Infrastructure\Providers\SchedulingServiceProvider;
@@ -20,4 +21,5 @@ return [
     NotificationServiceProvider::class,
     CommerceServiceProvider::class,
     SchedulingServiceProvider::class,
+    LearningServiceProvider::class,
 ];

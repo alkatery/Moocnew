@@ -118,6 +118,72 @@ export interface PlatformStats {
   enrollments: number;
 }
 
+export interface PathSummary {
+  id: number;
+  title: string;
+  slug: string;
+  summary: string | null;
+  published_at: string | null;
+  courses_count: number;
+  levels_count: number;
+}
+
+export interface PathCourseRef {
+  id: number;
+  title: string;
+  slug: string;
+  summary: string | null;
+  pricing_type: string;
+  price_minor: number;
+  instructor: string | null;
+}
+
+export interface PathLevelItem {
+  course: PathCourseRef;
+  position: number;
+  state: 'completed' | 'unlocked' | 'locked';
+}
+
+export interface PathLevel {
+  level: number;
+  items: PathLevelItem[];
+}
+
+export interface PathDetail {
+  id: number;
+  title: string;
+  slug: string;
+  summary: string | null;
+  description: string | null;
+  published_at: string | null;
+  levels: PathLevel[];
+  viewer: {
+    enrolled: boolean;
+    completed: boolean;
+    progress: { completed: number; total: number; percent: number } | null;
+  };
+}
+
+export interface StudyPlanView {
+  id: number;
+  title: string;
+  cadence_days: number;
+  target_date: string | null;
+  status: 'active' | 'completed';
+  completed_at: string | null;
+  progress: { completed: number; total: number; percent: number };
+  next_course: { id: number; title: string; slug: string } | null;
+  items: { course: { id: number; title: string; slug: string }; completed: boolean }[];
+}
+
+export interface CertificateView {
+  serial: string;
+  verification_uuid: string;
+  subject_type: 'course' | 'learning_path';
+  course_title: string;
+  issued_at: string;
+}
+
 export interface ContactMessageItem {
   id: number;
   name: string;
