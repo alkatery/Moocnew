@@ -443,3 +443,38 @@ export interface SurveyDetailSummary {
   count: number;
   comments: SurveyComment[];
 }
+
+// ---- C1: Gradebook للمعلّم (instructor gradebook) ----
+
+/** عمود واحد في جدول الدرجات: اختبار أو واجب */
+export interface GradebookColumn {
+  key: string;           // "quiz:3" | "assignment:5"
+  type: 'quiz' | 'assignment';
+  id: number;
+  title: string;
+  pass_mark: number | null;
+  weight: number;
+}
+
+/** خلية درجة طالب في تقييم معيّن */
+export interface GradebookCell {
+  score: number | null;  // نسبة 0–100 أو null (لم يُرصد/لم يُسلَّم/لم يُصحَّح)
+  passed: boolean;
+}
+
+/** صف طالب واحد في جدول الدرجات */
+export interface GradebookRow {
+  user_id: number;
+  name: string;
+  enrollment_status: 'active' | 'completed';
+  overall: number | null;           // الدرجة الكلية الموزونة أو null إن لا تقييمات
+  passed: boolean;
+  cells: Record<string, GradebookCell>; // مفاتيحها = column.key
+}
+
+/** استجابة GET /api/v1/assessment/courses/{slug}/gradebook — حقل data */
+export interface InstructorGradebook {
+  course: { id: number; title: string; passing_grade: number };
+  columns: GradebookColumn[];
+  rows: GradebookRow[];
+}

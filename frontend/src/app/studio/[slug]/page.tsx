@@ -10,6 +10,7 @@ import { LessonTypeIcon } from '@/components/LessonTypeIcon';
 import { HelpGuide } from '@/components/HelpGuide';
 import { LessonEditor } from '@/components/studio/LessonEditor';
 import { AssessmentsPanel } from '@/components/studio/AssessmentsPanel';
+import { InstructorGradebook } from '@/components/studio/InstructorGradebook';
 import { badgeTone, statusLabel } from '@/lib/labels';
 import { SuccessMsg } from '@/components/StatusMessage';
 
@@ -24,7 +25,7 @@ const LESSON_KINDS: { value: LessonKind; label: string }[] = [
 export default function ManageCoursePage() {
   const { slug } = useParams<{ slug: string }>();
   const [course, setCourse] = useState<Course | null>(null);
-  const [tab, setTab] = useState<'curriculum' | 'assessments'>('curriculum');
+  const [tab, setTab] = useState<'curriculum' | 'assessments' | 'gradebook'>('curriculum');
   const [sectionTitle, setSectionTitle] = useState('');
   const [passingGrade, setPassingGrade] = useState('0');
   const [note, setNote] = useState('');
@@ -166,8 +167,13 @@ export default function ManageCoursePage() {
       />
 
       {/* G6: role="tablist"/"tab"/aria-selected — G3: slate-400→slate-500 للتبويب غير النشط */}
+      {/* C1: أضيف تبويب ثالث «درجات الطلاب» بنفس نمط a11y القائم */}
       <div className="mb-6 flex gap-2 border-b border-slate-200" role="tablist" aria-label="أقسام الاستوديو">
-        {([['curriculum', 'المنهج'], ['assessments', 'التقييمات والدرجات']] as const).map(([k, label]) => (
+        {([
+          ['curriculum',  'المنهج'],
+          ['assessments', 'التقييمات والدرجات'],
+          ['gradebook',   t('gradebook.tab')],
+        ] as const).map(([k, label]) => (
           <button
             key={k}
             role="tab"
@@ -187,6 +193,12 @@ export default function ManageCoursePage() {
       <div id="tabpanel-assessments" role="tabpanel" hidden={tab !== 'assessments'}>
         <AssessmentsPanel courseSlug={slug} sections={sections} />
       </div>
+
+      {/* C1: tabpanel درجات الطلاب — يُحمَّل عند فتح التبويب */}
+      <div id="tabpanel-gradebook" role="tabpanel" hidden={tab !== 'gradebook'}>
+        {tab === 'gradebook' && <InstructorGradebook courseSlug={slug} />}
+      </div>
+
       <div id="tabpanel-curriculum" role="tabpanel" hidden={tab !== 'curriculum'}>
         <div className="grid gap-6 lg:grid-cols-3">
           <div className="lg:order-2">

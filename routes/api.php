@@ -16,6 +16,7 @@ use App\Http\Controllers\Api\V1\Analytics\AnalyticsController;
 use App\Http\Controllers\Api\V1\Analytics\PresenceController;
 use App\Http\Controllers\Api\V1\Assessment\AssignmentController;
 use App\Http\Controllers\Api\V1\Assessment\AssignmentSubmissionController;
+use App\Http\Controllers\Api\V1\Assessment\CourseGradebookController;
 use App\Http\Controllers\Api\V1\Assessment\CourseGradeController;
 use App\Http\Controllers\Api\V1\Assessment\QuestionController;
 use App\Http\Controllers\Api\V1\Assessment\QuizAttemptController;
@@ -340,6 +341,9 @@ Route::middleware('auth:sanctum')->prefix('assessment')->name('api.assessment.')
 
     // The learner's gradebook for a course (overall grade + per-assessment).
     Route::get('courses/{course}/grade', CourseGradeController::class)->name('courses.grade');
+
+    // مصفوفة الدرجات الكاملة للطاقم (C1 — Gradebook للمعلّم).
+    Route::get('courses/{course}/gradebook', CourseGradebookController::class)->name('courses.gradebook');
 });
 
 /*
