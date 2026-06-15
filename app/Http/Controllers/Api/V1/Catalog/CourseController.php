@@ -73,7 +73,15 @@ final class CourseController extends Controller
     {
         abort_unless($request->user()?->can('view', $course) ?? $course->status === CourseStatus::Published, 404);
 
-        $course->load(['category', 'instructor', 'sections.lessons'])
+        $course->load([
+            'category',
+            'instructor',
+            'sections.lessons',
+            // E1: المتطلّبات السابقة المنشورة فقط (يقرأها زر الالتحاق في الواجهة).
+            'prerequisites' => fn ($q) => $q
+                ->where('status', CourseStatus::Published->value)
+                ->select(['courses.id', 'courses.title', 'courses.slug']),
+        ])
             ->loadAvg('reviews', 'rating')
             ->loadCount('reviews');
 

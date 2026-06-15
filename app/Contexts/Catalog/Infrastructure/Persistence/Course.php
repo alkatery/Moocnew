@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Laravel\Scout\Searchable;
@@ -114,6 +115,22 @@ final class Course extends Model
     public function reviews(): HasMany
     {
         return $this->hasMany(CourseReview::class);
+    }
+
+    /**
+     * المتطلّبات السابقة لهذا المقرر — many-to-many ذاتية.
+     * الطالب يجب أن يُكمل كلّ مقرر في هذه القائمة قبل الالتحاق.
+     *
+     * @return BelongsToMany<self, $this>
+     */
+    public function prerequisites(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            self::class,
+            'course_prerequisites',
+            'course_id',
+            'prerequisite_course_id',
+        );
     }
 
     /**

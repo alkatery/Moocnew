@@ -32,6 +32,7 @@ use App\Http\Controllers\Api\V1\Auth\ResendVerificationController;
 use App\Http\Controllers\Api\V1\Auth\VerifyEmailController;
 use App\Http\Controllers\Api\V1\Catalog\CategoryController;
 use App\Http\Controllers\Api\V1\Catalog\CourseController;
+use App\Http\Controllers\Api\V1\Catalog\CoursePrerequisiteController;
 use App\Http\Controllers\Api\V1\Catalog\CoursePublishingController;
 use App\Http\Controllers\Api\V1\Catalog\LessonController;
 use App\Http\Controllers\Api\V1\Catalog\LessonTranscriptController;
@@ -219,6 +220,12 @@ Route::prefix('catalog')->name('api.catalog.')->group(function () {
         Route::post('courses', [CourseController::class, 'store'])->name('courses.store');
         Route::patch('courses/{course}', [CourseController::class, 'update'])->name('courses.update');
         Route::delete('courses/{course}', [CourseController::class, 'destroy'])->name('courses.destroy');
+
+        // E1 — المتطلّبات السابقة (تأليف — CoursePolicy::update).
+        Route::post('courses/{course}/prerequisites', [CoursePrerequisiteController::class, 'store'])
+            ->name('courses.prerequisites.store');
+        Route::delete('courses/{course}/prerequisites/{prerequisite}', [CoursePrerequisiteController::class, 'destroy'])
+            ->name('courses.prerequisites.destroy');
 
         // Publishing workflow.
         Route::post('courses/{course}/submit', [CoursePublishingController::class, 'submit'])->name('courses.submit');

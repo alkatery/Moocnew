@@ -5,6 +5,18 @@ export interface Category {
   parent_id?: number | null;
 }
 
+// ---- E1: المتطلّبات السابقة ----
+
+/**
+ * متطلّب سابق — عنصر مصفوفة prerequisites في CourseResource (ثابت، بلا حالة لكل مستخدم).
+ * يطابق شكل §1.أ من عقد E1: GET /api/v1/catalog/courses/{slug}
+ */
+export interface CoursePrerequisite {
+  id: number;
+  title: string;
+  slug: string;
+}
+
 export interface Course {
   id: number;
   title: string;
@@ -21,6 +33,8 @@ export interface Course {
   sections?: Section[];
   instructor?: { id: number; name: string };
   category?: Category | null;
+  /** قائمة المتطلّبات السابقة — يأتي عند GET /catalog/courses/{slug} فقط (لا في القوائم) */
+  prerequisites?: CoursePrerequisite[];
 }
 
 export interface Section {

@@ -12,6 +12,7 @@ import { LessonEditor } from '@/components/studio/LessonEditor';
 import { AssessmentsPanel } from '@/components/studio/AssessmentsPanel';
 import { InstructorGradebook } from '@/components/studio/InstructorGradebook';
 import { CommunicationsPanel } from '@/components/studio/CommunicationsPanel';
+import { PrerequisitesManager } from '@/components/studio/PrerequisitesManager';
 import { badgeTone, statusLabel } from '@/lib/labels';
 import { SuccessMsg } from '@/components/StatusMessage';
 
@@ -255,6 +256,9 @@ export default function ManageCoursePage() {
               </p>
               <button className="btn w-full">{t('common.save')}</button>
             </form>
+
+            {/* E1: إدارة المتطلّبات السابقة (تأليف) */}
+            <PrerequisitesManager courseSlug={slug} courseId={course.id} initial={course.prerequisites ?? []} />
 
             <form className="card mb-0" onSubmit={(e) => void addSection(e)}>
               <strong className="text-slate-900">{t('studio.addSection')}</strong>

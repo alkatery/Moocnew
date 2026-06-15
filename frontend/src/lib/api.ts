@@ -21,6 +21,8 @@ export class ApiError extends Error {
     message: string,
     public errors?: Record<string, string[]>,
     public code?: string,
+    /** الجسم الكامل للاستجابة — يُستخدم لقراءة حقول غير مقنّنة مثل prerequisites في 422 (E1) */
+    public body?: Record<string, unknown>,
   ) {
     super(message);
   }
@@ -51,6 +53,7 @@ export async function api<T = unknown>(
       (data as any)?.message ?? 'Request failed',
       (data as any)?.errors,
       (data as any)?.code,
+      data as Record<string, unknown>,
     );
   }
   return data as T;

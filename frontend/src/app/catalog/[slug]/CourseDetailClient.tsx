@@ -2,13 +2,14 @@
 
 // جزيرة العميل: تحوي كل JSX التفاعلي ومنطق enroll/busy/msg/useAuth/useRouter.
 // الدورة تأتي كـ prop جاهزة من الغلاف الخادمي — لا جلب هنا ولا حارس تحميل.
+// E1: أُضيف منطق المتطلّبات السابقة — حساب محلي من GET /enrollments.
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { api, ApiError } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
-import type { Course } from '@/lib/types';
+import type { Course, CoursePrerequisite, Enrollment } from '@/lib/types';
 import { formatMinor } from '@/lib/format';
 import { t } from '@/i18n/dictionary';
 import { LessonTypeIcon } from '@/components/LessonTypeIcon';
@@ -23,25 +24,91 @@ const BASE_PERKS = [
   'مجتمع نقاش بإشراف المدرّب',
 ];
 
+// ---- E1: رمز إتمام المتطلّب ----
+function CheckIcon() {
+  return (
+    <svg
+      className="inline-block shrink-0 text-emerald-600"
+      width="15"
+      height="15"
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden
+    >
+      <path
+        d="m5 13 4 4 10-10"
+        stroke="currentColor"
+        strokeWidth="2.4"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 export function CourseDetailClient({ course }: { course: Course }) {
   const { user } = useAuth();
   const router = useRouter();
   const [msg, setMsg] = useState('');
   const [busy, setBusy] = useState(false);
 
+  // ---- E1: قائمة الالتحاقات المكتملة للمتعلّم (Set<courseId>) ----
+  // تُجلب مرة واحدة عند تحميل الجزيرة لمستخدم مصادَق فقط.
+  const [completedIds, setCompletedIds] = useState<Set<number>>(new Set());
+  const [enrollsLoaded, setEnrollsLoaded] = useState(false);
+
+  useEffect(() => {
+    // لا جلب إن لم يكن المستخدم مسجّلاً
+    if (!user) { setEnrollsLoaded(true); return; }
+    api<{ data: Enrollment[] }>('/enrollments')
+      .then((res) => {
+        const ids = new Set(
+          res.data
+            .filter((e) => e.status === 'completed')
+            .map((e) => e.course_id),
+        );
+        setCompletedIds(ids);
+      })
+      .catch(() => {
+        // إن فشل الجلب، يبقى الزرّ مفعّلاً — الخادم يحمي عند الإرسال (§4.أ)
+      })
+      .finally(() => setEnrollsLoaded(true));
+  }, [user]);
+
+  // ---- E1: حساب المتطلّبات الناقصة ----
+  const prerequisites: CoursePrerequisite[] = course.prerequisites ?? [];
+  // المتطلّبات الناقصة — تُحسب فقط بعد تحميل الالتحاقات
+  const missingPrereqs: CoursePrerequisite[] = enrollsLoaded && user
+    ? prerequisites.filter((p) => !completedIds.has(p.id))
+    : [];
+
+  // الزرّ معطّل إن وُجدت متطلّبات ناقصة (ومستخدم مصادَق وبيانات محمّلة)
+  const isBlocked = enrollsLoaded && user !== null && missingPrereqs.length > 0;
+
+  // ---- E1: معالجة جسم 422 من الالتحاق ----
+  // يُستخرج من err.body?.prerequisites قائمة المقررات الناقصة (§1.د)
+  const [prereqErrors, setPrereqErrors] = useState<CoursePrerequisite[]>([]);
+
   async function enroll() {
     if (!user) { router.push('/login'); return; }
-    setBusy(true); setMsg('');
+    if (isBlocked) return; // حماية مزدوجة — الزرّ مغلق أصلاً
+    setBusy(true); setMsg(''); setPrereqErrors([]);
     try {
       await api(`/catalog/courses/${course.slug}/enroll`, { method: 'POST' });
       router.push(`/learn/${course.slug}`);
     } catch (err) {
-      // Surface the real reason so issues are diagnosable in a trial rather
-      // than hidden behind a generic message (network/CORS errors are not
-      // ApiError instances and carry their detail on `.message`).
-      const detail = err instanceof ApiError ? err.message : err instanceof Error ? err.message : String(err);
-      setMsg(detail || t('common.error'));
-      if (!(err instanceof ApiError)) console.error('enroll failed:', err);
+      if (err instanceof ApiError) {
+        setMsg(err.message || t('common.error'));
+        // E1: 422 مع حقل prerequisites في الجسم → عرض روابط المقررات الناقصة
+        const body = err.body as { prerequisites?: CoursePrerequisite[] } | undefined;
+        if (err.status === 422 && Array.isArray(body?.prerequisites)) {
+          setPrereqErrors(body.prerequisites);
+        }
+      } else {
+        const detail = err instanceof Error ? err.message : String(err);
+        setMsg(detail || t('common.error'));
+        console.error('enroll failed:', err);
+      }
     } finally { setBusy(false); }
   }
 
@@ -103,8 +170,48 @@ export function CourseDetailClient({ course }: { course: Course }) {
       </div>
 
       <div className="grid gap-6 md:grid-cols-3">
-        {/* Curriculum */}
+        {/* Curriculum + E1: قسم المتطلّبات السابقة */}
         <div className="md:col-span-2">
+
+          {/* ---- E1: قسم المتطلّبات السابقة (يظهر إن وُجدت متطلّبات) ---- */}
+          {prerequisites.length > 0 && (
+            <div className="card mb-6" aria-label={t('prereq.title')}>
+              <h2 className="mb-3 text-lg font-bold text-slate-900">{t('prereq.title')}</h2>
+              <ul className="space-y-2">
+                {prerequisites.map((p) => {
+                  const done = completedIds.has(p.id);
+                  return (
+                    <li key={p.id} className="flex items-center gap-3 text-sm">
+                      {/* شارة الحالة: مكتمل أو مطلوب */}
+                      {done ? (
+                        <span
+                          className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700"
+                          aria-label={t('prereq.completed')}
+                        >
+                          <CheckIcon />
+                          {t('prereq.completed')}
+                        </span>
+                      ) : (
+                        <span
+                          className="inline-flex items-center rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700"
+                          aria-label={t('prereq.required')}
+                        >
+                          {t('prereq.required')}
+                        </span>
+                      )}
+                      <Link
+                        href={`/catalog/${p.slug}`}
+                        className="text-brand-700 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-600"
+                      >
+                        {p.title}
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          )}
+
           <h2 className="mb-4 text-2xl font-extrabold">محتوى الدورة</h2>
           {course.sections?.length ? course.sections.map((s, si) => (
             <div key={s.id} className="card p-0">
@@ -144,9 +251,63 @@ export function CourseDetailClient({ course }: { course: Course }) {
             {/* G5: role="alert" عبر ErrorMsg */}
             <ErrorMsg msg={msg} />
 
+            {/* ---- E1: روابط المقررات الناقصة عند 422 من الخادم ---- */}
+            {prereqErrors.length > 0 && (
+              <div className="mb-3 rounded-lg bg-amber-50 p-3 text-sm text-amber-800" role="alert" aria-live="assertive">
+                <p className="mb-2 font-semibold">يجب إكمال المتطلّبات التالية أولاً:</p>
+                <ul className="space-y-1">
+                  {prereqErrors.map((p) => (
+                    <li key={p.id}>
+                      <Link
+                        href={`/catalog/${p.slug}`}
+                        className="underline hover:text-amber-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-700"
+                      >
+                        {p.title}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* ---- E1: رسالة ومتطلّبات ناقصة (حساب محلي) ---- */}
+            {isBlocked && (
+              <div className="mb-3 rounded-lg bg-slate-50 p-3 text-sm text-slate-700">
+                <p className="mb-2 font-semibold">المتطلّبات الناقصة للالتحاق:</p>
+                <ul className="space-y-1">
+                  {missingPrereqs.map((p) => (
+                    <li key={p.id}>
+                      <Link
+                        href={`/catalog/${p.slug}`}
+                        className="text-brand-700 underline hover:text-brand-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-600"
+                      >
+                        {p.title}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
             <div className="page-actions flex-col">
-              <button className="btn w-full" onClick={() => void enroll()} disabled={busy}>
-                {busy ? t('common.loading') : t('course.enroll')}
+              {/*
+                E1: الزرّ المعطّل عند وجود متطلّبات ناقصة.
+                — disabled: يمنع التفعيل فعلياً
+                — aria-disabled="true": يُعلم قارئ الشاشة
+                — نصّ سبب واضح مرئي «أكمل المتطلّبات أولاً» (لا اعتماد على اللون)
+                — opacity-50 + cursor-not-allowed: تباين AA مرئي
+              */}
+              <button
+                className={`btn w-full ${isBlocked ? 'cursor-not-allowed opacity-50' : ''}`}
+                onClick={() => void enroll()}
+                disabled={busy || isBlocked}
+                aria-disabled={isBlocked ? 'true' : undefined}
+              >
+                {busy
+                  ? t('common.loading')
+                  : isBlocked
+                    ? t('prereq.blockedCta')
+                    : t('course.enroll')}
               </button>
               {course.pricing_type !== 'free' && (
                 <Link className="btn btn-ghost w-full" href={`/checkout/${course.slug}`}>{t('course.buy')}</Link>
