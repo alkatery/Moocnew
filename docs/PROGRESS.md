@@ -39,7 +39,11 @@
 - ✅ **D3 — ملخّصات الإشعارات المجدولة** (موقّع): عمودا digest_frequency/last_digest_at · أمر `DispatchNotificationDigests` (يجمّع notifications بعد آخر ملخّص، لا فارغ، idempotent، daily/weekly بتوقيت المستخدم) · `DigestNotification` مُطابور يحترم opt-out · منتقي تكرار في /notifications.
 - ✅ **D4 — البحث في النصّ + ضوابط المشغّل** (موقّع، أمامي بحت): TranscriptSearch (بحث/تظليل `<mark>` آمن + aria-live، لا قفز زمني) · VideoControls (سرعة + استئناف من video_position + «من البداية»، لا تنزيل/جودة بنموذج التشغيل الموقّع) · LessonNav (سابق/تالٍ بحدود). 33 اختباراً.
 - **✅ المرحلة D (إثراء التعلّم) — مكتملة وموقّعة بالكامل (D1–D4).**
-- **▶️ التالي: المرحلة E (عمق التأليف) — الأخيرة.**
+## المرحلة 4 — التنفيذ (المرحلة E: عمق التأليف) ▶️
+- ✅ **E1 — المتطلّبات السابقة** (موقّع): جدول ربط ذاتي + استثناء Domain نقي PrerequisitesNotMet + رفض في EnrollmentService (مجاني+مدفوع، تجاوز للطاقم) + 422 بقائمة المتطلّبات + تأليف (PrerequisitesManager) + show يكشفها. الإكمال=Completed. 11 اختباراً. (امتحان الدخول مؤجَّل P3.)
+- ⏭️ E2 — جدولة ظهور الأقسام/الدروس · E3 — التأليف الجماعي · E4 — أنواع أسئلة إضافية · E5 — مكتبات المحتوى.
+
+> ملاحظة تشغيل: تعطّل PostgreSQL/Redis عابراً عند إعادة تشغيل الحاوية؛ يُعاد بـ `pg_ctlcluster 16 main start` و`redis-server --daemonize yes` قبل pest.
 
 > ملاحظات نشر/تأجيل:
 > - في الإنتاج يجب أن يكون `APP_URL` عنوان الـ API العام كي يصحّ توقيع رابط التحقّق. `FRONTEND_URL` يضبط صفحة هبوط التحقّق.
@@ -67,3 +71,4 @@
 | 2026-06-15 | D2 — منتدى (تمييز/متابعة) | accepted_post_id + forum_subscriptions + ForumReplyNotification مُطابور (opt-out، يتجنّب الكاتب) + توسعة show + أزرار aria-pressed وشارة إجابة مقبولة | pint نظيف · pest 427/427 (1514) · front typecheck/53/build ✅ | ✅ موقّع (مستقلّ) | D3 |
 | 2026-06-15 | D3 — ملخّصات مجدولة | digest_frequency/last_digest_at + DispatchNotificationDigests (idempotent، لا فارغ، daily/weekly) + DigestNotification مُطابور (opt-out) + منتقي تكرار /notifications | pint نظيف · pest 448/448 (1564) · front typecheck/74/build ✅ | ✅ موقّع (مستقلّ) | D4 |
 | 2026-06-15 | D4 — نصّ + ضوابط المشغّل | TranscriptSearch (بحث/تظليل آمن + aria-live، لا قفز) · VideoControls (سرعة + استئناف، لا تنزيل/جودة) · LessonNav (سابق/تالٍ) · أمامي بحت | typecheck نظيف · 107/107 · build ✅ (لا تغيير خلفي) | ✅ موقّع (مستقلّ) | المرحلة E |
+| 2026-06-15 | E1 — المتطلّبات السابقة | course_prerequisites + PrerequisitesNotMet (Domain نقي) + رفض EnrollmentService (مجاني+مدفوع، تجاوز طاقم) + 422 بالقائمة + تأليف PrerequisitesManager + show يكشفها | pint نظيف · pest 459/459 (1589) · front typecheck/107/build ✅ | ✅ موقّع (مستقلّ) | E2 |
