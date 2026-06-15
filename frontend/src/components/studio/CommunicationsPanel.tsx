@@ -98,7 +98,7 @@ function AnnouncementForm({ courseSlug }: { courseSlug: string }) {
   return (
     <div className="card mb-0">
       {/* عنوان القسم */}
-      <strong className="text-slate-900">{t('comm.announce.title')}</strong>
+      <h3 className="text-base font-bold text-slate-900">{t('comm.announce.title')}</h3>
       <p className="mb-4 text-xs text-slate-500">
         يظهر للمتعلّمين الملتحقين داخل التطبيق وعبر البريد (حسب تفضيلاتهم).
       </p>
@@ -206,7 +206,7 @@ function AnnouncementList({ courseSlug }: { courseSlug: string }) {
 
   return (
     <div className="card mb-0">
-      <strong className="text-slate-900">الإعلانات السابقة</strong>
+      <h3 className="text-base font-bold text-slate-900">الإعلانات السابقة</h3>
 
       {/* حالة التحميل */}
       {loading && (
@@ -313,7 +313,7 @@ function BulkEmailForm({ courseSlug }: { courseSlug: string }) {
   return (
     <div className="card mb-0">
       {/* عنوان القسم */}
-      <strong className="text-slate-900">{t('comm.email.title')}</strong>
+      <h3 className="text-base font-bold text-slate-900">{t('comm.email.title')}</h3>
       <p className="mb-4 text-xs text-slate-500">
         يُرسَل بريد إلكتروني لكل المتعلّمين النشطين (عبر الطابور، يحترم تفضيلات opt-out لكل متعلّم).
       </p>
