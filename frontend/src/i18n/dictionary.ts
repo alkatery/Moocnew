@@ -283,6 +283,14 @@ const dictionaries = {
     'community.subscribed': 'تتابع هذا الموضوع — ستُشعَر بالردود الجديدة',
     'community.acceptError': 'تعذّر تمييز الإجابة',
     'community.subscribeError': 'تعذّر تحديث المتابعة',
+    // D3: ملخّصات الإشعارات المجدولة
+    'notifications.digestTitle': 'ملخّص النشاط عبر البريد',
+    'notifications.digestOff': 'فوري — دون تجميع',
+    'notifications.digestDaily': 'ملخّص يومي',
+    'notifications.digestWeekly': 'ملخّص أسبوعي',
+    'notifications.digestHint': 'يومي: بريد واحد بنشاطك اليومي. أسبوعي: ملخّص كلّ أحد. فوري: تصلك الإشعارات لحظياً دون تجميع.',
+    'notifications.digestSaved': 'تم تحديث تكرار الملخّص.',
+    'notifications.digestError': 'تعذّر تحديث تكرار الملخّص',
   },
   en: {
     'app.name': 'MOOC Platform',
@@ -563,6 +571,14 @@ const dictionaries = {
     'community.subscribed': 'You are following this thread — you will be notified of new replies',
     'community.acceptError': 'Could not mark the answer',
     'community.subscribeError': 'Could not update follow status',
+    // D3: Scheduled notification digests
+    'notifications.digestTitle': 'Activity digest by email',
+    'notifications.digestOff': 'Instant — no digest',
+    'notifications.digestDaily': 'Daily digest',
+    'notifications.digestWeekly': 'Weekly digest',
+    'notifications.digestHint': 'Daily: one email with your daily activity. Weekly: a digest every Sunday. Instant: notifications arrive immediately, no batching.',
+    'notifications.digestSaved': 'Digest frequency updated.',
+    'notifications.digestError': 'Could not update digest frequency',
   },
 } as const;
 

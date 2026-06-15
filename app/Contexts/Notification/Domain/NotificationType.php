@@ -19,6 +19,7 @@ enum NotificationType: string
     case CourseAnnouncement = 'course_announcement';  // C3: إعلانات المقرر
     case CourseBulkEmail = 'course_bulk_email';        // C3: رسائل المعلّم الجماعية
     case ForumReply = 'forum_reply';                   // D2: ردود المنتدى
+    case Digest = 'digest';                            // D3: ملخّص النشاط الدوري
 
     public function label(): string
     {
@@ -32,6 +33,7 @@ enum NotificationType: string
             self::CourseAnnouncement => 'إعلانات المقرر',
             self::CourseBulkEmail => 'رسائل المعلّم',
             self::ForumReply => 'ردود المنتدى',
+            self::Digest => 'ملخّص النشاط',
         };
     }
 }

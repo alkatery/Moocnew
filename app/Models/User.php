@@ -39,6 +39,8 @@ class User extends Authenticatable implements MustVerifyEmail
         'locale',
         'timezone',
         'disabled_at',
+        'digest_frequency', // D3: تردّد ملخّص الإشعارات
+        'last_digest_at',   // D3: وقت آخر ملخّص مُرسَل (idempotency)
     ];
 
     /**
@@ -63,6 +65,7 @@ class User extends Authenticatable implements MustVerifyEmail
             'password' => 'hashed',
             'interests' => 'array',
             'disabled_at' => 'datetime',
+            'last_digest_at' => 'datetime', // D3: مقارنات Date::now() في الأمر المجدول
         ];
     }
 

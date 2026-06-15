@@ -155,6 +155,26 @@ export interface Preference {
   enabled: boolean;
 }
 
+// ---- D3: ملخّصات الإشعارات المجدولة ----
+
+/**
+ * تكرار ملخّص النشاط — §9.ب من عقد D3.
+ * off   = بدون تجميع (فوري، الافتراضي)
+ * daily = ملخّص يومي بالبريد
+ * weekly = ملخّص أسبوعي كلّ أحد
+ */
+export type DigestFrequency = 'off' | 'daily' | 'weekly';
+
+/**
+ * استجابة GET /api/v1/notifications/preferences — توسعة §5.أ من عقد D3.
+ * data: مصفوفة type×channel (بقيت كما هي، لا كسر).
+ * digest.frequency: القيمة الحالية لتكرار الملخّص.
+ */
+export interface PreferencesResponse {
+  data: Preference[];
+  digest: { frequency: DigestFrequency };
+}
+
 export interface CalendarEvent {
   type: string;
   title: string;

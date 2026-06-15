@@ -13,3 +13,6 @@ Schedule::command('scheduling:dispatch-reminders')->everyMinute()->withoutOverla
 
 // Study-plan nudges — hourly; each plan is reminded once per its cadence.
 Schedule::command('learning:dispatch-plan-reminders')->hourly()->withoutOverlapping();
+
+// Activity digests (D3) — يومياً 07:00؛ daily كل يوم، weekly يوم الأحد (يُفلتَر داخلياً).
+Schedule::command('notifications:dispatch-digests')->dailyAt('07:00')->withoutOverlapping();
