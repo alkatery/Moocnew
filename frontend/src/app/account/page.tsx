@@ -37,6 +37,7 @@ function Note({ ok, msg }: { ok: boolean; msg: string }) {
 }
 
 function ProfileSection({ user }: { user: AuthUser }) {
+  const { refresh } = useAuth();
   const [name, setName] = useState(user.name ?? '');
   const [locale, setLocale] = useState(user.locale ?? 'ar');
   const [timezone, setTimezone] = useState(user.timezone ?? 'Asia/Riyadh');
@@ -50,6 +51,7 @@ function ProfileSection({ user }: { user: AuthUser }) {
     setNote('');
     try {
       await api('/account', { method: 'PATCH', body: { name, locale, timezone } });
+      await refresh(); // reflect the change in the nav / shared auth state
       setOk(true);
       setNote(t('account.saved'));
     } catch (err) {

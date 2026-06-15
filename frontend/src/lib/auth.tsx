@@ -14,6 +14,7 @@ interface AuthState {
   login: (email: string, password: string) => Promise<void>;
   register: (payload: RegisterPayload) => Promise<void>;
   adoptSession: (token: string) => Promise<void>;
+  refresh: () => Promise<void>;
   logout: () => Promise<void>;
   impersonate: (token: string, name: string) => Promise<void>;
   stopImpersonating: () => Promise<void>;
@@ -117,7 +118,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ user, loading, impersonating, login, register, adoptSession, logout, impersonate, stopImpersonating }}
+      value={{ user, loading, impersonating, login, register, adoptSession, refresh: loadMe, logout, impersonate, stopImpersonating }}
     >
       {children}
     </AuthContext.Provider>
