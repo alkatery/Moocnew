@@ -56,6 +56,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Frontend (SPA) URL
+    |--------------------------------------------------------------------------
+    |
+    | Base URL of the Next.js frontend. Used to build user-facing links in
+    | transactional emails (e.g. email verification) that should land on the
+    | SPA rather than a raw API response.
+    |
+    */
+
+    'frontend_url' => env('FRONTEND_URL', 'http://localhost:3000'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Timezone
     |--------------------------------------------------------------------------
     |

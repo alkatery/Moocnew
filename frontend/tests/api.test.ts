@@ -28,4 +28,14 @@ describe('api client', () => {
 
     await expect(api('/x', { method: 'POST', body: {}, auth: false })).rejects.toBeInstanceOf(ApiError);
   });
+
+  it('captures the error code (e.g. email_unverified) from the body', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ message: 'unverified', code: 'email_unverified' }), { status: 403 }),
+    ));
+
+    await expect(
+      api('/auth/login', { method: 'POST', body: {}, auth: false }),
+    ).rejects.toMatchObject({ status: 403, code: 'email_unverified' });
+  });
 });

@@ -32,6 +32,15 @@ final class LoginController extends Controller
             ]);
         }
 
+        if (! $user->hasVerifiedEmail()) {
+            // No token until the email is proven. The client surfaces a
+            // resend action keyed off this code.
+            return response()->json([
+                'message' => 'يلزم تفعيل بريدك الإلكتروني قبل الدخول.',
+                'code' => 'email_unverified',
+            ], 403);
+        }
+
         $token = $user->createToken(
             $request->input('device_name', 'web'),
         )->plainTextToken;

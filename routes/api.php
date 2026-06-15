@@ -25,6 +25,8 @@ use App\Http\Controllers\Api\V1\Auth\LoginController;
 use App\Http\Controllers\Api\V1\Auth\LogoutController;
 use App\Http\Controllers\Api\V1\Auth\MeController;
 use App\Http\Controllers\Api\V1\Auth\RegisterController;
+use App\Http\Controllers\Api\V1\Auth\ResendVerificationController;
+use App\Http\Controllers\Api\V1\Auth\VerifyEmailController;
 use App\Http\Controllers\Api\V1\Catalog\CategoryController;
 use App\Http\Controllers\Api\V1\Catalog\CourseController;
 use App\Http\Controllers\Api\V1\Catalog\CoursePublishingController;
@@ -81,11 +83,22 @@ Route::prefix('auth')->name('api.auth.')->group(function () {
     Route::post('register', RegisterController::class)->name('register');
     Route::post('login', LoginController::class)->name('login');
 
+    // Re-send the verification mail (generic response, enumeration-safe).
+    Route::post('email/resend', ResendVerificationController::class)
+        ->middleware('throttle:6,1')->name('verification.resend');
+
     Route::middleware('auth:sanctum')->group(function () {
         Route::post('logout', LogoutController::class)->name('logout');
         Route::get('me', MeController::class)->name('me');
     });
 });
+
+// Signed verification link target. The global name `verification.verify` is
+// required by Illuminate's VerifyEmail notification. The `signed` middleware
+// authenticates the request, so no Sanctum token is needed here.
+Route::get('auth/email/verify/{id}/{hash}', VerifyEmailController::class)
+    ->middleware(['signed', 'throttle:6,1'])
+    ->name('verification.verify');
 
 Route::middleware('auth:sanctum')->prefix('admin')->name('api.admin.')->group(function () {
     Route::get('settings', [SettingsController::class, 'show'])->name('settings.show');

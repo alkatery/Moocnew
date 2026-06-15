@@ -2,18 +2,18 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
 import { t } from '@/i18n/dictionary';
-import { ApiError } from '@/lib/api';
+import { api, ApiError } from '@/lib/api';
 
 export default function RegisterPage() {
   const { register } = useAuth();
-  const router = useRouter();
   const [form, setForm] = useState({ name: '', email: '', password: '', password_confirmation: '' });
   const [consent, setConsent] = useState(false);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  const [sent, setSent] = useState(false);
+  const [resentNote, setResentNote] = useState('');
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -21,12 +21,43 @@ export default function RegisterPage() {
     setError('');
     try {
       await register({ ...form, consents: consent ? ['privacy_policy', 'data_processing'] : [] });
-      router.push('/catalog');
+      setSent(true);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : t('common.error'));
     } finally {
       setBusy(false);
     }
+  }
+
+  async function resend() {
+    setResentNote('');
+    try {
+      await api('/auth/email/resend', { method: 'POST', body: { email: form.email }, auth: false });
+    } catch {
+      // The endpoint is intentionally generic; never surface details.
+    }
+    setResentNote(t('auth.resent'));
+  }
+
+  if (sent) {
+    return (
+      <section className="mx-auto max-w-md py-6 text-center">
+        <span className="icon-tile mx-auto h-14 w-14 rounded-2xl" aria-hidden>
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+            <path d="M4 6h16v12H4z" stroke="#1f3a93" strokeWidth="1.6" />
+            <path d="m4 7 8 6 8-6" stroke="#5b6ef5" strokeWidth="1.6" fill="none" />
+          </svg>
+        </span>
+        <h1 className="mt-4 text-2xl font-extrabold">{t('auth.verifySentTitle')}</h1>
+        <p className="mt-2 text-sm text-slate-500">{t('auth.verifySentBody')}</p>
+        <p className="mt-1 text-sm font-semibold" dir="ltr">{form.email}</p>
+        <button className="btn btn-ghost mt-5" onClick={resend} type="button">{t('auth.resend')}</button>
+        {resentNote && <p className="mt-3 text-sm text-emerald-600" role="status">{resentNote}</p>}
+        <p className="mt-6 text-center text-sm text-slate-500">
+          <Link className="font-semibold" href="/login">{t('auth.goLogin')}</Link>
+        </p>
+      </section>
+    );
   }
 
   return (
