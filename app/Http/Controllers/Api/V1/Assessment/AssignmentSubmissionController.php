@@ -27,8 +27,9 @@ final class AssignmentSubmissionController extends Controller
     {
         abort_unless($request->user()->can('update', $assignment->course), 403);
 
+        // §2.أ — eager-load user:id,name لتفادي N+1 (الاسم فقط، PDPL)
         return AssignmentSubmissionResource::collection(
-            $assignment->submissions()->latest('submitted_at')->paginate(20),
+            $assignment->submissions()->with('user:id,name')->latest('submitted_at')->paginate(20),
         );
     }
 
@@ -107,6 +108,9 @@ final class AssignmentSubmissionController extends Controller
 
         // A passing grade can complete a course whose lessons are already done.
         $completion->evaluateFor($submission->user_id, $submission->assignment->course_id);
+
+        // §2.أ — eager-load الاسم لإدراجه في الاستجابة (PDPL: الاسم فقط)
+        $submission->loadMissing('user:id,name');
 
         return new AssignmentSubmissionResource($submission);
     }

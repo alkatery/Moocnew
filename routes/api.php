@@ -21,6 +21,7 @@ use App\Http\Controllers\Api\V1\Assessment\CourseGradeController;
 use App\Http\Controllers\Api\V1\Assessment\QuestionController;
 use App\Http\Controllers\Api\V1\Assessment\QuizAttemptController;
 use App\Http\Controllers\Api\V1\Assessment\QuizController;
+use App\Http\Controllers\Api\V1\Assessment\SubmissionFileController;
 use App\Http\Controllers\Api\V1\Assistant\AnalystController;
 use App\Http\Controllers\Api\V1\Assistant\TutorController;
 use App\Http\Controllers\Api\V1\Auth\LoginController;
@@ -338,6 +339,9 @@ Route::middleware('auth:sanctum')->prefix('assessment')->name('api.assessment.')
     Route::post('assignments/{assignment}/submissions', [AssignmentSubmissionController::class, 'store'])->name('submissions.store');
     Route::get('assignments/{assignment}/submissions', [AssignmentSubmissionController::class, 'index'])->name('submissions.index');
     Route::post('submissions/{submission}/grade', [AssignmentSubmissionController::class, 'grade'])->name('submissions.grade');
+
+    // §2.ب — تنزيل ملف التسليم (طاقم المقرر فقط، التخويل داخل المتحكّم)
+    Route::get('submissions/{submission}/file', SubmissionFileController::class)->name('submissions.file');
 
     // The learner's gradebook for a course (overall grade + per-assessment).
     Route::get('courses/{course}/grade', CourseGradeController::class)->name('courses.grade');

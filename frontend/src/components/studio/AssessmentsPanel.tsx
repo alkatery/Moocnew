@@ -5,6 +5,8 @@ import { api } from '@/lib/api';
 import type { AssignmentItem, BankQuestion, QuestionChoice, QuestionKind, QuizItem, Section } from '@/lib/types';
 import { t } from '@/i18n/dictionary';
 import { ErrorMsg } from '@/components/StatusMessage';
+// C2: مراجعة/تصحيح تسليمات الواجبات — يُحمَّل كسلًا inline ضمن بطاقة الواجبات
+import { SubmissionReview } from '@/components/studio/SubmissionReview';
 
 const KIND_LABELS: Record<QuestionKind, string> = {
   mcq: 'اختيار من متعدد',
@@ -22,6 +24,8 @@ export function AssessmentsPanel({ courseSlug, sections }: { courseSlug: string;
   const [quizzes, setQuizzes] = useState<QuizItem[]>([]);
   const [assignments, setAssignments] = useState<AssignmentItem[]>([]);
   const [err, setErr] = useState('');
+  // C2: معرّف الواجب المفتوح لمراجعة تسليماته (null = لا شيء مفتوح)
+  const [reviewAssignmentId, setReviewAssignmentId] = useState<number | null>(null);
 
   const load = useCallback(() => {
     api<{ data: BankQuestion[] }>(`/assessment/courses/${courseSlug}/questions`).then((r) => setQuestions(r.data)).catch(() => undefined);
@@ -95,12 +99,38 @@ export function AssessmentsPanel({ courseSlug, sections }: { courseSlug: string;
             <ul className="mb-4 divide-y divide-slate-100">
               {assignments.map((a) => (
                 <li key={a.id} className="py-2.5">
-                  <p className="text-sm font-medium text-slate-800">{a.title}</p>
-                  <span className="text-xs text-slate-500">
-                    {a.points} نقطة · وزن ×{a.weight}
-                    {sectionName(a.section_id) ? ` · ${sectionName(a.section_id)}` : ''}
-                    {a.due_at ? ` · تسليم قبل ${new Date(a.due_at).toLocaleDateString('ar')}` : ''}
-                  </span>
+                  {/* سطر ملخّص الواجب + زر مراجعة التسليمات (C2) */}
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium text-slate-800">{a.title}</p>
+                      <span className="text-xs text-slate-500">
+                        {a.points} نقطة · وزن ×{a.weight}
+                        {sectionName(a.section_id) ? ` · ${sectionName(a.section_id)}` : ''}
+                        {a.due_at ? ` · تسليم قبل ${new Date(a.due_at).toLocaleDateString('ar')}` : ''}
+                      </span>
+                    </div>
+                    {/* C2: زر «مراجعة التسليمات» — يفتح/يغلق SubmissionReview inline */}
+                    <button
+                      className="btn btn-ghost shrink-0 text-xs"
+                      onClick={() =>
+                        setReviewAssignmentId((prev) => (prev === a.id ? null : a.id))
+                      }
+                      aria-expanded={reviewAssignmentId === a.id}
+                      aria-controls={`submission-review-${a.id}`}
+                    >
+                      {reviewAssignmentId === a.id ? 'إغلاق المراجعة' : t('review.open')}
+                    </button>
+                  </div>
+
+                  {/* C2: مكوّن SubmissionReview — يُحمَّل كسلًا عند الفتح فقط */}
+                  {reviewAssignmentId === a.id && (
+                    <div id={`submission-review-${a.id}`}>
+                      <SubmissionReview
+                        assignment={a}
+                        onClose={() => setReviewAssignmentId(null)}
+                      />
+                    </div>
+                  )}
                 </li>
               ))}
             </ul>

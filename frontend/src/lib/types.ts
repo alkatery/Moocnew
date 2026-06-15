@@ -369,6 +369,13 @@ export interface QuizItem {
   questions_count?: number;
 }
 
+/** معيار واحد في نموذج التصحيح (Rubric) — يأتي من AssignmentResource */
+export interface RubricCriterion {
+  id: string;
+  title: string;
+  max_points: number;
+}
+
 export interface AssignmentItem {
   id: number;
   course_id: number;
@@ -378,6 +385,28 @@ export interface AssignmentItem {
   due_at: string | null;
   points: number;
   weight: number;
+  /** معايير التصحيح — null إن كان التصحيح بدرجة مباشرة */
+  rubric: RubricCriterion[] | null;
+}
+
+/** تسليم واجب — يُرجعه AssignmentSubmissionResource (بعد بند §2 من العقد C2) */
+export interface AssignmentSubmission {
+  id: number;
+  assignment_id: number;
+  user_id: number;
+  /** اسم الطالب — يُضاف في §2.أ من الخلفية */
+  student: { id: number; name: string };
+  content: string | null;
+  has_file: boolean;
+  /** رابط تنزيل الملف المحمي — يُضاف في §2.ب، null إن لا ملف */
+  file_url: string | null;
+  grade: number | null;
+  /** درجات المعايير — مفاتيحها criterion.id؛ null إن صُحِّح بدرجة مباشرة أو لم يُصحَّح */
+  rubric_scores: Record<string, number> | null;
+  feedback: string | null;
+  submitted_at: string;
+  /** null ⇒ غير مُصحَّح؛ وجود قيمة ⇒ مُصحَّح */
+  graded_at: string | null;
 }
 
 export interface InstructorOption { id: number; name: string; email: string }

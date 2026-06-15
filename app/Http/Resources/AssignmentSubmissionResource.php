@@ -22,8 +22,17 @@ final class AssignmentSubmissionResource extends JsonResource
             'id' => $this->id,
             'assignment_id' => $this->assignment_id,
             'user_id' => $this->user_id,
+            // §2.أ — الاسم فقط (PDPL: لا بريد/هاتف)؛ مشروط بـ eager-load
+            'student' => [
+                'id' => $this->user_id,
+                'name' => $this->whenLoaded('user', fn () => $this->user->name),
+            ],
             'content' => $this->content,
             'has_file' => $this->file_path !== null,
+            // §2.ب — رابط التنزيل المحمي؛ null صريح إن لا ملف (PDPL: لا يُسرَّب المسار الداخلي)
+            'file_url' => $this->file_path !== null
+                ? route('api.assessment.submissions.file', $this->resource)
+                : null,
             'grade' => $this->grade,
             'rubric_scores' => $this->rubric_scores,
             'feedback' => $this->feedback,
