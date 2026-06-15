@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
 import { t } from '@/i18n/dictionary';
 import { api, ApiError } from '@/lib/api';
+import { ErrorMsg } from '@/components/StatusMessage';
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -68,13 +69,15 @@ export default function LoginPage() {
         <label className="label" htmlFor="login-password">{t('auth.password')}</label>
         <input id="login-password" className="input" type="password"
           value={password} onChange={(e) => setPassword(e.target.value)} required />
-        {error && <p className="error mb-3">{error}</p>}
+        {/* G5: role="alert" عبر ErrorMsg */}
+        <ErrorMsg msg={error} />
         {unverified && (
           <button className="btn btn-ghost mb-3 w-full" onClick={resend} type="button">
             {t('auth.resend')}
           </button>
         )}
-        {resentNote && <p className="mb-3 text-sm text-emerald-600" role="status">{resentNote}</p>}
+        {/* G4: emerald-600 (3.77:1) → emerald-700 (5.48:1) — تمرير AA */}
+        {resentNote && <p className="mb-3 text-sm text-emerald-700" role="status">{resentNote}</p>}
         <button className="btn w-full" disabled={busy}>
           {busy ? t('common.loading') : t('auth.submitLogin')}
         </button>

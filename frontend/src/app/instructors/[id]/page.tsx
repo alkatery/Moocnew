@@ -207,17 +207,17 @@ export default async function InstructorProfilePage(
               <div className="mt-4 grid grid-cols-3 gap-2 text-center text-sm">
                 <div>
                   <div className="font-extrabold text-brand-700">{profile.stats.courses}</div>
-                  <div className="text-xs text-slate-400">{t('profile.courses')}</div>
+                  <div className="text-xs text-slate-500">{t('profile.courses')}</div>
                 </div>
                 <div>
                   <div className="font-extrabold text-brand-700">{profile.stats.learners}</div>
-                  <div className="text-xs text-slate-400">متعلّم</div>
+                  <div className="text-xs text-slate-500">متعلّم</div>
                 </div>
                 <div>
                   <div className="font-extrabold text-brand-700">
                     {profile.stats.rating ?? '—'}
                   </div>
-                  <div className="text-xs text-slate-400">التقييم</div>
+                  <div className="text-xs text-slate-500">التقييم</div>
                 </div>
               </div>
             </div>

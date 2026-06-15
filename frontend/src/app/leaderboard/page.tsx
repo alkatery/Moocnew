@@ -36,7 +36,8 @@ export default function LeaderboardPage() {
           <ul className="divide-y divide-slate-100">
             {rows.map((r) => (
               <li key={r.rank} className="flex items-center gap-4 px-5 py-3.5">
-                <span className="w-8 text-center text-lg font-extrabold text-slate-400">
+                {/* G3: slate-400 → slate-500 لرقم الترتيب (نص معلوماتي على خلفية بيضاء) */}
+                <span className="w-8 text-center text-lg font-extrabold text-slate-500">
                   {MEDALS[r.rank - 1] ?? r.rank}
                 </span>
                 <span className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-100 font-extrabold text-brand-700">

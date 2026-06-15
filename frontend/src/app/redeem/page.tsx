@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { api, ApiError } from '@/lib/api';
 import type { RedeemResult } from '@/lib/types';
+import { ErrorMsg, SuccessMsg } from '@/components/StatusMessage';
 
 export default function RedeemPage() {
   const router = useRouter();
@@ -40,8 +41,9 @@ export default function RedeemPage() {
       </p>
 
       <form className="card" onSubmit={(e) => void redeem(e)}>
-        {error && <p className="error mb-3">{error}</p>}
-        {success && <p className="success mb-3">{success}</p>}
+        {/* G5: role="alert"/"status" عبر ErrorMsg/SuccessMsg */}
+        <ErrorMsg msg={error} />
+        <SuccessMsg msg={success} />
 
         <label className="label block" htmlFor="redeem-code">كود الالتحاق</label>
         <input

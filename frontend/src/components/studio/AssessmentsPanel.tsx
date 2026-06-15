@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import type { AssignmentItem, BankQuestion, QuestionChoice, QuestionKind, QuizItem, Section } from '@/lib/types';
 import { t } from '@/i18n/dictionary';
+import { ErrorMsg } from '@/components/StatusMessage';
 
 const KIND_LABELS: Record<QuestionKind, string> = {
   mcq: 'اختيار من متعدد',
@@ -33,19 +34,20 @@ export function AssessmentsPanel({ courseSlug, sections }: { courseSlug: string;
 
   return (
     <div className="grid gap-6 lg:grid-cols-2">
-      {err && <p className="error lg:col-span-2">{err}</p>}
+      {/* G5: role="alert" عبر ErrorMsg */}
+      {err && <div className="lg:col-span-2"><ErrorMsg msg={err} /></div>}
 
       {/* ------------------------------------------------ question bank */}
       <div className="card mb-0 self-start">
         <strong className="text-slate-900">بنك الأسئلة</strong>
-        <p className="mb-3 text-xs text-slate-400">أسئلة الدورة المُعاد استخدامها في الاختبارات — التصحيح آلي بالكامل.</p>
+        <p className="mb-3 text-xs text-slate-500">أسئلة الدورة المُعاد استخدامها في الاختبارات — التصحيح آلي بالكامل.</p>
         {questions.length > 0 && (
           <ul className="mb-4 divide-y divide-slate-100">
             {questions.map((q) => (
               <li key={q.id} className="flex items-start justify-between gap-2 py-2.5">
                 <div className="min-w-0">
                   <p className="truncate text-sm font-medium text-slate-800">{q.body}</p>
-                  <span className="text-xs text-slate-400">{KIND_LABELS[q.type]} · {q.points} نقطة</span>
+                  <span className="text-xs text-slate-500">{KIND_LABELS[q.type]} · {q.points} نقطة</span>
                 </div>
                 <button className="btn btn-ghost shrink-0 text-xs text-red-600"
                   onClick={() => void api(`/assessment/questions/${q.id}`, { method: 'DELETE' }).then(load).catch(() => setErr(t('common.error')))}>
@@ -62,14 +64,14 @@ export function AssessmentsPanel({ courseSlug, sections }: { courseSlug: string;
         {/* --------------------------------------------------- quizzes */}
         <div className="card mb-0">
           <strong className="text-slate-900">الاختبارات</strong>
-          <p className="mb-3 text-xs text-slate-400">اختبارات مؤقتة بمحاولات محدودة، تُجمع أسئلتها من البنك ولها وزن في الدرجة النهائية.</p>
+          <p className="mb-3 text-xs text-slate-500">اختبارات مؤقتة بمحاولات محدودة، تُجمع أسئلتها من البنك ولها وزن في الدرجة النهائية.</p>
           {quizzes.length > 0 && (
             <ul className="mb-4 divide-y divide-slate-100">
               {quizzes.map((qz) => (
                 <li key={qz.id} className="flex items-center justify-between gap-2 py-2.5">
                   <div className="min-w-0">
                     <p className="truncate text-sm font-medium text-slate-800">{qz.title}</p>
-                    <span className="text-xs text-slate-400">
+                    <span className="text-xs text-slate-500">
                       {qz.questions_count ?? '—'} سؤالاً · نجاح {qz.pass_mark}% · وزن ×{qz.weight}
                       {sectionName(qz.section_id) ? ` · ${sectionName(qz.section_id)}` : ''}
                     </span>
@@ -88,13 +90,13 @@ export function AssessmentsPanel({ courseSlug, sections }: { courseSlug: string;
         {/* ------------------------------------------------ assignments */}
         <div className="card mb-0">
           <strong className="text-slate-900">الواجبات</strong>
-          <p className="mb-3 text-xs text-slate-400">تسليمات نصية يصححها المدرّب يدوياً بدرجة من مجموع النقاط.</p>
+          <p className="mb-3 text-xs text-slate-500">تسليمات نصية يصححها المدرّب يدوياً بدرجة من مجموع النقاط.</p>
           {assignments.length > 0 && (
             <ul className="mb-4 divide-y divide-slate-100">
               {assignments.map((a) => (
                 <li key={a.id} className="py-2.5">
                   <p className="text-sm font-medium text-slate-800">{a.title}</p>
-                  <span className="text-xs text-slate-400">
+                  <span className="text-xs text-slate-500">
                     {a.points} نقطة · وزن ×{a.weight}
                     {sectionName(a.section_id) ? ` · ${sectionName(a.section_id)}` : ''}
                     {a.due_at ? ` · تسليم قبل ${new Date(a.due_at).toLocaleDateString('ar')}` : ''}
@@ -177,7 +179,7 @@ function QuestionForm({ courseSlug, onCreated }: { courseSlug: string; onCreated
             onClick={() => setChoices((p) => [...p, { id: String.fromCharCode(97 + p.length) + Date.now().toString(36), text: '' }])}>
             + خيار
           </button>
-          <p className="text-xs text-slate-400">علّم ☑ بجانب الخيار/الخيارات الصحيحة.</p>
+          <p className="text-xs text-slate-500">علّم ☑ بجانب الخيار/الخيارات الصحيحة.</p>
         </div>
       )}
 
@@ -197,7 +199,12 @@ function QuestionForm({ courseSlug, onCreated }: { courseSlug: string; onCreated
         onChange={(e) => setExplanation(e.target.value)} />
       <div className="flex items-center gap-2">
         <button className="btn">إضافة السؤال</button>
-        {msg && <span className="text-xs text-slate-500">{msg}</span>}
+        {/* G5: role مناسب — نجاح (✓) أو خطأ */}
+        {msg && (
+          msg.includes('✓')
+            ? <span className="text-xs text-slate-500" role="status">{msg}</span>
+            : <span className="text-xs text-red-700" role="alert">{msg}</span>
+        )}
       </div>
     </form>
   );
@@ -268,7 +275,7 @@ function QuizForm({ courseSlug, questions, sections, onCreated }: {
       )}
       <div className="max-h-40 space-y-1 overflow-y-auto rounded-lg bg-slate-50 p-2">
         {questions.length === 0
-          ? <p className="text-xs text-slate-400">أضف أسئلة إلى البنك أولاً.</p>
+          ? <p className="text-xs text-slate-500">أضف أسئلة إلى البنك أولاً.</p>
           : questions.map((q) => (
             <label key={q.id} className="flex items-center gap-2 text-sm text-slate-600">
               <input type="checkbox" checked={picked.includes(q.id)}
@@ -279,7 +286,12 @@ function QuizForm({ courseSlug, questions, sections, onCreated }: {
       </div>
       <div className="flex items-center gap-2">
         <button className="btn" disabled={picked.length === 0}>إنشاء الاختبار</button>
-        {msg && <span className="text-xs text-slate-500">{msg}</span>}
+        {/* G5: role مناسب — نجاح (✓) أو خطأ */}
+        {msg && (
+          msg.includes('✓')
+            ? <span className="text-xs text-slate-500" role="status">{msg}</span>
+            : <span className="text-xs text-red-700" role="alert">{msg}</span>
+        )}
       </div>
     </form>
   );
@@ -360,12 +372,17 @@ function AssignmentForm({ courseSlug, sections, onCreated }: {
           </div>
         ))}
         {rubric.length > 0 && (
-          <p className="text-xs text-slate-400">مجموع المعايير يصبح درجة الطالب (يُقصّ عند نقاط الواجب).</p>
+          <p className="text-xs text-slate-500">مجموع المعايير يصبح درجة الطالب (يُقصّ عند نقاط الواجب).</p>
         )}
       </div>
       <div className="flex items-center gap-2">
         <button className="btn">إنشاء الواجب</button>
-        {msg && <span className="text-xs text-slate-500">{msg}</span>}
+        {/* G5: role مناسب — نجاح (✓) أو خطأ */}
+        {msg && (
+          msg.includes('✓')
+            ? <span className="text-xs text-slate-500" role="status">{msg}</span>
+            : <span className="text-xs text-red-700" role="alert">{msg}</span>
+        )}
       </div>
     </form>
   );

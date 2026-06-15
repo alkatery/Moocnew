@@ -11,6 +11,7 @@ import { HelpGuide } from '@/components/HelpGuide';
 import { LessonEditor } from '@/components/studio/LessonEditor';
 import { AssessmentsPanel } from '@/components/studio/AssessmentsPanel';
 import { badgeTone, statusLabel } from '@/lib/labels';
+import { SuccessMsg } from '@/components/StatusMessage';
 
 const LESSON_KINDS: { value: LessonKind; label: string }[] = [
   { value: 'article', label: 'مقال' },
@@ -140,7 +141,8 @@ export default function ManageCoursePage() {
         crumbs={[{ href: '/studio', label: t('nav.studio') }, { label: course.title }]}
         actions={
           <>
-            {note && <span className="success self-center">{note}</span>}
+            {/* G5: role="status" عبر SuccessMsg */}
+            <SuccessMsg msg={note} />
             {course.status === 'draft' || course.status === 'rejected' ? (
               <button className="btn" onClick={() => void submit()}>{t('studio.submit')}</button>
             ) : course.status === 'pending_review' ? (
@@ -163,21 +165,29 @@ export default function ManageCoursePage() {
         ]}
       />
 
-      {/* Tabs */}
-      <div className="mb-6 flex gap-2 border-b border-slate-200">
+      {/* G6: role="tablist"/"tab"/aria-selected — G3: slate-400→slate-500 للتبويب غير النشط */}
+      <div className="mb-6 flex gap-2 border-b border-slate-200" role="tablist" aria-label="أقسام الاستوديو">
         {([['curriculum', 'المنهج'], ['assessments', 'التقييمات والدرجات']] as const).map(([k, label]) => (
-          <button key={k} onClick={() => setTab(k)}
+          <button
+            key={k}
+            role="tab"
+            aria-selected={tab === k}
+            aria-controls={`tabpanel-${k}`}
+            onClick={() => setTab(k)}
             className={`-mb-px border-b-2 px-4 py-2.5 text-sm font-bold transition ${
-              tab === k ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-400 hover:text-slate-600'
-            }`}>
+              tab === k ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-500 hover:text-slate-600'
+            }`}
+          >
             {label}
           </button>
         ))}
       </div>
 
-      {tab === 'assessments' ? (
+      {/* G6: tabpanel يربط بـ aria-controls على كل تبويب */}
+      <div id="tabpanel-assessments" role="tabpanel" hidden={tab !== 'assessments'}>
         <AssessmentsPanel courseSlug={slug} sections={sections} />
-      ) : (
+      </div>
+      <div id="tabpanel-curriculum" role="tabpanel" hidden={tab !== 'curriculum'}>
         <div className="grid gap-6 lg:grid-cols-3">
           <div className="lg:order-2">
             <div className="card mb-4">
@@ -198,7 +208,7 @@ export default function ManageCoursePage() {
               <label className="label mt-3 block" htmlFor="passing-grade">{t('studio.passingGrade')}</label>
               <input id="passing-grade" className="input" type="number" min="0" max="100" dir="ltr"
                 value={passingGrade} onChange={(e) => setPassingGrade(e.target.value)} />
-              <p className="mb-3 text-xs text-slate-400">
+              <p className="mb-3 text-xs text-slate-500">
                 عند ضبطها أكبر من صفر، لن تُمنح الشهادة إلا بتحقيق هذه الدرجة في متوسط التقييمات الموزون.
               </p>
               <button className="btn w-full">{t('common.save')}</button>
@@ -221,7 +231,7 @@ export default function ManageCoursePage() {
                 <div key={s.id} className="card p-0">
                   <div className="flex items-center justify-between gap-2 border-b border-slate-100 px-5 py-3.5">
                     <strong className="min-w-0 truncate text-slate-900">القسم {si + 1}: {s.title}</strong>
-                    <div className="flex shrink-0 items-center gap-1 text-slate-400">
+                    <div className="flex shrink-0 items-center gap-1 text-slate-500">
                       <button title="تحريك لأعلى" className="rounded p-1 hover:bg-slate-100 disabled:opacity-30"
                         disabled={si === 0} onClick={() => void moveSection(si, -1)}>▲</button>
                       <button title="تحريك لأسفل" className="rounded p-1 hover:bg-slate-100 disabled:opacity-30"
@@ -235,7 +245,7 @@ export default function ManageCoursePage() {
                     {s.lessons.map((l, li) => (
                       <li key={l.id}>
                         <div className="flex items-center gap-2 px-5 py-3 text-sm text-slate-600">
-                          <span className="text-slate-400"><LessonTypeIcon type={l.type} /></span>
+                          <span className="text-slate-500"><LessonTypeIcon type={l.type} /></span>
                           <button className="min-w-0 flex-1 truncate text-start hover:text-brand-700"
                             onClick={() => setOpenLesson(openLesson === l.id ? null : l.id)}>
                             {l.title}
@@ -272,7 +282,7 @@ export default function ManageCoursePage() {
             )}
           </div>
         </div>
-      )}
+      </div>
     </section>
   );
 }

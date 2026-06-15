@@ -11,6 +11,7 @@ import { LessonTypeIcon } from '@/components/LessonTypeIcon';
 import { Gradebook } from '@/components/Gradebook';
 import { LessonInteraction } from '@/components/LessonInteraction';
 import { TutorWidget } from '@/components/TutorWidget';
+import { SuccessMsg } from '@/components/StatusMessage';
 
 const TYPE_BADGES: Record<string, string> = {
   video: 'درس فيديو',
@@ -140,7 +141,8 @@ export default function PlayerPage() {
                   <h2 className="text-xl">{active.title}</h2>
                 </div>
                 <div className="flex items-center gap-3">
-                  {note && <span className="success">{note}</span>}
+                  {/* G5: role="status" عبر SuccessMsg */}
+                  <SuccessMsg msg={note} />
                   <button className="btn" onClick={() => void complete(active)}>{t('lesson.complete')}</button>
                 </div>
               </div>
@@ -170,7 +172,7 @@ export default function PlayerPage() {
           <div className="card sticky top-20 max-h-[75vh] overflow-y-auto p-0">
             <div className="border-b border-slate-100 p-4">
               <strong className="text-slate-900">محتوى الدورة</strong>
-              <p className="mt-0.5 text-xs text-slate-400">
+              <p className="mt-0.5 text-xs text-slate-500">
                 {course.sections?.length ?? 0} أقسام · {course.sections?.reduce((n, s) => n + s.lessons.length, 0) ?? 0} درساً
               </p>
             </div>
@@ -188,7 +190,7 @@ export default function PlayerPage() {
                           active?.id === l.id ? 'bg-brand-50 font-bold text-brand-700' : 'text-slate-600'
                         }`}
                       >
-                        <span className={active?.id === l.id ? 'text-brand-600' : 'text-slate-400'}>
+                        <span className={active?.id === l.id ? 'text-brand-600' : 'text-slate-500'}>
                           <LessonTypeIcon type={l.type} />
                         </span>
                         <span className="flex-1">{l.title}</span>

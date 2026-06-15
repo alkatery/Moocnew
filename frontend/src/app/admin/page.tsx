@@ -7,6 +7,7 @@ import type { AssistantMode, ContactMessageItem, Paginated } from '@/lib/types';
 import { formatDate } from '@/lib/format';
 import { t } from '@/i18n/dictionary';
 import { ChatPanel } from '@/components/ChatPanel';
+import { ErrorMsg } from '@/components/StatusMessage';
 
 type Overview = Record<string, number | boolean>;
 
@@ -74,7 +75,8 @@ export default function AdminPage() {
           <Link className="btn btn-ghost" href="/admin/tools">أدوات الإدارة</Link>
         </div>
       </div>
-      {error && <p className="error mb-4">{error}</p>}
+      {/* G5: role="alert" عبر ErrorMsg */}
+      <ErrorMsg msg={error} />
 
       <div className="mb-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {overview && Object.entries(LABELS).map(([k, label]) => (
@@ -101,11 +103,15 @@ export default function AdminPage() {
       <div className="card">
         <strong className="text-slate-900">{t('admin.assistantMode')}</strong>
         <p className="mb-3 text-sm text-slate-500">اختر محرّك المساعد الذكي (للطلاب والإدارة) أو عطّله.</p>
+        {/* G6: aria-pressed لأزرار chip وضع المساعد */}
         <div className="flex flex-wrap gap-2">
           {(['off', 'rules', 'claude'] as const).map((m) => (
-            <button key={m}
+            <button
+              key={m}
+              aria-pressed={assistantMode === m}
               onClick={() => void changeAssistantMode(m)}
-              className={`chip ${assistantMode === m ? 'chip-active' : ''}`}>
+              className={`chip ${assistantMode === m ? 'chip-active' : ''}`}
+            >
               {m === 'off' ? t('admin.modeOff') : m === 'rules' ? t('admin.modeRules') : t('admin.modeClaude')}
             </button>
           ))}
@@ -140,12 +146,12 @@ export default function AdminPage() {
                 <div className="min-w-0">
                   <p className="text-sm font-bold text-slate-900">
                     {m.subject}
-                    <span className="ms-2 text-xs font-medium text-slate-400">
+                    <span className="ms-2 text-xs font-medium text-slate-500">
                       {m.name} — <a className="text-xs" href={`mailto:${m.email}`}>{m.email}</a>
                     </span>
                   </p>
                   <p className="mt-1 line-clamp-2 text-sm text-slate-500">{m.message}</p>
-                  {m.created_at && <time className="text-xs text-slate-400">{formatDate(m.created_at)}</time>}
+                  {m.created_at && <time className="text-xs text-slate-500">{formatDate(m.created_at)}</time>}
                 </div>
                 <button className="btn btn-ghost shrink-0" onClick={() => void markHandled(m.id)}>
                   {t('admin.markHandled')}

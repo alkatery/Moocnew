@@ -306,7 +306,7 @@ export function HomeClient() {
               <blockquote className="mt-3 text-sm leading-7 text-slate-600">{item.quote}</blockquote>
               <figcaption className="mt-4 border-t border-slate-100 pt-3">
                 <strong className="block text-sm text-slate-900">{item.name}</strong>
-                <span className="text-xs text-slate-400">{item.role}</span>
+                <span className="text-xs text-slate-500">{item.role}</span>
               </figcaption>
             </figure>
           ))}

@@ -37,7 +37,7 @@ export default function OrdersPage() {
               <li key={o.id} className="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
                 <div>
                   <p className="font-bold text-slate-900">طلب #{o.id}</p>
-                  {o.created_at && <time className="text-xs text-slate-400">{formatDate(o.created_at)}</time>}
+                  {o.created_at && <time className="text-xs text-slate-500">{formatDate(o.created_at)}</time>}
                 </div>
                 <div className="flex items-center gap-3">
                   <span className={`badge ${badgeTone(o.status)}`}>{statusLabel(o.status)}</span>

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { api, ApiError } from '@/lib/api';
 import type { AssistantReply, AssistantTurn } from '@/lib/types';
 import { t } from '@/i18n/dictionary';
+import { ErrorMsg } from '@/components/StatusMessage';
 
 interface Msg { role: 'user' | 'assistant'; content: string; sources?: string[] }
 
@@ -69,7 +70,7 @@ export function ChatPanel({
   return (
     <div className="flex h-full flex-col">
       <div className="flex-1 space-y-3 overflow-y-auto p-1">
-        {messages.length === 0 && <p className="px-2 py-6 text-center text-sm text-slate-400">{intro}</p>}
+        {messages.length === 0 && <p className="px-2 py-6 text-center text-sm text-slate-500">{intro}</p>}
         {messages.map((m, i) => (
           <div key={i} className={m.role === 'user' ? 'flex justify-start' : 'flex justify-end'}>
             <div className={`max-w-[85%] rounded-2xl px-3.5 py-2.5 text-sm leading-7 ${
@@ -82,11 +83,12 @@ export function ChatPanel({
             </div>
           </div>
         ))}
-        {busy && <p className="px-2 text-xs text-slate-400">{t('assistant.thinking')}</p>}
+        {busy && <p className="px-2 text-xs text-slate-500">{t('assistant.thinking')}</p>}
         <div ref={endRef} />
       </div>
 
-      {error && <p className="error mx-1 mb-2">{error}</p>}
+      {/* G5: role="alert" عبر ErrorMsg */}
+      <ErrorMsg msg={error} />
 
       <form className="flex gap-2 p-1" onSubmit={(e) => void send(e)}>
         <input className="input m-0 flex-1" placeholder={placeholder} value={input}

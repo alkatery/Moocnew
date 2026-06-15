@@ -45,12 +45,14 @@ export function CourseCard({ course, index = 0 }: { course: Course; index?: numb
         <p className="line-clamp-2 text-sm text-slate-500">{course.summary}</p>
         <div className="mt-auto flex items-center justify-between pt-3">
           {course.instructor?.name && (
-            <span className="text-xs font-medium text-slate-400">{course.instructor.name}</span>
+            /* G3: slate-400 (2.56:1) → slate-500 (3.95:1) على خلفية بيضاء */
+            <span className="text-xs font-medium text-slate-500">{course.instructor.name}</span>
           )}
           {(course.reviews_count ?? 0) > 0 && course.rating != null && (
             <span className="flex items-center gap-1">
               <Stars value={course.rating} size={13} />
-              <span className="text-xs text-slate-400">({course.reviews_count})</span>
+              {/* G3: slate-400 → slate-500 */}
+              <span className="text-xs text-slate-500">({course.reviews_count})</span>
             </span>
           )}
         </div>

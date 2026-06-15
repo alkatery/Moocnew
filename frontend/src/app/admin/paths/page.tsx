@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { api, ApiError } from '@/lib/api';
 import type { Course, Paginated, PathDetail, PathSummary } from '@/lib/types';
 import { t } from '@/i18n/dictionary';
+import { ErrorMsg } from '@/components/StatusMessage';
 
 interface DraftItem {
   course_id: number;
@@ -121,7 +122,8 @@ export default function AdminPathsPage() {
         <h1>إدارة المسارات</h1>
         <Link className="btn btn-ghost" href="/admin">{t('admin.title')}</Link>
       </div>
-      {error && <p className="error mb-4">{error}</p>}
+      {/* G5: role="alert" عبر ErrorMsg */}
+      <ErrorMsg msg={error} />
 
       <div className="grid gap-6 lg:grid-cols-2">
         <div>
@@ -149,7 +151,7 @@ export default function AdminPathsPage() {
                     <span className={`badge ${p.published_at ? '' : 'bg-amber-50 text-amber-700'}`}>
                       {p.published_at ? 'منشور' : 'مسودة'}
                     </span>
-                    <span className="text-slate-400">{p.levels_count} مستويات · {p.courses_count} دورات</span>
+                    <span className="text-slate-500">{p.levels_count} مستويات · {p.courses_count} دورات</span>
                   </div>
                 </div>
                 <div className="page-actions">
@@ -169,7 +171,7 @@ export default function AdminPathsPage() {
           {editing ? (
             <div className="card sticky top-20">
               <strong className="text-slate-900">عناصر المسار: {editing.title}</strong>
-              <p className="mt-1 text-xs text-slate-400">يأخذ المتدرب الدورات بترتيب (المستوى ثم الموضع).</p>
+              <p className="mt-1 text-xs text-slate-500">يأخذ المتدرب الدورات بترتيب (المستوى ثم الموضع).</p>
 
               <div className="mt-4 flex flex-wrap items-end gap-2">
                 <div className="min-w-40 flex-1">
@@ -191,7 +193,7 @@ export default function AdminPathsPage() {
               </div>
 
               {items.length === 0 ? (
-                <p className="mt-4 text-sm text-slate-400">لا توجد دورات في المسار بعد.</p>
+                <p className="mt-4 text-sm text-slate-500">لا توجد دورات في المسار بعد.</p>
               ) : (
                 <ul className="mt-4 divide-y divide-slate-100 rounded-xl border border-slate-200">
                   {[...items].sort((a, b) => a.level - b.level || a.position - b.position).map((item) => (
@@ -215,7 +217,7 @@ export default function AdminPathsPage() {
               </div>
             </div>
           ) : (
-            <div className="card text-center text-sm text-slate-400">
+            <div className="card text-center text-sm text-slate-500">
               اختر «الدورات والمستويات» من أي مسار لتحرير محتواه.
             </div>
           )}

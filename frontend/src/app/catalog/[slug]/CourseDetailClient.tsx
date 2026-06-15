@@ -14,6 +14,7 @@ import { t } from '@/i18n/dictionary';
 import { LessonTypeIcon } from '@/components/LessonTypeIcon';
 import { Reviews } from '@/components/Reviews';
 import { Stars } from '@/components/Stars';
+import { ErrorMsg } from '@/components/StatusMessage';
 
 const BASE_PERKS = [
   'وصول كامل لكل دروس الدورة',
@@ -52,10 +53,11 @@ export function CourseDetailClient({ course }: { course: Course }) {
 
   return (
     <section>
-      <nav className="mb-4 flex flex-wrap items-center gap-1.5 text-xs text-slate-400" aria-label="مسار التنقّل">
-        <Link className="text-slate-400 hover:text-brand-600" href="/">الرئيسية</Link>
+      {/* G3: text-slate-400 → text-slate-500 على روابط breadcrumb (خلفية بيضاء) */}
+      <nav className="mb-4 flex flex-wrap items-center gap-1.5 text-xs text-slate-500" aria-label="مسار التنقّل">
+        <Link className="text-slate-500 hover:text-brand-600" href="/">الرئيسية</Link>
         <span aria-hidden>‹</span>
-        <Link className="text-slate-400 hover:text-brand-600" href="/catalog">{t('nav.catalog')}</Link>
+        <Link className="text-slate-500 hover:text-brand-600" href="/catalog">{t('nav.catalog')}</Link>
         <span aria-hidden>‹</span>
         <span className="font-medium text-slate-500">{course.title}</span>
       </nav>
@@ -108,12 +110,12 @@ export function CourseDetailClient({ course }: { course: Course }) {
             <div key={s.id} className="card p-0">
               <div className="flex items-center justify-between border-b border-slate-100 px-5 py-3.5">
                 <strong className="text-slate-900">القسم {si + 1}: {s.title}</strong>
-                <span className="text-xs text-slate-400">{s.lessons.length} دروس</span>
+                <span className="text-xs text-slate-500">{s.lessons.length} دروس</span>
               </div>
               <ul className="divide-y divide-slate-50">
                 {s.lessons.map((l) => (
                   <li key={l.id} className="flex items-center gap-3 px-5 py-3 text-sm text-slate-600">
-                    <span className="text-slate-400"><LessonTypeIcon type={l.type} /></span>
+                    <span className="text-slate-500"><LessonTypeIcon type={l.type} /></span>
                     <span className="flex-1">{l.title}</span>
                     {l.is_free_preview && <span className="badge">معاينة مجانية</span>}
                   </li>
@@ -136,10 +138,11 @@ export function CourseDetailClient({ course }: { course: Course }) {
               <div className="text-3xl font-extrabold text-brand-700">
                 {course.pricing_type === 'free' ? t('course.free') : formatMinor(course.price_minor)}
               </div>
-              {course.pricing_type !== 'free' && <p className="mt-1 text-xs text-slate-400">دفعة واحدة — وصول دائم</p>}
+              {course.pricing_type !== 'free' && <p className="mt-1 text-xs text-slate-500">دفعة واحدة — وصول دائم</p>}
             </div>
 
-            {msg && <p className="error mb-3">{msg}</p>}
+            {/* G5: role="alert" عبر ErrorMsg */}
+            <ErrorMsg msg={msg} />
 
             <div className="page-actions flex-col">
               <button className="btn w-full" onClick={() => void enroll()} disabled={busy}>

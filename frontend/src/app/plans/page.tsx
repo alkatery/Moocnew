@@ -8,6 +8,7 @@ import { formatDate } from '@/lib/format';
 import { t } from '@/i18n/dictionary';
 import { PageHeader } from '@/components/PageHeader';
 import { EmptyState } from '@/components/EmptyState';
+import { ErrorMsg } from '@/components/StatusMessage';
 
 const CADENCES: { value: number; label: string }[] = [
   { value: 1, label: 'يومياً' },
@@ -89,7 +90,8 @@ export default function PlansPage() {
         subtitle="اجمع دوراتك في خطة، وحدّد وتيرة التذكير — وسنتابعك بالتنبيهات حتى تُنجزها."
         crumbs={[{ label: t('plans.title') }]}
       />
-      {error && <p className="error mb-4">{error}</p>}
+      {/* G5: role="alert" عبر ErrorMsg */}
+      <ErrorMsg msg={error} />
 
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Create form */}
@@ -115,7 +117,7 @@ export default function PlansPage() {
             value={filter} onChange={(e) => setFilter(e.target.value)} />
           <div className="mb-4 max-h-56 overflow-y-auto rounded-xl border border-slate-200">
             {visibleCourses.length === 0 ? (
-              <p className="p-3 text-sm text-slate-400">{t('catalog.empty')}</p>
+              <p className="p-3 text-sm text-slate-500">{t('catalog.empty')}</p>
             ) : visibleCourses.map((c) => (
               <label key={c.id} className="flex cursor-pointer items-center gap-2 border-b border-slate-100 px-3 py-2.5 text-sm last:border-0 hover:bg-brand-50/50">
                 <input type="checkbox" className="accent-brand-600"
@@ -142,7 +144,7 @@ export default function PlansPage() {
                 <div className="flex flex-wrap items-start justify-between gap-2">
                   <div>
                     <strong className="text-lg text-slate-900">{plan.title}</strong>
-                    <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-400">
+                    <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-500">
                       <span className="badge">{cadenceLabel(plan.cadence_days)}</span>
                       {plan.target_date && <span>الهدف: {formatDate(plan.target_date)}</span>}
                       {plan.status === 'completed' && (
@@ -174,7 +176,7 @@ export default function PlansPage() {
                       ) : (
                         <span className="h-2 w-2 shrink-0 rounded-full bg-slate-300" aria-hidden />
                       )}
-                      <Link className={item.completed ? 'text-slate-400 line-through' : 'text-slate-700'}
+                      <Link className={item.completed ? 'text-slate-500 line-through' : 'text-slate-700'}
                         href={`/catalog/${item.course.slug}`}>
                         {item.course.title}
                       </Link>

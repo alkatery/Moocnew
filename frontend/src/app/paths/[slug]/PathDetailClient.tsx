@@ -13,6 +13,7 @@ import { useAuth } from '@/lib/auth';
 import type { PathDetail, PathLevelItem } from '@/lib/types';
 import { formatMinor } from '@/lib/format';
 import { t } from '@/i18n/dictionary';
+import { ErrorMsg } from '@/components/StatusMessage';
 
 // ---------------------------------------------------------------------------
 // أيقونة حالة العنصر: مكتمل / مفتوح / مقفل
@@ -37,7 +38,7 @@ function StateIcon({ state }: { state: PathLevelItem['state'] }) {
     );
   }
   return (
-    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-400">
+    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-500">
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden>
         <path d="M7 10V8a5 5 0 1 1 10 0v2m-12 0h14v11H5z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
       </svg>
@@ -97,10 +98,11 @@ export function PathDetailClient({ path: initialPath }: { path: PathDetail }) {
 
   return (
     <section>
-      <nav className="mb-4 flex flex-wrap items-center gap-1.5 text-xs text-slate-400" aria-label="مسار التنقّل">
-        <Link className="text-slate-400 hover:text-brand-600" href="/">الرئيسية</Link>
+      {/* G3: text-slate-400 → text-slate-500 على روابط breadcrumb (خلفية بيضاء) */}
+      <nav className="mb-4 flex flex-wrap items-center gap-1.5 text-xs text-slate-500" aria-label="مسار التنقّل">
+        <Link className="text-slate-500 hover:text-brand-600" href="/">الرئيسية</Link>
         <span aria-hidden>‹</span>
-        <Link className="text-slate-400 hover:text-brand-600" href="/paths">{t('paths.title')}</Link>
+        <Link className="text-slate-500 hover:text-brand-600" href="/paths">{t('paths.title')}</Link>
         <span aria-hidden>‹</span>
         <span className="font-medium text-slate-500">{path.title}</span>
       </nav>
@@ -140,7 +142,8 @@ export function PathDetailClient({ path: initialPath }: { path: PathDetail }) {
         </div>
       </div>
 
-      {msg && <p className="error mb-4">{msg}</p>}
+      {/* G5: role="alert" عبر ErrorMsg */}
+      <ErrorMsg msg={msg} />
       <p className="mb-6 flex items-center gap-2 text-sm text-slate-500">
         <svg className="text-brand-500" width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
           <path d="M12 9v4m0 4h.01M12 3l10 18H2z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
@@ -157,7 +160,7 @@ export function PathDetailClient({ path: initialPath }: { path: PathDetail }) {
                 {level.level}
               </span>
               <h2 className="text-xl font-extrabold">{t('paths.level')} {level.level}</h2>
-              <span className="text-xs text-slate-400">{level.items.length} دورات</span>
+              <span className="text-xs text-slate-500">{level.items.length} دورات</span>
             </div>
             <div className="card p-0">
               <ul className="divide-y divide-slate-100">
@@ -167,7 +170,7 @@ export function PathDetailClient({ path: initialPath }: { path: PathDetail }) {
                     <div className="min-w-0 flex-1">
                       <strong className="block text-slate-900">{item.course.title}</strong>
                       <p className="line-clamp-1 text-sm text-slate-500">{item.course.summary}</p>
-                      <span className="text-xs text-slate-400">
+                      <span className="text-xs text-slate-500">
                         {item.course.instructor && `${item.course.instructor} · `}
                         {item.course.pricing_type === 'free' ? t('course.free') : formatMinor(item.course.price_minor)}
                       </span>
@@ -179,7 +182,7 @@ export function PathDetailClient({ path: initialPath }: { path: PathDetail }) {
                       <button className="btn shrink-0" onClick={() => void startCourse(item)}>{t('paths.startCourse')}</button>
                     )}
                     {item.state === 'locked' && (
-                      <span className="text-xs font-semibold text-slate-400">{t('paths.locked')}</span>
+                      <span className="text-xs font-semibold text-slate-500">{t('paths.locked')}</span>
                     )}
                   </li>
                 ))}

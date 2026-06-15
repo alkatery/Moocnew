@@ -8,6 +8,7 @@ import { useAuth } from '@/lib/auth';
 import type { AdminUser, Paginated } from '@/lib/types';
 import { formatDate } from '@/lib/format';
 import { t, type TranslationKey } from '@/i18n/dictionary';
+import { ErrorMsg } from '@/components/StatusMessage';
 
 const ROLES = ['instructor', 'supervisor', 'student'] as const;
 type CreatableRole = (typeof ROLES)[number];
@@ -122,7 +123,8 @@ export default function AdminUsersPage() {
         <h1>{t('users.title')}</h1>
         <Link className="btn btn-ghost" href="/admin">{t('admin.title')}</Link>
       </div>
-      {error && <p className="error mb-4">{error}</p>}
+      {/* G5: role="alert" عبر ErrorMsg */}
+      <ErrorMsg msg={error} />
 
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Create user */}
@@ -176,7 +178,7 @@ export default function AdminUsersPage() {
                           {u.name}
                           {u.disabled && <span className="badge ms-2 bg-red-50 text-red-700">{t('users.disabled')}</span>}
                         </strong>
-                        <span className="text-xs text-slate-400" dir="ltr">{u.email}</span>
+                        <span className="text-xs text-slate-500" dir="ltr">{u.email}</span>
                       </div>
                       {isSuper ? (
                         <span className="badge bg-slate-100 text-slate-600">{roleLabel('super_admin')}</span>

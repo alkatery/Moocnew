@@ -8,6 +8,7 @@ import { formatDate } from '@/lib/format';
 import { t } from '@/i18n/dictionary';
 import { PageHeader } from '@/components/PageHeader';
 import { Stars } from '@/components/Stars';
+import { ErrorMsg, SuccessMsg } from '@/components/StatusMessage';
 
 const AXIS_LABELS: { key: keyof SurveyCourseSummary['averages']; label: string }[] = [
   { key: 'overall', label: 'عام' },
@@ -66,7 +67,8 @@ export default function AdminQualityPage() {
         crumbs={[{ label: t('admin.title'), href: '/admin' }, { label: 'جودة التعليم' }]}
         actions={<Link className="btn btn-ghost" href="/admin">{t('admin.title')}</Link>}
       />
-      {error && <p className="error mb-4">{error}</p>}
+      {/* G5: role="alert" عبر ErrorMsg */}
+      <ErrorMsg msg={error} />
 
       {/* NELC licence */}
       <div className="card">
@@ -84,7 +86,8 @@ export default function AdminQualityPage() {
             onChange={(e) => setLicense(e.target.value)}
           />
           <button className="btn" onClick={() => void saveLicense()}>{t('common.save')}</button>
-          {licenseSaved && <span className="success">تم الحفظ.</span>}
+          {/* G5: role="status" لرسالة نجاح الحفظ */}
+          <SuccessMsg msg={licenseSaved ? 'تم الحفظ.' : ''} />
         </div>
       </div>
 
@@ -106,7 +109,7 @@ export default function AdminQualityPage() {
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="min-w-0">
                     <strong className="block text-sm text-slate-900">{c.title}</strong>
-                    <span className="text-xs text-slate-400">{c.count} استجابة</span>
+                    <span className="text-xs text-slate-500">{c.count} استجابة</span>
                   </div>
                   <div className="flex flex-wrap items-center gap-4">
                     {AXIS_LABELS.map((axis) => (
@@ -143,13 +146,13 @@ export default function AdminQualityPage() {
                           <li key={i} className="text-sm leading-7 text-slate-600">
                             «{comment.comment}»
                             {comment.created_at && (
-                              <time className="ms-2 text-xs text-slate-400">{formatDate(comment.created_at)}</time>
+                              <time className="ms-2 text-xs text-slate-500">{formatDate(comment.created_at)}</time>
                             )}
                           </li>
                         ))}
                       </ul>
                     )}
-                    <p className="mt-3 text-xs text-slate-400">تُعرض التعليقات دون هوية أصحابها التزاماً بنظام حماية البيانات الشخصية.</p>
+                    <p className="mt-3 text-xs text-slate-500">تُعرض التعليقات دون هوية أصحابها التزاماً بنظام حماية البيانات الشخصية.</p>
                   </div>
                 )}
               </li>

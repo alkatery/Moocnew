@@ -69,26 +69,38 @@ function CatalogInner() {
         </div>
       </div>
 
+      {/* G6: aria-pressed على أزرار chip لإعلام قارئ الشاشة بالحالة النشطة */}
       <div className="mb-6 flex flex-wrap items-center gap-2">
-        <button className={`chip ${category === '' ? 'chip-active' : ''}`} onClick={() => setCategory('')}>
+        <button
+          className={`chip ${category === '' ? 'chip-active' : ''}`}
+          aria-pressed={category === ''}
+          onClick={() => setCategory('')}
+        >
           كل المجالات
         </button>
         {categories.map((c) => (
           <button
             key={c.id}
             className={`chip ${category === c.slug ? 'chip-active' : ''}`}
+            aria-pressed={category === c.slug}
             onClick={() => setCategory(category === c.slug ? '' : c.slug)}
           >
             {c.name}
           </button>
         ))}
         <span className="mx-1 hidden h-5 w-px bg-slate-200 sm:block" aria-hidden />
-        <button className={`chip ${pricing === 'free' ? 'chip-active' : ''}`}
-          onClick={() => setPricing(pricing === 'free' ? '' : 'free')}>
+        <button
+          className={`chip ${pricing === 'free' ? 'chip-active' : ''}`}
+          aria-pressed={pricing === 'free'}
+          onClick={() => setPricing(pricing === 'free' ? '' : 'free')}
+        >
           {t('course.free')}
         </button>
-        <button className={`chip ${pricing === 'paid' ? 'chip-active' : ''}`}
-          onClick={() => setPricing(pricing === 'paid' ? '' : 'paid')}>
+        <button
+          className={`chip ${pricing === 'paid' ? 'chip-active' : ''}`}
+          aria-pressed={pricing === 'paid'}
+          onClick={() => setPricing(pricing === 'paid' ? '' : 'paid')}
+        >
           مدفوعة
         </button>
       </div>

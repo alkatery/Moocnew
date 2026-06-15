@@ -31,8 +31,9 @@ export default function AccountPage() {
 
 function Note({ ok, msg }: { ok: boolean; msg: string }) {
   if (!msg) return null;
+  /* G4: emerald-600 (3.77:1) → emerald-700 (5.48:1) — تمرير AA للنص على أبيض */
   return (
-    <p className={`mt-3 text-sm ${ok ? 'text-emerald-600' : 'text-rose-600'}`} role="status">{msg}</p>
+    <p className={`mt-3 text-sm ${ok ? 'text-emerald-700' : 'text-rose-600'}`} role="status">{msg}</p>
   );
 }
 

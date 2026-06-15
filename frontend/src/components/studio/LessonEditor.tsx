@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { API_BASE, api, getToken } from '@/lib/api';
 import type { LessonAuthoring, LessonKind } from '@/lib/types';
 import { t } from '@/i18n/dictionary';
+import { ErrorMsg, SuccessMsg } from '@/components/StatusMessage';
 
 const TYPE_LABELS: Record<LessonKind, string> = {
   video: 'فيديو',
@@ -206,7 +207,7 @@ export function LessonEditor({
               + نقطة تحقق
             </button>
           </div>
-          {bank.length === 0 && <p className="text-xs text-slate-400">أضف أسئلة لبنك الأسئلة أولاً (تبويب التقييمات).</p>}
+          {bank.length === 0 && <p className="text-xs text-slate-500">أضف أسئلة لبنك الأسئلة أولاً (تبويب التقييمات).</p>}
           {checkpoints.map((cp, i) => (
             <div key={i} className="mb-1 flex items-center gap-2">
               <input className="input m-0 w-24" type="number" min="0" dir="ltr" title="الثانية"
@@ -221,7 +222,7 @@ export function LessonEditor({
             </div>
           ))}
           {checkpoints.length > 0 && (
-            <p className="text-xs text-slate-400">يتوقف الطالب عند الثانية المحددة ليجيب — تغذية راجعة فورية بلا تأثير على الدرجة.</p>
+            <p className="text-xs text-slate-500">يتوقف الطالب عند الثانية المحددة ليجيب — تغذية راجعة فورية بلا تأثير على الدرجة.</p>
           )}
         </div>
       )}
@@ -235,8 +236,9 @@ export function LessonEditor({
       <div className="flex flex-wrap items-center gap-2">
         <button className="btn" disabled={busy} onClick={() => void save()}>{t('common.save')}</button>
         <button className="btn btn-ghost text-red-600" disabled={busy} onClick={() => void remove()}>حذف الدرس</button>
-        {note && <span className="success text-sm">{note}</span>}
-        {err && <span className="error text-sm">{err}</span>}
+        {/* G5: role="status"/"alert" عبر SuccessMsg/ErrorMsg */}
+        <SuccessMsg msg={note} />
+        <ErrorMsg msg={err} />
       </div>
     </div>
   );

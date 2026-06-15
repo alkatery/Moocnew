@@ -29,7 +29,7 @@ export function Gradebook({ courseSlug }: { courseSlug: string }) {
       <div className="mb-3 flex items-center justify-between">
         <strong className="text-slate-900">{t('grades.title')}</strong>
         {grade.passing_grade > 0 && (
-          <span className="text-xs text-slate-400">{t('grades.passing')}: {grade.passing_grade}%</span>
+          <span className="text-xs text-slate-500">{t('grades.passing')}: {grade.passing_grade}%</span>
         )}
       </div>
 
@@ -57,7 +57,7 @@ export function Gradebook({ courseSlug }: { courseSlug: string }) {
             </span>
             <span className="flex items-center gap-2">
               {c.score === null ? (
-                <span className="text-xs text-slate-400">{t('grades.notGraded')}</span>
+                <span className="text-xs text-slate-500">{t('grades.notGraded')}</span>
               ) : (
                 <strong className={c.passed ? 'text-emerald-600' : 'text-slate-700'}>{c.score}%</strong>
               )}

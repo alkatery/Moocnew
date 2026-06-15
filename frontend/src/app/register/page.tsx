@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { useAuth } from '@/lib/auth';
 import { t } from '@/i18n/dictionary';
 import { api, ApiError } from '@/lib/api';
+import { ErrorMsg } from '@/components/StatusMessage';
 
 export default function RegisterPage() {
   const { register } = useAuth();
@@ -52,7 +53,8 @@ export default function RegisterPage() {
         <p className="mt-2 text-sm text-slate-500">{t('auth.verifySentBody')}</p>
         <p className="mt-1 text-sm font-semibold" dir="ltr">{form.email}</p>
         <button className="btn btn-ghost mt-5" onClick={resend} type="button">{t('auth.resend')}</button>
-        {resentNote && <p className="mt-3 text-sm text-emerald-600" role="status">{resentNote}</p>}
+        {/* G4: emerald-600 (3.77:1) → emerald-700 (5.48:1) — تمرير AA */}
+        {resentNote && <p className="mt-3 text-sm text-emerald-700" role="status">{resentNote}</p>}
         <p className="mt-6 text-center text-sm text-slate-500">
           <Link className="font-semibold" href="/login">{t('auth.goLogin')}</Link>
         </p>
@@ -96,7 +98,8 @@ export default function RegisterPage() {
           <input className="mt-1" type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} required />
           {t('auth.consent')}
         </label>
-        {error && <p className="error mb-3">{error}</p>}
+        {/* G5: role="alert" عبر ErrorMsg */}
+        <ErrorMsg msg={error} />
         <button className="btn w-full" disabled={busy}>
           {busy ? t('common.loading') : t('auth.submitRegister')}
         </button>

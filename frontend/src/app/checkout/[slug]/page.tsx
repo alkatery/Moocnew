@@ -8,6 +8,7 @@ import { formatMinor } from '@/lib/format';
 import { t } from '@/i18n/dictionary';
 import { PageHeader } from '@/components/PageHeader';
 import { badgeTone, statusLabel } from '@/lib/labels';
+import { ErrorMsg } from '@/components/StatusMessage';
 
 export default function CheckoutPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -50,7 +51,7 @@ export default function CheckoutPage() {
           <div className="mt-4 flex items-start justify-between gap-3 border-b border-slate-100 pb-4">
             <div>
               <p className="font-bold text-slate-800">{course.title}</p>
-              {course.instructor?.name && <p className="mt-0.5 text-xs text-slate-400">{course.instructor.name}</p>}
+              {course.instructor?.name && <p className="mt-0.5 text-xs text-slate-500">{course.instructor.name}</p>}
             </div>
             <span className="badge shrink-0">{formatMinor(course.price_minor, 'SAR')}</span>
           </div>
@@ -77,9 +78,10 @@ export default function CheckoutPage() {
               <label className="label mt-3 block" htmlFor="co-coupon">{t('checkout.coupon')}</label>
               <input id="co-coupon" className="input" dir="ltr"
                 value={coupon} onChange={(e) => setCoupon(e.target.value)} />
-              {error && <p className="error mb-3">{error}</p>}
+              {/* G5: role="alert" عبر ErrorMsg */}
+              <ErrorMsg msg={error} />
               <button className="btn w-full" onClick={() => void pay()}>{t('checkout.pay')}</button>
-              <p className="mt-3 flex items-center justify-center gap-1.5 text-xs text-slate-400">
+              <p className="mt-3 flex items-center justify-center gap-1.5 text-xs text-slate-500">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden>
                   <path d="M6 10V8a6 6 0 1 1 12 0v2m-13 0h14v11H5z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
                 </svg>

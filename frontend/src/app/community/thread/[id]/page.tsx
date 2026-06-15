@@ -41,7 +41,7 @@ export default function ThreadPage() {
               {i === 0 ? 'س' : 'ر'}
             </span>
             <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2 text-xs text-slate-400">
+              <div className="flex items-center gap-2 text-xs text-slate-500">
                 <span className="font-bold text-slate-600">{i === 0 ? 'صاحب الموضوع' : `مشارك`}</span>
                 {p.created_at && <time>{formatDate(p.created_at)}</time>}
               </div>

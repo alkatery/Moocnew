@@ -64,7 +64,7 @@ export function LessonInteraction({
       {/* ----------------------------------------------------- notes */}
       <div className="card mb-0 self-start">
         <strong className="text-slate-900">🗒 ملاحظاتي على الدرس</strong>
-        <p className="mb-3 text-xs text-slate-400">خاصة بك — تُحفظ مع توقيت الفيديو الحالي للعودة إليها بنقرة.</p>
+        <p className="mb-3 text-xs text-slate-500">خاصة بك — تُحفظ مع توقيت الفيديو الحالي للعودة إليها بنقرة.</p>
         <div className="mb-3 flex gap-2">
           <input className="input m-0 flex-1" placeholder="اكتب ملاحظة…" value={draft}
             onChange={(e) => setDraft(e.target.value)}
@@ -73,7 +73,7 @@ export function LessonInteraction({
         </div>
         {err && <p className="error mb-2 text-sm">{err}</p>}
         {notes.length === 0 ? (
-          <p className="text-sm text-slate-400">لا ملاحظات بعد.</p>
+          <p className="text-sm text-slate-500">لا ملاحظات بعد.</p>
         ) : (
           <ul className="divide-y divide-slate-100">
             {notes.map((n) => (
@@ -100,7 +100,7 @@ export function LessonInteraction({
       {checkpoints.length > 0 && (
         <div className="card mb-0 self-start">
           <strong className="text-slate-900">🎯 أسئلة تفاعلية أثناء الدرس</strong>
-          <p className="mb-3 text-xs text-slate-400">اختبر فهمك عند المحطات الزمنية — لا تؤثر على درجتك.</p>
+          <p className="mb-3 text-xs text-slate-500">اختبر فهمك عند المحطات الزمنية — لا تؤثر على درجتك.</p>
           <ul className="space-y-3">
             {checkpoints.map((cp) => (
               <CheckpointItem key={cp.question.id} lessonId={lessonId} cp={cp} seekTo={seekTo} />

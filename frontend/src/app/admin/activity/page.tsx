@@ -6,6 +6,7 @@ import { api } from '@/lib/api';
 import type { ActivityLogRow } from '@/lib/types';
 import { formatDate } from '@/lib/format';
 import { t } from '@/i18n/dictionary';
+import { ErrorMsg } from '@/components/StatusMessage';
 
 export default function AdminActivityPage() {
   const [rows, setRows] = useState<ActivityLogRow[]>([]);
@@ -27,7 +28,8 @@ export default function AdminActivityPage() {
         <h1>{t('activity.title')}</h1>
         <Link className="btn btn-ghost" href="/admin">{t('admin.title')}</Link>
       </div>
-      {error && <p className="error mb-4">{error}</p>}
+      {/* G5: role="alert" عبر ErrorMsg */}
+      <ErrorMsg msg={error} />
 
       <div className="mb-4">
         <select className="input m-0 w-64 max-w-full" value={event} onChange={(e) => setEvent(e.target.value)}>
@@ -43,9 +45,9 @@ export default function AdminActivityPage() {
               <span className="badge font-mono" dir="ltr">{r.event}</span>
               <span className="flex-1 text-slate-600">
                 {r.causer ?? 'النظام'}
-                {r.subject_type && <span className="text-slate-400"> · {r.subject_type}#{r.subject_id}</span>}
+                {r.subject_type && <span className="text-slate-500"> · {r.subject_type}#{r.subject_id}</span>}
               </span>
-              {r.created_at && <time className="text-xs text-slate-400">{formatDate(r.created_at)}</time>}
+              {r.created_at && <time className="text-xs text-slate-500">{formatDate(r.created_at)}</time>}
             </li>
           ))}
         </ul>

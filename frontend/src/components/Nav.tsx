@@ -35,7 +35,7 @@ export function Nav() {
   const isStaff = roles.includes('super_admin') || roles.includes('supervisor');
 
   return (
-    <nav className="nav">
+    <nav className="nav" aria-label="التنقّل الرئيسي">
       <div className="inner">
         <Link href="/"><Logo /></Link>
         <Link href="/catalog">{t('nav.catalog')}</Link>
