@@ -1,175 +1,194 @@
-'use client';
+// غلاف خادمي (Server Component) — ينفّذ generateMetadata ويحقن JSON-LD ويُصيَّر عند الطلب.
+// العقد: B1-course-seo.md
 
-import Link from 'next/link';
-import { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import { api, ApiError } from '@/lib/api';
-import { useAuth } from '@/lib/auth';
+import { cache } from 'react';
+import { notFound } from 'next/navigation';
+import type { Metadata } from 'next';
+import { API_BASE } from '@/lib/api';
 import type { Course } from '@/lib/types';
-import { formatMinor } from '@/lib/format';
-import { t } from '@/i18n/dictionary';
-import { LessonTypeIcon } from '@/components/LessonTypeIcon';
-import { Reviews } from '@/components/Reviews';
-import { Stars } from '@/components/Stars';
+import { CourseDetailClient } from './CourseDetailClient';
 
-const BASE_PERKS = [
-  'وصول كامل لكل دروس الدورة',
-  'اختبارات وواجبات مع تصحيح',
-  'شهادة إتمام موثّقة برمز QR',
-  'مجتمع نقاش بإشراف المدرّب',
-];
+// الصفحة ديناميكية — تُصيَّر عند كل طلب (لا توليد ثابت وقت البناء).
+export const dynamic = 'force-dynamic';
 
-export default function CourseDetailPage() {
-  const { slug } = useParams<{ slug: string }>();
-  const { user } = useAuth();
-  const router = useRouter();
-  const [course, setCourse] = useState<Course | null>(null);
-  const [msg, setMsg] = useState('');
-  const [busy, setBusy] = useState(false);
+// ثابت الموقع — نفس المستخدم في sitemap.ts (لا metadataBase، كل روابط مطلقة).
+const SITE = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
 
-  useEffect(() => {
-    api<{ data: Course }>(`/catalog/courses/${slug}`, { auth: false })
-      .then((res) => setCourse(res.data)).catch(() => setCourse(null));
-  }, [slug]);
+// ---------------------------------------------------------------------------
+// دالة مساعدة: تحويل مسار الصورة إلى رابط مطلق (§4).
+// إن كانت تبدأ بـ http تُعاد كما هي، وإلا تُبنى من SITE.
+// ---------------------------------------------------------------------------
+function absImage(path: string): string {
+  if (path.startsWith('http')) return path;
+  return `${SITE}${path.startsWith('/') ? '' : '/'}${path}`;
+}
 
-  async function enroll() {
-    if (!user) { router.push('/login'); return; }
-    setBusy(true); setMsg('');
-    try {
-      await api(`/catalog/courses/${slug}/enroll`, { method: 'POST' });
-      router.push(`/learn/${slug}`);
-    } catch (err) {
-      // Surface the real reason so issues are diagnosable in a trial rather
-      // than hidden behind a generic message (network/CORS errors are not
-      // ApiError instances and carry their detail on `.message`).
-      const detail = err instanceof ApiError ? err.message : err instanceof Error ? err.message : String(err);
-      setMsg(detail || t('common.error'));
-      if (!(err instanceof ApiError)) console.error('enroll failed:', err);
-    } finally { setBusy(false); }
+// ---------------------------------------------------------------------------
+// دالة مساعدة: اقتطاع النص عند حدود الكلمة (§4).
+// تُرجع النص كما هو إن كان أقصر من n، وإلا تقصّ عند آخر مسافة قبل n وتُلحق «…».
+// ---------------------------------------------------------------------------
+function truncate(text: string, n: number): string {
+  if (text.length <= n) return text;
+  const cut = text.lastIndexOf(' ', n);
+  return (cut > 0 ? text.slice(0, cut) : text.slice(0, n)) + '…';
+}
+
+// ---------------------------------------------------------------------------
+// جلب الدورة الخادمي — مغلّف بـ react.cache لتفادي ازدواج الطلب بين
+// generateMetadata والصفحة في نفس دورة الطلب (§3).
+// يعيد Course|null ولا يرمي (أي خطأ → null).
+// ---------------------------------------------------------------------------
+const getCourse = cache(async (slug: string): Promise<Course | null> => {
+  try {
+    const res = await fetch(`${API_BASE}/catalog/courses/${slug}`, {
+      headers: { Accept: 'application/json' },
+      cache: 'no-store', // يضمن التصيير الديناميكي عند الطلب
+    });
+    if (!res.ok) return null;
+    const json = await res.json() as { data: Course };
+    return json.data ?? null;
+  } catch {
+    return null;
+  }
+});
+
+// ---------------------------------------------------------------------------
+// بناء كائن JSON-LD وفق §5 (Course + Offer + BreadcrumbList + aggregateRating الشرطي).
+// ---------------------------------------------------------------------------
+function courseJsonLd(course: Course, site: string): object {
+  // السعر بالوحدات الرئيسية: price_minor / 100 (§5 — قاعدة السعر الإلزامية).
+  const isFree = course.pricing_type === 'free';
+  const priceStr = isFree ? '0' : (course.price_minor / 100).toFixed(2);
+
+  // عُقدة Course الأساسية.
+  const courseNode: Record<string, unknown> = {
+    '@type': 'Course',
+    'name': course.title,
+    // description لا تكون فارغة — احتياطي إلى title إن غابت الحقول.
+    'description': truncate(course.description ?? course.summary ?? course.title, 5000),
+    'url': `${site}/catalog/${course.slug}`,
+    'inLanguage': 'ar',
+    'provider': {
+      '@type': 'Organization',
+      'name': 'منصة MOOC',
+      'url': site,
+    },
+    'hasCourseInstance': {
+      '@type': 'CourseInstance',
+      'courseMode': 'online',
+      'inLanguage': 'ar',
+    },
+    'offers': {
+      '@type': 'Offer',
+      'category': isFree ? 'free' : 'paid',
+      'price': priceStr,
+      'priceCurrency': 'SAR',
+      'availability': 'https://schema.org/InStock',
+      'url': `${site}/catalog/${course.slug}`,
+    },
+  };
+
+  // image — يُحذف المفتاح إن لا غلاف (§5 — قواعد الحذف الشرطي).
+  if (course.cover_image) {
+    courseNode['image'] = absImage(course.cover_image);
   }
 
-  if (!course) return <p className="label">{t('common.loading')}</p>;
+  // aggregateRating — تُضاف فقط حين reviews_count > 0 و rating != null (§5).
+  if ((course.reviews_count ?? 0) > 0 && course.rating != null) {
+    courseNode['aggregateRating'] = {
+      '@type': 'AggregateRating',
+      'ratingValue': String(course.rating),
+      'reviewCount': String(course.reviews_count),
+      'bestRating': '5',
+      'worstRating': '1',
+    };
+  }
 
-  const sectionsCount = course.sections?.length ?? 0;
-  const lessonsCount = course.sections?.reduce((n, s) => n + s.lessons.length, 0) ?? 0;
-  const perks = (course.passing_grade ?? 0) > 0
-    ? [...BASE_PERKS, `اجتياز التقييمات بدرجة ${course.passing_grade}% للحصول على الشهادة`]
-    : BASE_PERKS;
+  return {
+    '@context': 'https://schema.org',
+    '@graph': [
+      courseNode,
+      {
+        '@type': 'BreadcrumbList',
+        'itemListElement': [
+          { '@type': 'ListItem', 'position': 1, 'name': 'الرئيسية',  'item': site },
+          { '@type': 'ListItem', 'position': 2, 'name': 'الكتالوج',  'item': `${site}/catalog` },
+          { '@type': 'ListItem', 'position': 3, 'name': course.title, 'item': `${site}/catalog/${course.slug}` },
+        ],
+      },
+    ],
+  };
+}
+
+// ---------------------------------------------------------------------------
+// generateMetadata — params غير متزامن في Next.js 15 (§4).
+// ---------------------------------------------------------------------------
+export async function generateMetadata(
+  { params }: { params: Promise<{ slug: string }> },
+): Promise<Metadata> {
+  const { slug } = await params;
+  const course = await getCourse(slug);
+
+  // حالة الغياب — ميتاداتا آمنة بلا canonical (§4).
+  if (!course) {
+    return {
+      title: 'الدورة غير متوفّرة — منصة MOOC',
+      description: 'لم نعثر على هذه الدورة.',
+    };
+  }
+
+  const title = `${course.title} — منصة MOOC`;
+  const description = truncate(course.description ?? course.summary ?? '', 160);
+  const url = `${SITE}/catalog/${course.slug}`;
+
+  // بناء قوائم الصور الشرطية (تُحذف إن لا cover_image).
+  const images = course.cover_image ? [absImage(course.cover_image)] : undefined;
+
+  return {
+    title,
+    description,
+    alternates: {
+      canonical: url,
+    },
+    openGraph: {
+      title,
+      description,
+      url,
+      type: 'website',
+      locale: 'ar_SA',
+      siteName: 'منصة MOOC',
+      ...(images ? { images } : {}),
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      ...(images ? { images } : {}),
+    },
+  };
+}
+
+// ---------------------------------------------------------------------------
+// الغلاف الخادمي الرئيسي — Server Component افتراضي (§5).
+// ---------------------------------------------------------------------------
+export default async function CourseDetailPage(
+  { params }: { params: Promise<{ slug: string }> },
+) {
+  const { slug } = await params;
+  const course = await getCourse(slug);
+
+  // دورة غير موجودة → 404 (§5).
+  if (!course) notFound();
 
   return (
-    <section>
-      <nav className="mb-4 flex flex-wrap items-center gap-1.5 text-xs text-slate-400" aria-label="مسار التنقّل">
-        <Link className="text-slate-400 hover:text-brand-600" href="/">الرئيسية</Link>
-        <span aria-hidden>‹</span>
-        <Link className="text-slate-400 hover:text-brand-600" href="/catalog">{t('nav.catalog')}</Link>
-        <span aria-hidden>‹</span>
-        <span className="font-medium text-slate-500">{course.title}</span>
-      </nav>
-
-      {/* Hero */}
-      <div className="relative mb-6 overflow-hidden rounded-3xl bg-gradient-to-bl from-brand-900 via-brand-700 to-brand-500 p-8 text-white shadow-card sm:p-10">
-        <div className="pointer-events-none absolute -bottom-24 -start-10 h-64 w-64 rounded-full bg-white/10 blur-3xl" aria-hidden />
-        <div className="relative max-w-2xl">
-          <div className="flex flex-wrap items-center gap-2">
-            {course.category?.name && <span className="badge bg-white/15 text-white">{course.category.name}</span>}
-            <span className="badge bg-white/15 text-white">
-              {course.pricing_type === 'free' ? t('course.free') : formatMinor(course.price_minor)}
-            </span>
-          </div>
-          <h1 className="mt-4 text-3xl font-extrabold leading-snug text-white sm:text-4xl">{course.title}</h1>
-          <p className="mt-3 leading-8 text-brand-50/90">{course.description ?? course.summary}</p>
-
-          <div className="mt-5 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-brand-100">
-            {course.instructor?.name && (
-              <span className="flex items-center gap-2">
-                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/20 text-xs font-extrabold">
-                  {course.instructor.name.slice(0, 1)}
-                </span>
-                {course.instructor.name}
-              </span>
-            )}
-            <span>{sectionsCount} أقسام</span>
-            <span>{lessonsCount} درساً</span>
-            {(course.reviews_count ?? 0) > 0 && course.rating != null && (
-              <span className="flex items-center gap-1.5">
-                <Stars value={course.rating} size={14} />
-                <span>{course.rating} ({course.reviews_count})</span>
-              </span>
-            )}
-            <span className="flex items-center gap-1">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden>
-                <path d="M12 14a5 5 0 1 0 0-10 5 5 0 0 0 0 10Zm-3 1.5L8 21l4-2 4 2-1-5.5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-              شهادة إتمام
-            </span>
-          </div>
-        </div>
-      </div>
-
-      <div className="grid gap-6 md:grid-cols-3">
-        {/* Curriculum */}
-        <div className="md:col-span-2">
-          <h2 className="mb-4 text-2xl font-extrabold">محتوى الدورة</h2>
-          {course.sections?.length ? course.sections.map((s, si) => (
-            <div key={s.id} className="card p-0">
-              <div className="flex items-center justify-between border-b border-slate-100 px-5 py-3.5">
-                <strong className="text-slate-900">القسم {si + 1}: {s.title}</strong>
-                <span className="text-xs text-slate-400">{s.lessons.length} دروس</span>
-              </div>
-              <ul className="divide-y divide-slate-50">
-                {s.lessons.map((l) => (
-                  <li key={l.id} className="flex items-center gap-3 px-5 py-3 text-sm text-slate-600">
-                    <span className="text-slate-400"><LessonTypeIcon type={l.type} /></span>
-                    <span className="flex-1">{l.title}</span>
-                    {l.is_free_preview && <span className="badge">معاينة مجانية</span>}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )) : (
-            <div className="card text-slate-500">سيُنشر المنهج التفصيلي قريباً.</div>
-          )}
-
-          <div className="mt-6">
-            <Reviews courseSlug={course.slug} />
-          </div>
-        </div>
-
-        {/* Sticky enrollment card */}
-        <aside>
-          <div className="card sticky top-20">
-            <div className="mb-4 text-center">
-              <div className="text-3xl font-extrabold text-brand-700">
-                {course.pricing_type === 'free' ? t('course.free') : formatMinor(course.price_minor)}
-              </div>
-              {course.pricing_type !== 'free' && <p className="mt-1 text-xs text-slate-400">دفعة واحدة — وصول دائم</p>}
-            </div>
-
-            {msg && <p className="error mb-3">{msg}</p>}
-
-            <div className="page-actions flex-col">
-              <button className="btn w-full" onClick={() => void enroll()} disabled={busy}>
-                {busy ? t('common.loading') : t('course.enroll')}
-              </button>
-              {course.pricing_type !== 'free' && (
-                <Link className="btn btn-ghost w-full" href={`/checkout/${course.slug}`}>{t('course.buy')}</Link>
-              )}
-              <Link className="btn btn-ghost w-full" href={`/community/${course.slug}`}>{t('community.title')}</Link>
-            </div>
-
-            <ul className="mt-5 space-y-2.5 border-t border-slate-100 pt-4 text-sm text-slate-600">
-              {perks.map((perk) => (
-                <li key={perk} className="flex items-center gap-2">
-                  <svg className="shrink-0 text-emerald-500" width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden>
-                    <path d="m5 13 4 4 10-10" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                  {perk}
-                </li>
-              ))}
-            </ul>
-          </div>
-        </aside>
-      </div>
-    </section>
+    <>
+      {/* حقن JSON-LD وفق §5 */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(courseJsonLd(course, SITE)) }}
+      />
+      {/* تمرير الدورة كاملة إلى الجزيرة التفاعلية */}
+      <CourseDetailClient course={course} />
+    </>
   );
 }
