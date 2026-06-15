@@ -30,7 +30,7 @@
   - ✅ **B3 — WCAG 2.2 AA** (موقّع): G1 skip link/landmark · G2 `:focus-visible` عام + حلقات تركيز ≥3:1 · G3 ترقية تباين `slate-400→500` شاملة (إبقاء الداكن) · G4 نجاح `emerald-700` · G5 مكوّن `StatusMessage` (alert/status) عبر ~24 ملفاً · G6 tabs/aria-pressed · G7 فحص axe آلي (jest-axe، 16/16).
 ## المرحلة 4 — التنفيذ (المرحلة C: أدوات المعلّم) ▶️
 - ✅ **C1 — Gradebook للمعلّم** (موقّع): `GET /api/v1/assessment/courses/{slug}/gradebook` (تخويل isStaffFor، طالب→403) عبر `GradebookService` دُفعي بلا N+1 + `weightedOverall` مشتركة (DRY)؛ تبويب «درجات الطلاب» بجدول دلالي + فرز + تصدير CSV (UTF-8 BOM) + نمط WAI‑ARIA كامل. PDPL: لا بريد/هاتف، عزل المقررات.
-- ⏭️ C2 — مراجعة/تصحيح التسليمات من الواجهة (تجاوز/إعادة درجة).
+- ✅ **C2 — مراجعة/تصحيح التسليمات** (موقّع): كشف `student.name` (PDPL) + متحكّم تنزيل ملف محمي (`can('update',course)`، لا path traversal) + `SubmissionReview.tsx` (قائمة→فتح→تصحيح rubric/مباشر+تغذية→حفظ، تأكيد إعادة). الخلفية (index/grade) كانت جاهزة.
 - ⏭️ C3 — البريد الجماعي والإعلانات (طوابير، تحترم التفضيلات).
 
 > ملاحظات نشر/تأجيل:
@@ -53,3 +53,4 @@
 | 2026-06-15 | B2b — SEO الأخبار + المدرّب | news/[slug] → NewsArticle؛ instructors/[id] → ProfilePage(inLanguage:ar)→Person (sameAs روابط فقط PDPL) + BreadcrumbList · أغلفة خادمية · لا تغيير خلفي | front: typecheck نظيف، 12/12، build ✅ (الصفحتان ƒ) · compliance schema.org+PDPL OK | ✅ موقّع (مستقلّ) | B3 |
 | 2026-06-15 | B3 — WCAG 2.2 AA | G1 skip link/landmark · G2 focus-visible عام + حلقات ≥3:1 · G3 تباين slate-400→500 شامل · G4 emerald-700 · G5 StatusMessage (alert/status) ~24 ملف · G6 tabs/aria-pressed · G7 jest-axe | front: typecheck نظيف، 16/16 (axe)، build ✅ · لا تغيير خلفي | ✅ موقّع (مستقلّ) | المرحلة C |
 | 2026-06-15 | C1 — Gradebook المعلّم | GET /assessment/courses/{slug}/gradebook (isStaffFor، طالب→403) · GradebookService دُفعي بلا N+1 · weightedOverall مشتركة · تبويب جدول+فرز+CSV(BOM)+WAI-ARIA | pint نظيف · pest 339/339 (1155) · front typecheck/16/build ✅ | ✅ موقّع (مستقلّ) | C2 |
+| 2026-06-15 | C2 — مراجعة التسليمات | كشف student.name (PDPL) + SubmissionFileController (تنزيل محمي، 403/404) + SubmissionReview.tsx (تصحيح rubric/مباشر+تغذية+تأكيد إعادة) · الخلفية index/grade جاهزة | pint نظيف · pest 350/350 (1208) · front typecheck/16/build ✅ | ✅ موقّع (مستقلّ) | C3 |
