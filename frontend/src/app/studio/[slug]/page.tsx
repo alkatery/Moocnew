@@ -168,38 +168,60 @@ export default function ManageCoursePage() {
 
       {/* G6: role="tablist"/"tab"/aria-selected — G3: slate-400→slate-500 للتبويب غير النشط */}
       {/* C1: أضيف تبويب ثالث «درجات الطلاب» بنفس نمط a11y القائم */}
+      {/* a11y (WAI-ARIA Tabs): id لكل تبويب + roving tabindex + تنقّل بالأسهم (RTL: يسار=التالي) */}
       <div className="mb-6 flex gap-2 border-b border-slate-200" role="tablist" aria-label="أقسام الاستوديو">
-        {([
-          ['curriculum',  'المنهج'],
-          ['assessments', 'التقييمات والدرجات'],
-          ['gradebook',   t('gradebook.tab')],
-        ] as const).map(([k, label]) => (
-          <button
-            key={k}
-            role="tab"
-            aria-selected={tab === k}
-            aria-controls={`tabpanel-${k}`}
-            onClick={() => setTab(k)}
-            className={`-mb-px border-b-2 px-4 py-2.5 text-sm font-bold transition ${
-              tab === k ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-500 hover:text-slate-600'
-            }`}
-          >
-            {label}
-          </button>
-        ))}
+        {(() => {
+          const keys = ['curriculum', 'assessments', 'gradebook'] as const;
+          const labels: Record<(typeof keys)[number], string> = {
+            curriculum: 'المنهج',
+            assessments: 'التقييمات والدرجات',
+            gradebook: t('gradebook.tab'),
+          };
+          const onKeyDown = (e: React.KeyboardEvent, k: (typeof keys)[number]) => {
+            const i = keys.indexOf(k);
+            let next: (typeof keys)[number] | null = null;
+            if (e.key === 'ArrowLeft') next = keys[(i + 1) % keys.length]; // RTL: السهم الأيسر يتقدّم
+            else if (e.key === 'ArrowRight') next = keys[(i - 1 + keys.length) % keys.length];
+            else if (e.key === 'Home') next = keys[0];
+            else if (e.key === 'End') next = keys[keys.length - 1];
+            if (next) {
+              e.preventDefault();
+              setTab(next);
+              const id = `tab-${next}`;
+              requestAnimationFrame(() => document.getElementById(id)?.focus());
+            }
+          };
+          return keys.map((k) => (
+            <button
+              key={k}
+              id={`tab-${k}`}
+              role="tab"
+              aria-selected={tab === k}
+              aria-controls={`tabpanel-${k}`}
+              tabIndex={tab === k ? 0 : -1}
+              onClick={() => setTab(k)}
+              onKeyDown={(e) => onKeyDown(e, k)}
+              className={`-mb-px border-b-2 px-4 py-2.5 text-sm font-bold transition ${
+                tab === k ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-500 hover:text-slate-600'
+              }`}
+            >
+              {labels[k]}
+            </button>
+          ));
+        })()}
       </div>
 
-      {/* G6: tabpanel يربط بـ aria-controls على كل تبويب */}
-      <div id="tabpanel-assessments" role="tabpanel" hidden={tab !== 'assessments'}>
+      {/* G6: tabpanel يربط بـ aria-controls على كل تبويب — a11y: aria-labelledby للاسم */}
+      <div id="tabpanel-assessments" role="tabpanel" aria-labelledby="tab-assessments" hidden={tab !== 'assessments'}>
         <AssessmentsPanel courseSlug={slug} sections={sections} />
       </div>
 
       {/* C1: tabpanel درجات الطلاب — يُحمَّل عند فتح التبويب */}
-      <div id="tabpanel-gradebook" role="tabpanel" hidden={tab !== 'gradebook'}>
+      <div id="tabpanel-gradebook" role="tabpanel" aria-labelledby="tab-gradebook" hidden={tab !== 'gradebook'}>
         {tab === 'gradebook' && <InstructorGradebook courseSlug={slug} />}
       </div>
 
-      <div id="tabpanel-curriculum" role="tabpanel" hidden={tab !== 'curriculum'}>
+      <div id="tabpanel-curriculum" role="tabpanel" aria-labelledby="tab-curriculum" hidden={tab !== 'curriculum'}>
         <div className="grid gap-6 lg:grid-cols-3">
           <div className="lg:order-2">
             <div className="card mb-4">

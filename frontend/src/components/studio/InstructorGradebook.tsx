@@ -133,7 +133,7 @@ export function InstructorGradebook({ courseSlug }: { courseSlug: string }) {
 
   // ── مساعد: رمز سهم الفرز مع aria-sort ───────────────────────────────
   function SortIcon({ colKey }: { colKey: SortKey }) {
-    if (sortKey !== colKey) return <span aria-hidden="true" className="ms-1 text-slate-300">⇅</span>;
+    if (sortKey !== colKey) return <span aria-hidden="true" className="ms-1 text-slate-400">⇅</span>;
     return (
       <span aria-hidden="true" className="ms-1 text-brand-600">
         {sortDir === 'asc' ? '↑' : '↓'}
