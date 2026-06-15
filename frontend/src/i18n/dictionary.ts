@@ -247,6 +247,16 @@ const dictionaries = {
     'gradebook.sortAsc': 'ترتيب تصاعدي',
     'gradebook.sortDesc': 'ترتيب تنازلي',
     'gradebook.exportNote': 'يتم تصدير الصفحة الحالية فقط',
+    // D1: العلامات المرجعية
+    'nav.bookmarks': 'علاماتي',
+    'bookmarks.title': 'علاماتي المرجعية',
+    'bookmarks.empty': 'لا علامات مرجعية بعد — احفظ دروساً من صفحة التعلّم للرجوع إليها لاحقاً.',
+    'bookmarks.error': 'تعذّر تحميل علاماتك المرجعية',
+    'bookmarks.add': 'حفظ كعلامة مرجعية',
+    'bookmarks.remove': 'إزالة العلامة المرجعية',
+    'bookmarks.open': 'فتح الدرس',
+    'lesson.bookmark': 'حفظ كعلامة مرجعية',
+    'lesson.bookmarked': 'إزالة العلامة المرجعية',
     // C3: البريد الجماعي وإعلانات المقرر
     'comm.tab': 'التواصل',
     'comm.announce.title': 'نشر إعلان',
@@ -508,6 +518,16 @@ const dictionaries = {
     'gradebook.sortAsc': 'Sort ascending',
     'gradebook.sortDesc': 'Sort descending',
     'gradebook.exportNote': 'Exports current page only',
+    // D1: Bookmarks
+    'nav.bookmarks': 'My bookmarks',
+    'bookmarks.title': 'My bookmarks',
+    'bookmarks.empty': 'No bookmarks yet — save lessons from the learning page to revisit them later.',
+    'bookmarks.error': 'Could not load your bookmarks',
+    'bookmarks.add': 'Save as bookmark',
+    'bookmarks.remove': 'Remove bookmark',
+    'bookmarks.open': 'Open lesson',
+    'lesson.bookmark': 'Save as bookmark',
+    'lesson.bookmarked': 'Remove bookmark',
     // C3: bulk email & course announcements
     'comm.tab': 'Communications',
     'comm.announce.title': 'Post announcement',

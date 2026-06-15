@@ -508,6 +508,15 @@ export interface InstructorGradebook {
   rows: GradebookRow[];
 }
 
+// ---- D1: العلامات المرجعية (Bookmarks) ----
+/** علامة مرجعية واحدة — يطابق عنصر data في GET/POST /api/v1/bookmarks */
+export interface Bookmark {
+  id: number;
+  lesson: { id: number; title: string; type: Lesson['type'] };
+  course: { id: number; title: string; slug: string };
+  created_at: string;
+}
+
 // ---- C3: إعلانات المقرر والبريد الجماعي ----
 
 /**

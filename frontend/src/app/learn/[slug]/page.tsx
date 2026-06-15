@@ -1,17 +1,19 @@
 'use client';
 
+// D1: أُضيف استيراد Bookmark ودعم زر toggle العلامة المرجعية
+
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { api } from '@/lib/api';
-import type { Course, Lesson, LessonContent } from '@/lib/types';
+import type { Bookmark, Course, Lesson, LessonContent } from '@/lib/types';
 import { t } from '@/i18n/dictionary';
 import { PageHeader } from '@/components/PageHeader';
 import { LessonTypeIcon } from '@/components/LessonTypeIcon';
 import { Gradebook } from '@/components/Gradebook';
 import { LessonInteraction } from '@/components/LessonInteraction';
 import { TutorWidget } from '@/components/TutorWidget';
-import { SuccessMsg } from '@/components/StatusMessage';
+import { ErrorMsg, SuccessMsg } from '@/components/StatusMessage';
 
 const TYPE_BADGES: Record<string, string> = {
   video: 'درس فيديو',
@@ -30,11 +32,32 @@ export default function PlayerPage() {
   const [note, setNote] = useState('');
   const videoRef = useRef<HTMLVideoElement | null>(null);
 
+  // D1: حالات العلامة المرجعية
+  // خريطة lesson_id → bookmark_id للحذف الفوري
+  const [bookmarkMap, setBookmarkMap] = useState<Map<number, number>>(new Map());
+  // حالة toggle للدرس النشط (مشتقة من bookmarkMap)
+  const [bookmarkBusy, setBookmarkBusy] = useState(false);
+  const [bookmarkMsg, setBookmarkMsg] = useState('');
+  const [bookmarkErr, setBookmarkErr] = useState('');
+
   useEffect(() => {
     api<{ data: Course }>(`/catalog/courses/${slug}`, { auth: false })
       .then((res) => setCourse(res.data))
       .catch(() => setCourse(null));
   }, [slug]);
+
+  // D1: جلب علامات المستخدم مرة واحدة لتهيئة bookmarkMap
+  useEffect(() => {
+    api<{ data: { id: number; lesson: { id: number } }[] }>('/bookmarks')
+      .then((r) => {
+        const map = new Map<number, number>();
+        r.data.forEach((b) => map.set(b.lesson.id, b.id));
+        setBookmarkMap(map);
+      })
+      .catch(() => {
+        // الفشل هنا لا يكسر الصفحة — الزر يبدأ بحالة «غير محفوظ»
+      });
+  }, []);
 
   async function open(lesson: Lesson) {
     setActive(lesson);
@@ -58,6 +81,39 @@ export default function PlayerPage() {
   async function complete(lesson: Lesson) {
     await api(`/lessons/${lesson.id}/progress`, { method: 'POST', body: { completed: true } }).catch(() => {});
     setNote('تم تسجيل إكمال الدرس ✓');
+  }
+
+  // D1: toggle العلامة المرجعية — POST إضافة / DELETE حذف
+  async function toggleBookmark(lesson: Lesson) {
+    if (bookmarkBusy) return;
+    setBookmarkBusy(true);
+    setBookmarkErr('');
+    setBookmarkMsg('');
+    const existingId = bookmarkMap.get(lesson.id);
+    try {
+      if (existingId !== undefined) {
+        // الدرس محفوظ → حذف
+        await api(`/bookmarks/${existingId}`, { method: 'DELETE' });
+        setBookmarkMap((prev) => {
+          const next = new Map(prev);
+          next.delete(lesson.id);
+          return next;
+        });
+        setBookmarkMsg(t('lesson.bookmark'));
+      } else {
+        // الدرس غير محفوظ → إضافة (idempotent: 201 أو 200)
+        const res = await api<{ data: Bookmark }>('/bookmarks', {
+          method: 'POST',
+          body: { lesson_id: lesson.id },
+        });
+        setBookmarkMap((prev) => new Map(prev).set(lesson.id, res.data.id));
+        setBookmarkMsg(t('lesson.bookmarked'));
+      }
+    } catch {
+      setBookmarkErr(t('common.error'));
+    } finally {
+      setBookmarkBusy(false);
+    }
   }
 
   if (!course) return <p className="label">{t('common.loading')}</p>;
@@ -140,9 +196,46 @@ export default function PlayerPage() {
                   <span className="badge mb-1">{TYPE_BADGES[active.type] ?? TYPE_BADGES.article}</span>
                   <h2 className="text-xl">{active.title}</h2>
                 </div>
-                <div className="flex items-center gap-3">
-                  {/* G5: role="status" عبر SuccessMsg */}
+                <div className="flex flex-wrap items-center gap-3">
+                  {/* G5: رسائل الحالة عبر StatusMessage (polite / assertive) */}
+                  <SuccessMsg msg={bookmarkMsg} />
+                  <ErrorMsg msg={bookmarkErr} />
                   <SuccessMsg msg={note} />
+
+                  {/* D1: زر toggle العلامة المرجعية — aria-pressed يعلن الحالة لتقنيات المساعدة */}
+                  {(() => {
+                    const isBookmarked = bookmarkMap.has(active.id);
+                    return (
+                      <button
+                        className={`btn btn-ghost ${isBookmarked ? 'text-brand-700' : 'text-slate-600'}`}
+                        aria-pressed={isBookmarked}
+                        aria-label={isBookmarked ? t('bookmarks.remove') : t('bookmarks.add')}
+                        disabled={bookmarkBusy}
+                        onClick={() => void toggleBookmark(active)}
+                      >
+                        {/* أيقونة مرجعية — aria-hidden لأن النص/aria-label يحمل الدلالة */}
+                        <svg
+                          width="18"
+                          height="18"
+                          viewBox="0 0 24 24"
+                          fill={isBookmarked ? 'currentColor' : 'none'}
+                          stroke="currentColor"
+                          strokeWidth="1.8"
+                          aria-hidden
+                          className="inline-block align-text-bottom"
+                        >
+                          <path
+                            d="M5 3h14a1 1 0 0 1 1 1v17l-8-4-8 4V4a1 1 0 0 1 1-1Z"
+                            strokeLinejoin="round"
+                          />
+                        </svg>
+                        <span className="me-1">
+                          {isBookmarked ? t('bookmarks.remove') : t('bookmarks.add')}
+                        </span>
+                      </button>
+                    );
+                  })()}
+
                   <button className="btn" onClick={() => void complete(active)}>{t('lesson.complete')}</button>
                 </div>
               </div>

@@ -54,6 +54,7 @@ use App\Http\Controllers\Api\V1\Enrollment\LessonProgressController;
 use App\Http\Controllers\Api\V1\Enrollment\MediaStreamController;
 use App\Http\Controllers\Api\V1\Enrollment\PlaybackController;
 use App\Http\Controllers\Api\V1\HealthController;
+use App\Http\Controllers\Api\V1\Learning\BookmarkController;
 use App\Http\Controllers\Api\V1\Learning\LessonNoteController;
 use App\Http\Controllers\Api\V1\Learning\PathController;
 use App\Http\Controllers\Api\V1\Learning\PathEnrollmentController;
@@ -292,6 +293,10 @@ Route::middleware('auth:sanctum')->name('api.enrollment.')->group(function () {
     Route::get('lessons/{lesson}/notes', [LessonNoteController::class, 'index'])->name('lesson.notes.index');
     Route::post('lessons/{lesson}/notes', [LessonNoteController::class, 'store'])->name('lesson.notes.store');
     Route::delete('lesson-notes/{note}', [LessonNoteController::class, 'destroy'])->name('lesson.notes.destroy');
+    // D1 — العلامات المرجعية (bookmarks)
+    Route::get('bookmarks', [BookmarkController::class, 'index'])->name('bookmarks.index');
+    Route::post('bookmarks', [BookmarkController::class, 'store'])->name('bookmarks.store');
+    Route::delete('bookmarks/{bookmark}', [BookmarkController::class, 'destroy'])->name('bookmarks.destroy');
     Route::get('lessons/{lesson}/checkpoints', [LessonCheckpointController::class, 'index'])->name('lesson.checkpoints');
     Route::post('lessons/{lesson}/checkpoints/{question}/answer', [LessonCheckpointController::class, 'answer'])->name('lesson.checkpoints.answer');
     Route::get('catalog/courses/{course}/progress', [CourseProgressController::class, 'show'])->name('course.progress');
