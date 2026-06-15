@@ -23,11 +23,12 @@
   - ✅ **A1 — تفعيل البريد الإلكتروني** (موقّع من مراجِع مستقلّ).
   - ✅ **A2 — الخدمة الذاتية للحساب** (كلمة المرور/تصدير/حذف PDPL): موقّع. أُغلقت ملاحظة الـ UX (تحديث سياق auth بعد PATCH).
   - ✅ **A3 — إخفاء الهوية الإداري (Retirement)**: موقّع. يعيد استخدام `AnonymizeUser` (لا تعديل عليه — انضباط نطاق).
-- **▶️ المرحلة B (SEO + WCAG 2.2 AA) — جارية.** اعتمد صاحب المشروع الانطلاق بها.
+- **✅ المرحلة B (SEO + WCAG 2.2 AA) — مكتملة وموقّعة بالكامل.**
   - ✅ **B1 — SEO صفحة الدورة** (موقّع): Server Component + `generateMetadata` + JSON‑LD (Course/Offer/BreadcrumbList).
   - ✅ **B2a — SEO المسار + الرئيسية** (موقّع): صفحة المسار → غلاف خادمي + JSON‑LD (EducationalOccupationalProgram/ItemList/BreadcrumbList) + جزيرة تفاعلية (reloadWithAuth بعد الالتحاق)؛ الرئيسية → حقن Organization/WebSite/SearchAction (logo محذوف لغياب أصل عام). أُصلح سقوط محرف في سلسلة SVG زخرفية (مطابقة 1:1).
   - ✅ **B2b — SEO الأخبار + المدرّب** (موقّع): NewsArticle (الخبر) + ProfilePage→Person (المدرّب، sameAs مصفّاة لروابط URL فقط — PDPL) + BreadcrumbList، أغلفة خادمية بلا جزيرة. أُضيف inLanguage:ar للـ ProfilePage.
-  - ⏭️ B3 — تدقيق وإصلاح WCAG 2.2 AA (يشمل ملاحظة جسم الخبر `<div>`→دلالي).
+  - ✅ **B3 — WCAG 2.2 AA** (موقّع): G1 skip link/landmark · G2 `:focus-visible` عام + حلقات تركيز ≥3:1 · G3 ترقية تباين `slate-400→500` شاملة (إبقاء الداكن) · G4 نجاح `emerald-700` · G5 مكوّن `StatusMessage` (alert/status) عبر ~24 ملفاً · G6 tabs/aria-pressed · G7 فحص axe آلي (jest-axe، 16/16).
+- **▶️ التالي: المرحلة C (أدوات المعلّم).**
 
 > ملاحظات نشر/تأجيل:
 > - في الإنتاج يجب أن يكون `APP_URL` عنوان الـ API العام كي يصحّ توقيع رابط التحقّق. `FRONTEND_URL` يضبط صفحة هبوط التحقّق.
@@ -47,3 +48,4 @@
 | 2026-06-15 | B1 — SEO صفحة الدورة | صفحة الدورة → Server Component + generateMetadata (canonical/OG/Twitter) + JSON‑LD (Course/Offer/BreadcrumbList) + CourseDetailClient (جزيرة تفاعلية) · لا تغيير خلفي | front: typecheck نظيف، 12/12، build ✅ (/catalog/[slug] = ƒ Dynamic) · compliance schema.org 27/27 | ✅ موقّع (مستقلّ) | B2a |
 | 2026-06-15 | B2a — SEO المسار + الرئيسية | المسار → غلاف خادمي + JSON‑LD (EducationalOccupationalProgram/ItemList/BreadcrumbList) + PathDetailClient (reloadWithAuth)؛ الرئيسية → Organization/WebSite/SearchAction (logo محذوف) + HomeClient · لا تغيير خلفي | front: typecheck نظيف، 12/12، build ✅ (/paths/[slug]=ƒ، /=○) · compliance schema.org OK | ✅ موقّع (مستقلّ) | B2b |
 | 2026-06-15 | B2b — SEO الأخبار + المدرّب | news/[slug] → NewsArticle؛ instructors/[id] → ProfilePage(inLanguage:ar)→Person (sameAs روابط فقط PDPL) + BreadcrumbList · أغلفة خادمية · لا تغيير خلفي | front: typecheck نظيف، 12/12، build ✅ (الصفحتان ƒ) · compliance schema.org+PDPL OK | ✅ موقّع (مستقلّ) | B3 |
+| 2026-06-15 | B3 — WCAG 2.2 AA | G1 skip link/landmark · G2 focus-visible عام + حلقات ≥3:1 · G3 تباين slate-400→500 شامل · G4 emerald-700 · G5 StatusMessage (alert/status) ~24 ملف · G6 tabs/aria-pressed · G7 jest-axe | front: typecheck نظيف، 16/16 (axe)، build ✅ · لا تغيير خلفي | ✅ موقّع (مستقلّ) | المرحلة C |
