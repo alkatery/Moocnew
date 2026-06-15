@@ -33,7 +33,11 @@
 - ✅ **C2 — مراجعة/تصحيح التسليمات** (موقّع): كشف `student.name` (PDPL) + متحكّم تنزيل ملف محمي (`can('update',course)`، لا path traversal) + `SubmissionReview.tsx` (قائمة→فتح→تصحيح rubric/مباشر+تغذية→حفظ، تأكيد إعادة). الخلفية (index/grade) كانت جاهزة.
 - ✅ **C3 — البريد الجماعي والإعلانات** (موقّع): `course_announcements` + صنفا إشعار `ShouldQueue` يرثان `PreferenceAwareNotification` (opt-out مجّاني) · `CourseBroadcaster` إرسال فردي (لا BCC) · POST إعلان (201، throttle 30/1) + GET + POST بريد جماعي (202، throttle 5/1، لا تخزين) · تخويل isStaffFor · تدقيق بالعدد · تبويب «التواصل». 40 اختباراً.
 - **✅ المرحلة C (أدوات المعلّم) — مكتملة وموقّعة بالكامل.** متابعة موثّقة غير حاجبة: إضافة اختبار 429 لـ rate limit (السلوك صحيح والـ middleware مطبَّق؛ الواجهة تعالج 429).
-- **▶️ التالي: المرحلة D (إثراء التعلّم).**
+## المرحلة 4 — التنفيذ (المرحلة D: إثراء التعلّم) ▶️
+- ✅ **D1 — العلامات المرجعية** (موقّع): جدول/موديل/متحكّم على نمط LessonNote · GET/POST(idempotent)/DELETE تحت تخويل LessonAccess · زر toggle (aria-pressed) في مشغّل الدرس + صفحة /bookmarks. عزل بالمستخدم، لا PII.
+- ⏭️ D2 — المنتدى (تمييز إجابة + متابعة موضوع).
+- ⏭️ D3 — ملخّصات الإشعارات المجدولة (Horizon).
+- ⏭️ D4 — البحث في النصّ + ضوابط المشغّل (سرعة/جودة/استئناف).
 
 > ملاحظات نشر/تأجيل:
 > - في الإنتاج يجب أن يكون `APP_URL` عنوان الـ API العام كي يصحّ توقيع رابط التحقّق. `FRONTEND_URL` يضبط صفحة هبوط التحقّق.
@@ -57,3 +61,4 @@
 | 2026-06-15 | C1 — Gradebook المعلّم | GET /assessment/courses/{slug}/gradebook (isStaffFor، طالب→403) · GradebookService دُفعي بلا N+1 · weightedOverall مشتركة · تبويب جدول+فرز+CSV(BOM)+WAI-ARIA | pint نظيف · pest 339/339 (1155) · front typecheck/16/build ✅ | ✅ موقّع (مستقلّ) | C2 |
 | 2026-06-15 | C2 — مراجعة التسليمات | كشف student.name (PDPL) + SubmissionFileController (تنزيل محمي، 403/404) + SubmissionReview.tsx (تصحيح rubric/مباشر+تغذية+تأكيد إعادة) · الخلفية index/grade جاهزة | pint نظيف · pest 350/350 (1208) · front typecheck/16/build ✅ | ✅ موقّع (مستقلّ) | C3 |
 | 2026-06-15 | C3 — بريد جماعي وإعلانات | course_announcements + إشعاران ShouldQueue (PreferenceAware/opt-out) · CourseBroadcaster إرسال فردي · POST إعلان(201)/GET + bulk-email(202) · throttle 30/5 · تدقيق بالعدد · تبويب التواصل | pint نظيف · pest 390/390 (1327) · front typecheck/16/build ✅ | ✅ موقّع (مستقلّ) | المرحلة D |
+| 2026-06-15 | D1 — العلامات المرجعية | جدول/موديل/متحكّم (نمط LessonNote) · GET/POST(idempotent 201/200)/DELETE · تخويل LessonAccess · زر toggle aria-pressed + صفحة /bookmarks · عزل بالمستخدم | pint نظيف · pest 403/403 (1398) · front typecheck/30/build ✅ | ✅ موقّع (مستقلّ) | D2 |
