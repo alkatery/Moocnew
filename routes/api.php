@@ -441,6 +441,10 @@ Route::middleware('auth:sanctum')->prefix('community')->name('api.community.')->
     Route::post('posts/{post}/report', [ForumController::class, 'report'])->name('posts.report');
     Route::post('posts/{post}/hide', [ForumController::class, 'hide'])->name('posts.hide');
     Route::post('courses/{course}/bans', [ForumController::class, 'ban'])->name('bans.store');
+    // D2 — تمييز الإجابة المقبولة (toggle) + متابعة الموضوع
+    Route::post('threads/{thread}/accept', [ForumController::class, 'accept'])->name('threads.accept');
+    Route::post('threads/{thread}/subscribe', [ForumController::class, 'subscribe'])->name('threads.subscribe');
+    Route::delete('threads/{thread}/subscribe', [ForumController::class, 'unsubscribe'])->name('threads.unsubscribe');
 
     // Support tickets.
     Route::get('tickets', [TicketController::class, 'index'])->name('tickets.index');

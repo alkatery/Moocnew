@@ -10,8 +10,8 @@ it('returns the full preference matrix with channels enabled by default', functi
 
     $response = $this->getJson('/api/v1/notifications/preferences')->assertOk();
 
-    // 8 types × 5 channels = 40 rows (C3 أضاف course_announcement + course_bulk_email)
-    expect($response->json('data'))->toHaveCount(40);
+    // 9 types × 5 channels = 45 rows (D2 أضاف forum_reply)
+    expect($response->json('data'))->toHaveCount(45);
     expect(collect($response->json('data'))->every(fn ($r) => $r['enabled'] === true))->toBeTrue();
 });
 

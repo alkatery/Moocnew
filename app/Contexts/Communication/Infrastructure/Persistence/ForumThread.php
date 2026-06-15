@@ -15,10 +15,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property int $user_id
  * @property string $title
  * @property bool $locked
+ * @property int|null $accepted_post_id
  */
 final class ForumThread extends Model
 {
-    protected $fillable = ['course_id', 'user_id', 'title', 'locked'];
+    protected $fillable = ['course_id', 'user_id', 'title', 'locked', 'accepted_post_id'];
 
     protected function casts(): array
     {
@@ -41,5 +42,17 @@ final class ForumThread extends Model
     public function posts(): HasMany
     {
         return $this->hasMany(ForumPost::class, 'thread_id');
+    }
+
+    /** D2 — الإجابة المقبولة على الموضوع (إشارة واحدة nullOnDelete). */
+    public function acceptedPost(): BelongsTo
+    {
+        return $this->belongsTo(ForumPost::class, 'accepted_post_id');
+    }
+
+    /** D2 — اشتراكات متابعة الموضوع. */
+    public function subscriptions(): HasMany
+    {
+        return $this->hasMany(ForumSubscription::class, 'thread_id');
     }
 }

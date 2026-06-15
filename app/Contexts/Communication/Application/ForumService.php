@@ -7,7 +7,9 @@ namespace App\Contexts\Communication\Application;
 use App\Contexts\Communication\Infrastructure\Persistence\ForumBan;
 use App\Contexts\Communication\Infrastructure\Persistence\ForumPost;
 use App\Contexts\Communication\Infrastructure\Persistence\ForumReport;
+use App\Contexts\Communication\Infrastructure\Persistence\ForumSubscription;
 use App\Contexts\Communication\Infrastructure\Persistence\ForumThread;
+use App\Contexts\Notification\Infrastructure\Notifications\ForumReplyNotification;
 use App\Models\User;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
@@ -51,11 +53,84 @@ final class ForumService
 
         $this->assertNotDuplicate($thread->getKey(), $author->getKey(), $body);
 
-        return $thread->posts()->create([
+        $post = $thread->posts()->create([
             'user_id' => $author->getKey(),
             'body' => $body,
             'parent_id' => $parentId,
         ]);
+
+        // D2 — إشعار متابعي الموضوع عدا كاتب الرد (مُطابور، opt-out عبر via())
+        $this->notifySubscribers($thread, $author);
+
+        return $post;
+    }
+
+    /**
+     * D2 — تمييز رد كإجابة مقبولة أو إلغاء تمييزه (toggle).
+     *
+     * الرد يجب أن يكون في الموضوع وغير مخفيّ — يُتحقّق في المتحكّم قبل الاستدعاء.
+     * يُرجع accepted_post_id الجديد (أو null بعد الإلغاء).
+     */
+    public function accept(ForumThread $thread, ForumPost $post): ?int
+    {
+        // toggle: نفس الرد المميَّز → إلغاء؛ غيره → تبديل الإشارة
+        $newValue = $thread->accepted_post_id === $post->getKey()
+            ? null
+            : $post->getKey();
+
+        $thread->update(['accepted_post_id' => $newValue]);
+
+        return $newValue;
+    }
+
+    /**
+     * D2 — متابعة موضوع (idempotent: اشتراك قائم لا يُكرَّر).
+     */
+    public function subscribe(ForumThread $thread, User $user): void
+    {
+        ForumSubscription::firstOrCreate([
+            'thread_id' => $thread->getKey(),
+            'user_id' => $user->getKey(),
+        ]);
+    }
+
+    /**
+     * D2 — إلغاء متابعة موضوع (idempotent: غير مشترك أصلاً → لا خطأ).
+     */
+    public function unsubscribe(ForumThread $thread, User $user): void
+    {
+        ForumSubscription::query()
+            ->where('thread_id', $thread->getKey())
+            ->where('user_id', $user->getKey())
+            ->delete();
+    }
+
+    /**
+     * D2 — بثّ ForumReplyNotification لمتابعي الموضوع عدا كاتب الرد.
+     * chunkById لحماية الذاكرة عند كثرة المتابعين؛ كل إرسال مهمة مُطابورة.
+     */
+    private function notifySubscribers(ForumThread $thread, User $author): void
+    {
+        // تحميل بيانات المقرر مرة واحدة (قد يكون محمَّلاً بالفعل)
+        $course = $thread->course;
+        $courseTitle = $course->title ?? '';
+
+        ForumSubscription::query()
+            ->where('thread_id', $thread->getKey())
+            ->where('user_id', '!=', $author->getKey())   // تجنّب إشعار الذات
+            ->with('user')
+            ->chunkById(100, function ($subscriptions) use ($thread, $courseTitle, $author): void {
+                foreach ($subscriptions as $subscription) {
+                    $subscription->user->notify(
+                        new ForumReplyNotification(
+                            $thread->getKey(),
+                            $thread->title,
+                            $courseTitle,
+                            $author->name,
+                        )
+                    );
+                }
+            });
     }
 
     public function hide(ForumPost $post, User $moderator): ForumPost

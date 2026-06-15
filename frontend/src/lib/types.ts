@@ -93,6 +93,55 @@ export interface ForumPost {
   created_at: string | null;
 }
 
+// ---- D2: تمييز الإجابة + متابعة الموضوع ----
+
+/**
+ * شكل الموضوع الكامل كما يُرجعه GET /community/threads/{id}
+ * يحمل الحقول الجديدة: user_id, accepted_post_id (§3.د من عقد D2)
+ */
+export interface ForumThreadFull {
+  id: number;
+  title: string;
+  /** معرّف صاحب الموضوع — لتحديد ظهور زر التمييز */
+  user_id: number;
+  /** معرّف الرد المقبول حالياً، أو null إن لم يُميَّز رد بعد */
+  accepted_post_id: number | null;
+}
+
+/**
+ * استجابة GET /community/threads/{id} الكاملة — §3.د
+ * subscribed: هل المستخدم الحالي متابع للموضوع
+ * can_accept: هل يحقّ للمستخدم الحالي تمييز إجابة (صاحب الموضوع أو طاقم المقرر)
+ */
+export interface ThreadDetail {
+  thread: ForumThreadFull;
+  posts: ForumPost[];
+  subscribed: boolean;
+  can_accept: boolean;
+}
+
+/**
+ * استجابة POST /community/threads/{id}/accept — §3.أ
+ * accepted_post_id: معرّف الرد المميَّز أو null بعد الإلغاء
+ */
+export interface AcceptPostResponse {
+  data: {
+    thread_id: number;
+    accepted_post_id: number | null;
+  };
+}
+
+/**
+ * استجابة POST|DELETE /community/threads/{id}/subscribe — §3.ب و§3.ج
+ * subscribed: الحالة الجديدة للمتابعة
+ */
+export interface SubscribeResponse {
+  data: {
+    thread_id: number;
+    subscribed: boolean;
+  };
+}
+
 export interface NotificationItem {
   id: string;
   data: Record<string, unknown>;

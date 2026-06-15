@@ -274,6 +274,15 @@ const dictionaries = {
     'comm.audience.allActive': 'كل المتعلّمين النشطين',
     'comm.error': 'تعذّر الإرسال — تأكّد أنك من طاقم هذا المقرر',
     'comm.rateLimited': 'أرسلت كثيراً — انتظر دقيقة',
+    // D2: تمييز الإجابة + متابعة الموضوع
+    'community.accept': 'تمييز كإجابة مقبولة',
+    'community.unaccept': 'إلغاء تمييز الإجابة',
+    'community.acceptedBadge': 'إجابة مقبولة',
+    'community.subscribe': 'متابعة الموضوع',
+    'community.unsubscribe': 'إلغاء المتابعة',
+    'community.subscribed': 'تتابع هذا الموضوع — ستُشعَر بالردود الجديدة',
+    'community.acceptError': 'تعذّر تمييز الإجابة',
+    'community.subscribeError': 'تعذّر تحديث المتابعة',
   },
   en: {
     'app.name': 'MOOC Platform',
@@ -545,6 +554,15 @@ const dictionaries = {
     'comm.audience.allActive': 'All active learners',
     'comm.error': 'Could not send — make sure you are course staff',
     'comm.rateLimited': 'Too many requests — please wait a minute',
+    // D2: Accept answer + subscribe to thread
+    'community.accept': 'Mark as accepted answer',
+    'community.unaccept': 'Unmark accepted answer',
+    'community.acceptedBadge': 'Accepted answer',
+    'community.subscribe': 'Follow thread',
+    'community.unsubscribe': 'Unfollow thread',
+    'community.subscribed': 'You are following this thread — you will be notified of new replies',
+    'community.acceptError': 'Could not mark the answer',
+    'community.subscribeError': 'Could not update follow status',
   },
 } as const;
 

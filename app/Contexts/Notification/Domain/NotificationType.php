@@ -18,6 +18,7 @@ enum NotificationType: string
     case StudyPlanReminder = 'study_plan_reminder';
     case CourseAnnouncement = 'course_announcement';  // C3: إعلانات المقرر
     case CourseBulkEmail = 'course_bulk_email';        // C3: رسائل المعلّم الجماعية
+    case ForumReply = 'forum_reply';                   // D2: ردود المنتدى
 
     public function label(): string
     {
@@ -30,6 +31,7 @@ enum NotificationType: string
             self::StudyPlanReminder => 'تنبيهات الخطة الدراسية',
             self::CourseAnnouncement => 'إعلانات المقرر',
             self::CourseBulkEmail => 'رسائل المعلّم',
+            self::ForumReply => 'ردود المنتدى',
         };
     }
 }
