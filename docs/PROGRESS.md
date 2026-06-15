@@ -36,7 +36,7 @@
 ## المرحلة 4 — التنفيذ (المرحلة D: إثراء التعلّم) ▶️
 - ✅ **D1 — العلامات المرجعية** (موقّع): جدول/موديل/متحكّم على نمط LessonNote · GET/POST(idempotent)/DELETE تحت تخويل LessonAccess · زر toggle (aria-pressed) في مشغّل الدرس + صفحة /bookmarks. عزل بالمستخدم، لا PII.
 - ✅ **D2 — المنتدى (تمييز إجابة + متابعة)** (موقّع): `accepted_post_id` (إجابة واحدة بنيوية) + `forum_subscriptions` + `ForumReplyNotification` مُطابور (يحترم opt-out، يتجنّب الكاتب) + توسعة show (can_accept/subscribed) + أزرار a11y (شارة لا لون فقط).
-- ⏭️ D3 — ملخّصات الإشعارات المجدولة (Horizon).
+- ✅ **D3 — ملخّصات الإشعارات المجدولة** (موقّع): عمودا digest_frequency/last_digest_at · أمر `DispatchNotificationDigests` (يجمّع notifications بعد آخر ملخّص، لا فارغ، idempotent، daily/weekly بتوقيت المستخدم) · `DigestNotification` مُطابور يحترم opt-out · منتقي تكرار في /notifications.
 - ⏭️ D4 — البحث في النصّ + ضوابط المشغّل (سرعة/جودة/استئناف).
 
 > ملاحظات نشر/تأجيل:
@@ -63,3 +63,4 @@
 | 2026-06-15 | C3 — بريد جماعي وإعلانات | course_announcements + إشعاران ShouldQueue (PreferenceAware/opt-out) · CourseBroadcaster إرسال فردي · POST إعلان(201)/GET + bulk-email(202) · throttle 30/5 · تدقيق بالعدد · تبويب التواصل | pint نظيف · pest 390/390 (1327) · front typecheck/16/build ✅ | ✅ موقّع (مستقلّ) | المرحلة D |
 | 2026-06-15 | D1 — العلامات المرجعية | جدول/موديل/متحكّم (نمط LessonNote) · GET/POST(idempotent 201/200)/DELETE · تخويل LessonAccess · زر toggle aria-pressed + صفحة /bookmarks · عزل بالمستخدم | pint نظيف · pest 403/403 (1398) · front typecheck/30/build ✅ | ✅ موقّع (مستقلّ) | D2 |
 | 2026-06-15 | D2 — منتدى (تمييز/متابعة) | accepted_post_id + forum_subscriptions + ForumReplyNotification مُطابور (opt-out، يتجنّب الكاتب) + توسعة show + أزرار aria-pressed وشارة إجابة مقبولة | pint نظيف · pest 427/427 (1514) · front typecheck/53/build ✅ | ✅ موقّع (مستقلّ) | D3 |
+| 2026-06-15 | D3 — ملخّصات مجدولة | digest_frequency/last_digest_at + DispatchNotificationDigests (idempotent، لا فارغ، daily/weekly) + DigestNotification مُطابور (opt-out) + منتقي تكرار /notifications | pint نظيف · pest 448/448 (1564) · front typecheck/74/build ✅ | ✅ موقّع (مستقلّ) | D4 |
