@@ -26,8 +26,8 @@
 - **▶️ المرحلة B (SEO + WCAG 2.2 AA) — جارية.** اعتمد صاحب المشروع الانطلاق بها.
   - ✅ **B1 — SEO صفحة الدورة** (موقّع): Server Component + `generateMetadata` + JSON‑LD (Course/Offer/BreadcrumbList).
   - ✅ **B2a — SEO المسار + الرئيسية** (موقّع): صفحة المسار → غلاف خادمي + JSON‑LD (EducationalOccupationalProgram/ItemList/BreadcrumbList) + جزيرة تفاعلية (reloadWithAuth بعد الالتحاق)؛ الرئيسية → حقن Organization/WebSite/SearchAction (logo محذوف لغياب أصل عام). أُصلح سقوط محرف في سلسلة SVG زخرفية (مطابقة 1:1).
-  - ⏭️ B2b — SEO الأخبار (NewsArticle) + المدرّب (ProfilePage→Person).
-  - ⏭️ B3 — تدقيق وإصلاح WCAG 2.2 AA.
+  - ✅ **B2b — SEO الأخبار + المدرّب** (موقّع): NewsArticle (الخبر) + ProfilePage→Person (المدرّب، sameAs مصفّاة لروابط URL فقط — PDPL) + BreadcrumbList، أغلفة خادمية بلا جزيرة. أُضيف inLanguage:ar للـ ProfilePage.
+  - ⏭️ B3 — تدقيق وإصلاح WCAG 2.2 AA (يشمل ملاحظة جسم الخبر `<div>`→دلالي).
 
 > ملاحظات نشر/تأجيل:
 > - في الإنتاج يجب أن يكون `APP_URL` عنوان الـ API العام كي يصحّ توقيع رابط التحقّق. `FRONTEND_URL` يضبط صفحة هبوط التحقّق.
@@ -46,3 +46,4 @@
 | 2026-06-15 | A3 — إخفاء الهوية الإداري | POST /admin/users/{id}/retire (يعيد استخدام AnonymizeUser) · حراسات الذات/الإدارة العليا/الصلاحية · زر «إخفاء الهوية» بالواجهة | pint نظيف · pest 317/317 (1073) · front: typecheck نظيف، 12/12، build ✅ | ✅ موقّع (مستقلّ) | حدّ المرحلة A — انتظار الموافقة |
 | 2026-06-15 | B1 — SEO صفحة الدورة | صفحة الدورة → Server Component + generateMetadata (canonical/OG/Twitter) + JSON‑LD (Course/Offer/BreadcrumbList) + CourseDetailClient (جزيرة تفاعلية) · لا تغيير خلفي | front: typecheck نظيف، 12/12، build ✅ (/catalog/[slug] = ƒ Dynamic) · compliance schema.org 27/27 | ✅ موقّع (مستقلّ) | B2a |
 | 2026-06-15 | B2a — SEO المسار + الرئيسية | المسار → غلاف خادمي + JSON‑LD (EducationalOccupationalProgram/ItemList/BreadcrumbList) + PathDetailClient (reloadWithAuth)؛ الرئيسية → Organization/WebSite/SearchAction (logo محذوف) + HomeClient · لا تغيير خلفي | front: typecheck نظيف، 12/12، build ✅ (/paths/[slug]=ƒ، /=○) · compliance schema.org OK | ✅ موقّع (مستقلّ) | B2b |
+| 2026-06-15 | B2b — SEO الأخبار + المدرّب | news/[slug] → NewsArticle؛ instructors/[id] → ProfilePage(inLanguage:ar)→Person (sameAs روابط فقط PDPL) + BreadcrumbList · أغلفة خادمية · لا تغيير خلفي | front: typecheck نظيف، 12/12، build ✅ (الصفحتان ƒ) · compliance schema.org+PDPL OK | ✅ موقّع (مستقلّ) | B3 |

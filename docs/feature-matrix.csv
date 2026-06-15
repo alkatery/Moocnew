@@ -111,10 +111,10 @@
 مكوّن: الإكمال اليدوي,المكوّنات,موجود,—,—,عبر تتبّع التقدّم,ناجح,موقّع
 UX: الوضع الليلي Dark Mode,التصميم,غائب,P3,frontend-dev,تبديل ثيم,—,—
 UX: i18n توجيه لغات,التصميم,جزئي,P2,frontend-dev,توجيه لغات + hreflang,معلّق,معلّق
-SEO: ميتا لكل صفحة,التصميم,موجود,P1,frontend-dev,عنوان/وصف لكل مقرر/مسار,ناجح,موقّع (B1 مقرر + B2a مسار؛ الأخبار B2b)
-SEO: schema.org JSON-LD,التصميم,موجود,P1,frontend-dev,JSON-LD Course/Offer لكل مقرر,ناجح,موقّع (B1 مقرر + B2a مسار/Organization/WebSite)
-SEO: OpenGraph/Twitter,التصميم,جزئي,P1,frontend-dev,وسوم لكل مقرر/شهادة,جزئي — مقرر+مسار B1/B2a,B1/B2a (مقرر+مسار؛ الشهادة لاحقاً)
-SEO: canonical,التصميم,موجود,P1,frontend-dev,توحيد canonical للمقرر,ناجح,موقّع (B1 مقرر + B2a مسار)
+SEO: ميتا لكل صفحة,التصميم,موجود,P1,frontend-dev,عنوان/وصف لكل مقرر/مسار,ناجح,موقّع (B1/B2a/B2b: مقرر+مسار+خبر+مدرّب)
+SEO: schema.org JSON-LD,التصميم,موجود,P1,frontend-dev,JSON-LD Course/Offer لكل مقرر,ناجح,موقّع (B1 Course + B2a Program/Org/WebSite + B2b NewsArticle/Person)
+SEO: OpenGraph/Twitter,التصميم,جزئي,P1,frontend-dev,وسوم لكل مقرر/شهادة,جزئي — مقرر+مسار+خبر+مدرّب,B1/B2a/B2b (كل الصفحات العامّة؛ الشهادة لاحقاً)
+SEO: canonical,التصميم,موجود,P1,frontend-dev,توحيد canonical للمقرر,ناجح,موقّع (B1/B2a/B2b: كل الصفحات العامّة)
 SEO: hreflang,التصميم,غائب,P2,frontend-dev,وسوم للنسخ اللغوية,معلّق,معلّق
 SEO: تحسين الصور,التصميم,جزئي,P3,frontend-dev,WebP/lazy-load,—,—
 a11y: سمات ARIA,التصميم,جزئي,P1,compliance,تغطية الأزرار/الحقول/المناطق الحيّة,معلّق,معلّق
