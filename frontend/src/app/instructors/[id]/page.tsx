@@ -97,6 +97,7 @@ function instructorJsonLd(profile: InstructorProfile, id: string, site: string):
     '@graph': [
       {
         '@type': 'ProfilePage',
+        'inLanguage': 'ar', // §7 — اتساق مع بقية الصفحات (ProfilePage هي WebPage/CreativeWork)
         'mainEntity': personNode,
       },
       {
