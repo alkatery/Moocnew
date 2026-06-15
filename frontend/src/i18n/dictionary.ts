@@ -305,6 +305,16 @@ const dictionaries = {
     'prereq.addError': 'تعذّر إضافة المتطلّب',
     'prereq.removeError': 'تعذّر إزالة المتطلّب',
     'prereq.loadError': 'تعذّر تحميل مقرراتك',
+    // E2: جدولة ظهور الأقسام
+    'scheduled.visible': 'ظاهر',
+    'scheduled.visibleOn': 'يظهر في {date}',
+    'scheduled.schedule': 'جدولة الظهور',
+    'scheduled.unschedule': 'إلغاء الجدولة',
+    'scheduled.fieldLabel': 'تاريخ ووقت ظهور القسم',
+    'scheduled.hint': 'حدّد متى يظهر هذا القسم للطلاب. اترك الحقل فارغاً ليظهر فوراً.',
+    'scheduled.savedVisible': 'سيظهر القسم للطلاب في الموعد المحدّد.',
+    'scheduled.clearSuccess': 'أُلغيت الجدولة — القسم ظاهر للطلاب الآن.',
+    'scheduled.error': 'تعذّر تحديث موعد ظهور القسم.',
     // D4: بحث النصّ + ضوابط المشغّل + التنقّل بين الدروس
     'transcript.search': 'ابحث في نصّ الدرس',
     'transcript.results': '{n} من {total}',
@@ -621,6 +631,16 @@ const dictionaries = {
     'prereq.addError': 'Could not add prerequisite',
     'prereq.removeError': 'Could not remove prerequisite',
     'prereq.loadError': 'Could not load your courses',
+    // E2: Scheduled section visibility
+    'scheduled.visible': 'Visible',
+    'scheduled.visibleOn': 'Visible from {date}',
+    'scheduled.schedule': 'Schedule visibility',
+    'scheduled.unschedule': 'Clear schedule',
+    'scheduled.fieldLabel': 'Section visibility date & time',
+    'scheduled.hint': 'Set when this section becomes visible to learners. Leave empty to show immediately.',
+    'scheduled.savedVisible': 'The section will become visible to learners at the scheduled time.',
+    'scheduled.clearSuccess': 'Schedule cleared — section is now visible to learners.',
+    'scheduled.error': 'Could not update section visibility date.',
     // D4: Transcript search + player controls + lesson navigation
     'transcript.search': 'Search transcript',
     'transcript.results': '{n} of {total}',

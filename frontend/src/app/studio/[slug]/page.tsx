@@ -13,6 +13,7 @@ import { AssessmentsPanel } from '@/components/studio/AssessmentsPanel';
 import { InstructorGradebook } from '@/components/studio/InstructorGradebook';
 import { CommunicationsPanel } from '@/components/studio/CommunicationsPanel';
 import { PrerequisitesManager } from '@/components/studio/PrerequisitesManager';
+import { SectionScheduler } from '@/components/studio/SectionScheduler';
 import { badgeTone, statusLabel } from '@/lib/labels';
 import { SuccessMsg } from '@/components/StatusMessage';
 
@@ -275,8 +276,12 @@ export default function ManageCoursePage() {
             ) : (
               sections.map((s, si) => (
                 <div key={s.id} className="card p-0">
-                  <div className="flex items-center justify-between gap-2 border-b border-slate-100 px-5 py-3.5">
-                    <strong className="min-w-0 truncate text-slate-900">القسم {si + 1}: {s.title}</strong>
+                  <div className="flex items-start justify-between gap-2 border-b border-slate-100 px-5 py-3.5">
+                    {/* E2: عنوان القسم + شارة الجدولة ومحرّرها */}
+                    <div className="min-w-0 flex-1">
+                      <strong className="block truncate text-slate-900">القسم {si + 1}: {s.title}</strong>
+                      <SectionScheduler section={s} onSaved={load} />
+                    </div>
                     <div className="flex shrink-0 items-center gap-1 text-slate-500">
                       <button title="تحريك لأعلى" className="rounded p-1 hover:bg-slate-100 disabled:opacity-30"
                         disabled={si === 0} onClick={() => void moveSection(si, -1)}>▲</button>

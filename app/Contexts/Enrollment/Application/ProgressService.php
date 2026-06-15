@@ -67,16 +67,35 @@ final class ProgressService
      * Recompute the lesson-completion percentage, then let the completion
      * service decide whether the enrollment is now complete (it also applies
      * the course's passing-grade requirement).
+     *
+     * E2: المقام والبسط يُحسبان على الأقسام الظاهرة فعلاً فقط (visibleNow).
+     * الأقسام المجدولة مستقبلاً لا تدخل الحساب — الطالب يبلغ 100% بإنهاء
+     * المتاح له اليوم؛ وعند ظهور قسم لاحق يُعاد الحساب تلقائياً.
      */
     private function recalculate(Enrollment $enrollment): void
     {
+        // E2: المقام — دروس الأقسام الظاهرة فقط (visible_from IS NULL OR <= now()).
         $totalLessons = Lesson::query()
-            ->whereHas('section', fn ($q) => $q->where('course_id', $enrollment->course_id))
+            ->whereHas(
+                'section',
+                fn ($q) => $q
+                    ->where('course_id', $enrollment->course_id)
+                    ->visibleNow(),          // E2: استثناء الأقسام غير الظاهرة بعد
+            )
             ->count();
 
+        // E2: البسط — الدروس المكتملة ضمن الأقسام الظاهرة فقط.
+        // (درس مخفيّ لا يُسجَّل له تقدّم بعد الفحص في LessonProgressController،
+        //  لكن القيد هنا يضمن الدقة في حال تغيّر visible_from لاحقاً.)
         $completedLessons = LessonProgress::query()
             ->where('enrollment_id', $enrollment->getKey())
             ->whereNotNull('completed_at')
+            ->whereHas(
+                'lesson.section',
+                fn ($q) => $q
+                    ->where('course_id', $enrollment->course_id)
+                    ->visibleNow(),          // E2: استثناء الأقسام غير الظاهرة بعد
+            )
             ->count();
 
         $enrollment->progress_percent = $totalLessons > 0

@@ -8,6 +8,7 @@ use App\Contexts\Catalog\Domain\Course\CourseStatus;
 use App\Contexts\Catalog\Domain\Course\PricingType;
 use App\Contexts\Catalog\Infrastructure\Persistence\Category;
 use App\Contexts\Catalog\Infrastructure\Persistence\Course;
+use App\Contexts\Enrollment\Application\CourseAccess;
 use App\Contexts\Identity\Domain\Permission;
 use App\Contexts\Identity\Domain\Role;
 use App\Contexts\Shared\Application\ImageUploader;
@@ -69,14 +70,20 @@ final class CourseController extends Controller
         return CourseResource::collection($paginator);
     }
 
-    public function show(Request $request, Course $course): CourseResource
+    public function show(Request $request, Course $course, CourseAccess $courseAccess): CourseResource
     {
         abort_unless($request->user()?->can('view', $course) ?? $course->status === CourseStatus::Published, 404);
+
+        // E2: تحديد هوية المُشاهِد — الطاقم يرى كل الأقسام، الطالب/الزائر يرى الظاهر فقط.
+        $user = $request->user();
+        $isStaff = $user !== null && $courseAccess->isStaffFor($user, $course);
 
         $course->load([
             'category',
             'instructor',
-            'sections.lessons',
+            // E2: فلترة الأقسام بـ scopeVisibleTo في eager-load واحد (منع N+1).
+            // الطاقم يرى الكل؛ الطالب/الزائر يرى visible_from IS NULL OR visible_from <= now().
+            'sections' => fn ($q) => $q->visibleTo($isStaff)->with('lessons'),
             // E1: المتطلّبات السابقة المنشورة فقط (يقرأها زر الالتحاق في الواجهة).
             'prerequisites' => fn ($q) => $q
                 ->where('status', CourseStatus::Published->value)

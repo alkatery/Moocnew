@@ -19,6 +19,27 @@ final class LessonAccess
 {
     public function canAccess(?User $user, Lesson $lesson): bool
     {
+        // E2 — الخطوة 1: تحميل القسم والمقرر إن لم يُحمَّلا بعد.
+        $lesson->loadMissing('section.course');
+        $course = $lesson->section->course;
+
+        // E2 — الخطوة 2: تحديد هوية الطاقم أولاً.
+        // الطاقم (مالك المقرر / مراجع / أدمن) يتجاوز كل قيود الجدولة — يصل دائماً.
+        $isStaff = $user !== null
+            && ($course->instructor_id === $user->getKey()
+                || $user->can(Permission::ReviewCourses->value));
+
+        if ($isStaff) {
+            return true;
+        }
+
+        // E2 — الخطوة 3: فحص ظهور القسم قبل short-circuit المعاينة المجانية.
+        // الجدولة تتقدّم على is_free_preview — درس معاينة في قسم مجدول لا يتسرّب.
+        if (! $lesson->section->isVisibleNow()) {
+            return false;
+        }
+
+        // الخطوة 4 (القائم): المعاينة المجانية مفتوحة لمن حان قسمها.
         if ($lesson->is_free_preview) {
             return true;
         }
@@ -27,16 +48,7 @@ final class LessonAccess
             return false;
         }
 
-        $course = $lesson->section->course;
-
-        if ($course->instructor_id === $user->getKey()) {
-            return true;
-        }
-
-        if ($user->can(Permission::ReviewCourses->value)) {
-            return true;
-        }
-
+        // الخطوة 5 (القائم): الالتحاق النشط يمنح الوصول.
         return Enrollment::query()
             ->where('user_id', $user->getKey())
             ->where('course_id', $course->getKey())

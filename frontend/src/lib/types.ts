@@ -42,6 +42,8 @@ export interface Section {
   title: string;
   position: number;
   lessons: Lesson[];
+  /** E2: تاريخ ظهور القسم — ISO 8601 أو null (ظاهر دائماً). يُرجَع من SectionResource للطاقم. */
+  visible_from?: string | null;
 }
 
 export interface Lesson {
