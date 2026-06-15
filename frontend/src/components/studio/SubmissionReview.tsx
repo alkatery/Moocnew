@@ -324,7 +324,7 @@ function SubmissionDetail({
                     className="mb-0.5 block text-xs text-slate-600"
                   >
                     {c.title}
-                    <span className="ms-1 text-slate-400">(من {c.max_points})</span>
+                    <span className="ms-1 text-slate-500">(من {c.max_points})</span>
                   </label>
                   <input
                     id={fieldId}
@@ -355,7 +355,7 @@ function SubmissionDetail({
               className="mb-0.5 block text-xs text-slate-600"
             >
               {t('review.grade')}
-              <span className="ms-1 text-slate-400">(0 – {assignment.points})</span>
+              <span className="ms-1 text-slate-500">(0 – {assignment.points})</span>
             </label>
             <input
               id={`direct-grade-${submission.id}`}
@@ -378,7 +378,7 @@ function SubmissionDetail({
             className="mb-0.5 block text-xs text-slate-600"
           >
             {t('review.feedback')}
-            <span className="ms-1 text-slate-400">(اختياري)</span>
+            <span className="ms-1 text-slate-500">(اختياري)</span>
           </label>
           <textarea
             id={`feedback-${submission.id}`}
