@@ -49,6 +49,7 @@ export function Nav() {
         {isInstructor && <Link href="/studio">{t('nav.studio')}</Link>}
         {isStaff && <Link href="/admin">{t('nav.admin')}</Link>}
         {user && <Link href="/notifications">{t('nav.notifications')}</Link>}
+        {user && <Link className="hidden sm:inline" href="/account">{t('nav.account')}</Link>}
         {user ? (
           <button className="btn" onClick={() => void logout()}>{t('nav.logout')}</button>
         ) : (

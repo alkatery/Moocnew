@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\Api\V1\Account\AccountController;
 use App\Http\Controllers\Api\V1\Admin\ActivityLogController;
 use App\Http\Controllers\Api\V1\Admin\CourseCloneController;
 use App\Http\Controllers\Api\V1\Admin\EnrollmentCodeController;
@@ -99,6 +100,14 @@ Route::prefix('auth')->name('api.auth.')->group(function () {
 Route::get('auth/email/verify/{id}/{hash}', VerifyEmailController::class)
     ->middleware(['signed', 'throttle:6,1'])
     ->name('verification.verify');
+
+// Self-service account management + PDPL data-subject rights.
+Route::middleware('auth:sanctum')->prefix('account')->name('api.account.')->group(function () {
+    Route::patch('/', [AccountController::class, 'update'])->name('update');
+    Route::put('password', [AccountController::class, 'password'])->name('password');
+    Route::get('export', [AccountController::class, 'export'])->name('export');
+    Route::delete('/', [AccountController::class, 'destroy'])->name('destroy');
+});
 
 Route::middleware('auth:sanctum')->prefix('admin')->name('api.admin.')->group(function () {
     Route::get('settings', [SettingsController::class, 'show'])->name('settings.show');

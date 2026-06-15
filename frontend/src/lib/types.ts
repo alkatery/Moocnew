@@ -53,6 +53,8 @@ export interface AuthUser {
   name: string;
   email: string;
   roles: string[];
+  locale?: string | null;
+  timezone?: string | null;
 }
 
 export interface AdminUser {
