@@ -58,6 +58,8 @@ use App\Http\Controllers\Api\V1\Learning\LessonNoteController;
 use App\Http\Controllers\Api\V1\Learning\PathController;
 use App\Http\Controllers\Api\V1\Learning\PathEnrollmentController;
 use App\Http\Controllers\Api\V1\Learning\StudyPlanController;
+use App\Http\Controllers\Api\V1\Notification\CourseAnnouncementController;
+use App\Http\Controllers\Api\V1\Notification\CourseBulkEmailController;
 use App\Http\Controllers\Api\V1\Notification\NotificationController;
 use App\Http\Controllers\Api\V1\Notification\PreferenceController;
 use App\Http\Controllers\Api\V1\Platform\PublicStatsController;
@@ -373,6 +375,28 @@ Route::middleware('auth:sanctum')->prefix('notifications')->name('api.notificati
     Route::post('{id}/read', [NotificationController::class, 'markAsRead'])->name('read');
     Route::get('preferences', [PreferenceController::class, 'index'])->name('preferences.index');
     Route::put('preferences', [PreferenceController::class, 'update'])->name('preferences.update');
+});
+
+/*
+|--------------------------------------------------------------------------
+| C3 — إعلانات المقرر والبريد الجماعي (PRD §5.ط)
+|--------------------------------------------------------------------------
+| الإعلانات: طاقم المقرر ينشر (throttle:30,1) والطاقم+المتعلّم النشط يقرأ.
+| البريد الجماعي: طاقم المقرر فقط (throttle:5,1 — حاجز مكافحة سبام).
+| التخويل داخل كلّ متحكّم/طلب عبر CourseAccess::isStaffFor / canParticipate.
+| {course} يُربط بالـ slug (Course::getRouteKeyName).
+*/
+Route::middleware('auth:sanctum')->prefix('courses')->name('api.courses.communications.')->group(function () {
+    Route::post('{course}/announcements', [CourseAnnouncementController::class, 'store'])
+        ->middleware('throttle:30,1')
+        ->name('announcements.store');
+
+    Route::get('{course}/announcements', [CourseAnnouncementController::class, 'index'])
+        ->name('announcements.index');
+
+    Route::post('{course}/bulk-email', CourseBulkEmailController::class)
+        ->middleware('throttle:5,1')
+        ->name('bulk-email.send');
 });
 
 /*

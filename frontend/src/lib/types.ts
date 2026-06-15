@@ -507,3 +507,51 @@ export interface InstructorGradebook {
   columns: GradebookColumn[];
   rows: GradebookRow[];
 }
+
+// ---- C3: إعلانات المقرر والبريد الجماعي ----
+
+/**
+ * إعلان مقرر واحد — يطابق شكل `data` في §3.أ و§3.ب من العقد C3.
+ * يُخزَّن في جدول `course_announcements` (لا `recipients_queued` في القائمة).
+ */
+export interface CourseAnnouncement {
+  id: number;
+  course_id: number;
+  title: string;
+  body: string;
+  author: { id: number; name: string };
+  created_at: string;
+}
+
+/**
+ * استجابة POST /api/v1/courses/{course}/announcements (201) — §3.أ.
+ * `recipients_queued`: عدد الملتحقين النشطين الذين دُفعت لهم مهام الإشعار.
+ */
+export interface AnnouncementCreateResponse {
+  data: CourseAnnouncement;
+  recipients_queued: number;
+}
+
+/**
+ * استجابة POST /api/v1/courses/{course}/bulk-email (202) — §3.ج.
+ * `recipients_queued`: عدد المستهدَفين قبل فلترة القناة الفردية.
+ * `audience`: الفئة المستهدَفة (v1: all_active فقط).
+ */
+export interface BulkEmailResponse {
+  recipients_queued: number;
+  audience: string;
+}
+
+/**
+ * استجابة GET /api/v1/courses/{course}/announcements (200) — §3.ب.
+ * مُرقّمة: `meta` يحوي بيانات الصفحة.
+ */
+export interface AnnouncementsListResponse {
+  data: CourseAnnouncement[];
+  meta: {
+    current_page: number;
+    last_page: number;
+    per_page: number;
+    total: number;
+  };
+}

@@ -11,6 +11,7 @@ import { HelpGuide } from '@/components/HelpGuide';
 import { LessonEditor } from '@/components/studio/LessonEditor';
 import { AssessmentsPanel } from '@/components/studio/AssessmentsPanel';
 import { InstructorGradebook } from '@/components/studio/InstructorGradebook';
+import { CommunicationsPanel } from '@/components/studio/CommunicationsPanel';
 import { badgeTone, statusLabel } from '@/lib/labels';
 import { SuccessMsg } from '@/components/StatusMessage';
 
@@ -25,7 +26,7 @@ const LESSON_KINDS: { value: LessonKind; label: string }[] = [
 export default function ManageCoursePage() {
   const { slug } = useParams<{ slug: string }>();
   const [course, setCourse] = useState<Course | null>(null);
-  const [tab, setTab] = useState<'curriculum' | 'assessments' | 'gradebook'>('curriculum');
+  const [tab, setTab] = useState<'curriculum' | 'assessments' | 'gradebook' | 'communications'>('curriculum');
   const [sectionTitle, setSectionTitle] = useState('');
   const [passingGrade, setPassingGrade] = useState('0');
   const [note, setNote] = useState('');
@@ -168,14 +169,16 @@ export default function ManageCoursePage() {
 
       {/* G6: role="tablist"/"tab"/aria-selected — G3: slate-400→slate-500 للتبويب غير النشط */}
       {/* C1: أضيف تبويب ثالث «درجات الطلاب» بنفس نمط a11y القائم */}
+      {/* C3: أضيف تبويب رابع «التواصل» بنفس نمط a11y — لا كسر للتبويبات السابقة */}
       {/* a11y (WAI-ARIA Tabs): id لكل تبويب + roving tabindex + تنقّل بالأسهم (RTL: يسار=التالي) */}
       <div className="mb-6 flex gap-2 border-b border-slate-200" role="tablist" aria-label="أقسام الاستوديو">
         {(() => {
-          const keys = ['curriculum', 'assessments', 'gradebook'] as const;
+          const keys = ['curriculum', 'assessments', 'gradebook', 'communications'] as const;
           const labels: Record<(typeof keys)[number], string> = {
             curriculum: 'المنهج',
             assessments: 'التقييمات والدرجات',
             gradebook: t('gradebook.tab'),
+            communications: t('comm.tab'),
           };
           const onKeyDown = (e: React.KeyboardEvent, k: (typeof keys)[number]) => {
             const i = keys.indexOf(k);
@@ -219,6 +222,11 @@ export default function ManageCoursePage() {
       {/* C1: tabpanel درجات الطلاب — يُحمَّل عند فتح التبويب */}
       <div id="tabpanel-gradebook" role="tabpanel" aria-labelledby="tab-gradebook" hidden={tab !== 'gradebook'}>
         {tab === 'gradebook' && <InstructorGradebook courseSlug={slug} />}
+      </div>
+
+      {/* C3: tabpanel التواصل — يُحمَّل كسلاً عند فتح التبويب فقط */}
+      <div id="tabpanel-communications" role="tabpanel" aria-labelledby="tab-communications" hidden={tab !== 'communications'}>
+        {tab === 'communications' && <CommunicationsPanel courseSlug={slug} />}
       </div>
 
       <div id="tabpanel-curriculum" role="tabpanel" aria-labelledby="tab-curriculum" hidden={tab !== 'curriculum'}>
