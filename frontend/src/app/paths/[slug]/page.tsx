@@ -1,179 +1,216 @@
-'use client';
+// غلاف خادمي (Server Component) — ينفّذ generateMetadata ويحقن JSON-LD ويُصيَّر عند الطلب.
+// العقد: B2-content-seo.md §3
 
-import Link from 'next/link';
-import { useCallback, useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import { api, ApiError } from '@/lib/api';
-import { useAuth } from '@/lib/auth';
-import type { PathDetail, PathLevelItem } from '@/lib/types';
-import { formatMinor } from '@/lib/format';
-import { t } from '@/i18n/dictionary';
+import { cache } from 'react';
+import { notFound } from 'next/navigation';
+import type { Metadata } from 'next';
+import { API_BASE } from '@/lib/api';
+import type { PathDetail } from '@/lib/types';
+import { PathDetailClient } from './PathDetailClient';
 
-function StateIcon({ state }: { state: PathLevelItem['state'] }) {
-  if (state === 'completed') {
-    return (
-      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
-          <path d="m5 13 4 4 10-10" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-      </span>
-    );
-  }
-  if (state === 'unlocked') {
-    return (
-      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-100 text-brand-700">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden>
-          <path d="M8 6.5 18 12 8 17.5z" fill="currentColor" />
-        </svg>
-      </span>
-    );
-  }
-  return (
-    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-400">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden>
-        <path d="M7 10V8a5 5 0 1 1 10 0v2m-12 0h14v11H5z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
-      </svg>
-    </span>
-  );
+// الصفحة ديناميكية — تُصيَّر عند كل طلب (§2).
+export const dynamic = 'force-dynamic';
+
+// ثابت الموقع — لا metadataBase، كل الروابط مطلقة (§2).
+const SITE = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+
+// ---------------------------------------------------------------------------
+// دالة مساعدة: تحويل مسار الصورة إلى رابط مطلق (§2).
+// ---------------------------------------------------------------------------
+function absImage(path: string): string {
+  if (path.startsWith('http')) return path;
+  return `${SITE}${path.startsWith('/') ? '' : '/'}${path}`;
 }
 
-export default function PathDetailPage() {
-  const { slug } = useParams<{ slug: string }>();
-  const { user } = useAuth();
-  const router = useRouter();
-  const [path, setPath] = useState<PathDetail | null>(null);
-  const [msg, setMsg] = useState('');
-  const [busy, setBusy] = useState(false);
+// ---------------------------------------------------------------------------
+// دالة مساعدة: اقتطاع النص عند حدود الكلمة (§2).
+// ---------------------------------------------------------------------------
+function truncate(text: string, n: number): string {
+  if (text.length <= n) return text;
+  const cut = text.lastIndexOf(' ', n);
+  return (cut > 0 ? text.slice(0, cut) : text.slice(0, n)) + '…';
+}
 
-  const load = useCallback(() => {
-    api<{ data: PathDetail }>(`/learning/paths/${slug}`, { auth: true })
-      .then((r) => setPath(r.data)).catch(() => setPath(null));
-  }, [slug]);
+// ---------------------------------------------------------------------------
+// جلب المسار خادمياً — بلا Authorization (النقطة عامّة §1.أ).
+// مغلَّف بـ react.cache لتفادي ازدواج الطلب بين generateMetadata والصفحة.
+// يعيد PathDetail|null ولا يرمي (أي خطأ → null).
+// ---------------------------------------------------------------------------
+const getPath = cache(async (slug: string): Promise<PathDetail | null> => {
+  try {
+    const res = await fetch(`${API_BASE}/learning/paths/${slug}`, {
+      headers: { Accept: 'application/json' },
+      cache: 'no-store', // يضمن التصيير الديناميكي عند الطلب
+    });
+    if (!res.ok) return null;
+    const json = await res.json() as { data: PathDetail };
+    return json.data ?? null;
+  } catch {
+    return null;
+  }
+});
 
-  useEffect(load, [load]);
+// ---------------------------------------------------------------------------
+// بناء JSON-LD وفق §3.4:
+//   EducationalOccupationalProgram + ItemList (تسطيح levels تصاعدياً) + BreadcrumbList
+// لا Offer على مستوى البرنامج — التسعير على مستوى كل دورة (§3.4).
+// ---------------------------------------------------------------------------
+function pathJsonLd(path: PathDetail, site: string): object {
+  // تسطيح المستويات تصاعدياً ثم item.position للحصول على ترتيب مسار التعلّم الفعلي
+  const allItems = path.levels
+    .slice()
+    .sort((a, b) => a.level - b.level)
+    .flatMap((level) =>
+      level.items.slice().sort((a, b) => a.position - b.position),
+    );
 
-  async function join() {
-    if (!user) { router.push('/login'); return; }
-    setBusy(true); setMsg('');
-    try {
-      await api(`/learning/paths/${slug}/enroll`, { method: 'POST' });
-      load();
-    } catch (err) {
-      setMsg(err instanceof ApiError ? err.message : t('common.error'));
-    } finally { setBusy(false); }
+  const totalCourses = allItems.length;
+
+  // عُقدة البرنامج التعليمي
+  const programNode: Record<string, unknown> = {
+    '@type': 'EducationalOccupationalProgram',
+    'name': path.title,
+    'description': truncate(path.description ?? path.summary ?? path.title, 5000),
+    'url': `${site}/paths/${path.slug}`,
+    'inLanguage': 'ar',
+    'provider': {
+      '@type': 'Organization',
+      'name': 'منصة MOOC',
+      'url': site,
+    },
+    'educationalProgramMode': 'online',
+  };
+
+  // image — يُحذف إن لا غلاف (§3.4 — قواعد الحذف الشرطي)
+  if (path.cover_image) {
+    programNode['image'] = absImage(path.cover_image);
   }
 
-  async function startCourse(item: PathLevelItem) {
-    if (!user) { router.push('/login'); return; }
-    setMsg('');
-    try {
-      const res = await api<{ data: { status: string } }>(
-        `/learning/paths/${slug}/courses/${item.course.slug}/enroll`,
-        { method: 'POST' },
-      );
-      router.push(res.data.status === 'pending' ? `/checkout/${item.course.slug}` : `/learn/${item.course.slug}`);
-    } catch (err) {
-      setMsg(err instanceof ApiError ? err.message : t('common.error'));
-    }
+  // numberOfCredits — يُحذف إن 0 (§3.4)
+  if (totalCourses > 0) {
+    programNode['numberOfCredits'] = totalCourses;
   }
 
-  if (!path) return <p className="label">{t('common.loading')}</p>;
+  // hasCourse — يُحذف كاملاً إن لا دورات (§3.4)
+  if (totalCourses > 0) {
+    programNode['hasCourse'] = allItems.map((item) => ({
+      '@type': 'Course',
+      'name': item.course.title,
+      'url': `${site}/catalog/${item.course.slug}`,
+      'provider': {
+        '@type': 'Organization',
+        'name': 'منصة MOOC',
+        'url': site,
+      },
+      'hasCourseInstance': {
+        '@type': 'CourseInstance',
+        'courseMode': 'online',
+        'inLanguage': 'ar',
+      },
+    }));
+  }
 
-  const progress = path.viewer.progress;
+  // بناء الـ graph — ItemList يُحذف إن لا دورات (§3.4)
+  const graph: unknown[] = [programNode];
+
+  if (totalCourses > 0) {
+    graph.push({
+      '@type': 'ItemList',
+      'itemListOrder': 'https://schema.org/ItemListOrderAscending',
+      'numberOfItems': totalCourses,
+      'itemListElement': allItems.map((item, idx) => ({
+        '@type': 'ListItem',
+        'position': idx + 1,
+        'url': `${site}/catalog/${item.course.slug}`,
+        'name': item.course.title,
+      })),
+    });
+  }
+
+  graph.push({
+    '@type': 'BreadcrumbList',
+    'itemListElement': [
+      { '@type': 'ListItem', 'position': 1, 'name': 'الرئيسية', 'item': site },
+      { '@type': 'ListItem', 'position': 2, 'name': 'المسارات',  'item': `${site}/paths` },
+      { '@type': 'ListItem', 'position': 3, 'name': path.title,   'item': `${site}/paths/${path.slug}` },
+    ],
+  });
+
+  return {
+    '@context': 'https://schema.org',
+    '@graph': graph,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// generateMetadata — params غير متزامن في Next.js 15 (§3.3).
+// ---------------------------------------------------------------------------
+export async function generateMetadata(
+  { params }: { params: Promise<{ slug: string }> },
+): Promise<Metadata> {
+  const { slug } = await params;
+  const path = await getPath(slug);
+
+  // حالة الغياب — ميتاداتا آمنة بلا canonical (§3.3)
+  if (!path) {
+    return {
+      title: 'المسار غير متوفّر — منصة MOOC',
+      description: 'لم نعثر على هذا المسار.',
+    };
+  }
+
+  const title = `${path.title} — منصة MOOC`;
+  const description = truncate(path.description ?? path.summary ?? '', 160);
+  const url = `${SITE}/paths/${path.slug}`;
+
+  // قائمة الصور — تُحذف إن لا cover_image (§3.3)
+  const images = path.cover_image ? [absImage(path.cover_image)] : undefined;
+
+  return {
+    title,
+    description,
+    alternates: {
+      canonical: url,
+    },
+    openGraph: {
+      title,
+      description,
+      url,
+      type: 'website',
+      locale: 'ar_SA',
+      siteName: 'منصة MOOC',
+      ...(images ? { images } : {}),
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      ...(images ? { images } : {}),
+    },
+  };
+}
+
+// ---------------------------------------------------------------------------
+// الغلاف الخادمي الرئيسي — Server Component (§3.1).
+// ---------------------------------------------------------------------------
+export default async function PathDetailPage(
+  { params }: { params: Promise<{ slug: string }> },
+) {
+  const { slug } = await params;
+  const path = await getPath(slug);
+
+  // مسار غير موجود → 404 (§3.3)
+  if (!path) notFound();
 
   return (
-    <section>
-      <nav className="mb-4 flex flex-wrap items-center gap-1.5 text-xs text-slate-400" aria-label="مسار التنقّل">
-        <Link className="text-slate-400 hover:text-brand-600" href="/">الرئيسية</Link>
-        <span aria-hidden>‹</span>
-        <Link className="text-slate-400 hover:text-brand-600" href="/paths">{t('paths.title')}</Link>
-        <span aria-hidden>‹</span>
-        <span className="font-medium text-slate-500">{path.title}</span>
-      </nav>
-
-      {/* Hero */}
-      <div className="relative mb-6 overflow-hidden rounded-3xl bg-gradient-to-bl from-brand-900 via-brand-700 to-brand-500 p-8 text-white shadow-card sm:p-10">
-        <div className="pointer-events-none absolute -bottom-24 -start-10 h-64 w-64 rounded-full bg-white/10 blur-3xl" aria-hidden />
-        <div className="relative max-w-2xl">
-          <div className="flex flex-wrap gap-2">
-            <span className="badge bg-white/15 text-white">مسار تخصصي</span>
-            <span className="badge bg-white/15 text-white">{path.levels.length} مستويات</span>
-            <span className="badge bg-white/15 text-white">شهادة مسار موثّقة</span>
-          </div>
-          <h1 className="mt-4 text-3xl font-extrabold leading-snug text-white sm:text-4xl">{path.title}</h1>
-          <p className="mt-3 leading-8 text-brand-50/90">{path.description ?? path.summary}</p>
-
-          {path.viewer.completed ? (
-            <div className="mt-5 rounded-xl bg-emerald-500/20 px-4 py-3 text-sm font-semibold text-emerald-100">
-              🎉 {t('paths.completed')}{' '}
-              <Link className="text-white underline" href="/certificates">{t('nav.certificates')}</Link>
-            </div>
-          ) : path.viewer.enrolled && progress ? (
-            <div className="mt-5 max-w-md">
-              <div className="mb-1 flex items-center justify-between text-sm text-brand-100">
-                <span>{t('paths.joined')} — {progress.completed}/{progress.total} دورات</span>
-                <span className="font-bold text-white">{progress.percent}%</span>
-              </div>
-              <div className="h-2 overflow-hidden rounded-full bg-white/20">
-                <span className="block h-full rounded-full bg-white" style={{ width: `${progress.percent}%` }} />
-              </div>
-            </div>
-          ) : (
-            <button className="btn mt-5 bg-white px-6 text-brand-700 hover:bg-brand-50" onClick={() => void join()} disabled={busy}>
-              {busy ? t('common.loading') : t('paths.join')}
-            </button>
-          )}
-        </div>
-      </div>
-
-      {msg && <p className="error mb-4">{msg}</p>}
-      <p className="mb-6 flex items-center gap-2 text-sm text-slate-500">
-        <svg className="text-brand-500" width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
-          <path d="M12 9v4m0 4h.01M12 3l10 18H2z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
-        </svg>
-        {t('paths.certificateNote')}
-      </p>
-
-      {/* Levels */}
-      <div className="space-y-6">
-        {path.levels.map((level) => (
-          <div key={level.level}>
-            <div className="mb-3 flex items-center gap-3">
-              <span className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-600 text-sm font-extrabold text-white">
-                {level.level}
-              </span>
-              <h2 className="text-xl font-extrabold">{t('paths.level')} {level.level}</h2>
-              <span className="text-xs text-slate-400">{level.items.length} دورات</span>
-            </div>
-            <div className="card p-0">
-              <ul className="divide-y divide-slate-100">
-                {level.items.map((item) => (
-                  <li key={item.course.id} className={`flex flex-wrap items-center gap-3 px-5 py-4 ${item.state === 'locked' ? 'opacity-60' : ''}`}>
-                    <StateIcon state={item.state} />
-                    <div className="min-w-0 flex-1">
-                      <strong className="block text-slate-900">{item.course.title}</strong>
-                      <p className="line-clamp-1 text-sm text-slate-500">{item.course.summary}</p>
-                      <span className="text-xs text-slate-400">
-                        {item.course.instructor && `${item.course.instructor} · `}
-                        {item.course.pricing_type === 'free' ? t('course.free') : formatMinor(item.course.price_minor)}
-                      </span>
-                    </div>
-                    {item.state === 'completed' && (
-                      <Link className="btn btn-ghost shrink-0" href={`/learn/${item.course.slug}`}>{t('paths.review')}</Link>
-                    )}
-                    {item.state === 'unlocked' && (
-                      <button className="btn shrink-0" onClick={() => void startCourse(item)}>{t('paths.startCourse')}</button>
-                    )}
-                    {item.state === 'locked' && (
-                      <span className="text-xs font-semibold text-slate-400">{t('paths.locked')}</span>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-        ))}
-      </div>
-    </section>
+    <>
+      {/* حقن JSON-LD وفق §3.4 */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(pathJsonLd(path, SITE)) }}
+      />
+      {/* تمرير المسار كاملاً إلى الجزيرة التفاعلية — viewer بقيم الزائر (مقصود §3.1) */}
+      <PathDetailClient path={path} />
+    </>
   );
 }

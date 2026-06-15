@@ -171,6 +171,7 @@ export interface PathDetail {
   slug: string;
   summary: string | null;
   description: string | null;
+  cover_image?: string | null;   // §3.5 — حقل الغلاف المُرجَع من API (مؤكَّد §1.أ)
   published_at: string | null;
   levels: PathLevel[];
   viewer: {
