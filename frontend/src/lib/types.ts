@@ -449,9 +449,26 @@ export interface LessonContent {
   transcript: string | null;
 }
 
-export type QuestionKind = 'mcq' | 'true_false' | 'short_answer';
+export type QuestionKind =
+  | 'mcq'
+  | 'true_false'
+  | 'short_answer'
+  | 'dropdown'
+  | 'multi_select'
+  | 'numerical'
+  | 'regex';
 
 export interface QuestionChoice { id: string; text: string }
+
+/**
+ * إعدادات التقييم للأنواع الجديدة (E4) — تُكشف للمؤلّف فقط عبر QuestionAdminResource.
+ * numerical: tolerance (هامش الخطأ المسموح به ≥0).
+ * regex: flags ('i' = تجاهل حالة الأحرف؛ '' = حسّاس).
+ */
+export interface QuestionConfig {
+  tolerance?: number; // numerical فقط
+  flags?: string;     // regex فقط: '' | 'i'
+}
 
 export interface BankQuestion {
   id: number;
@@ -459,6 +476,8 @@ export interface BankQuestion {
   body: string;
   choices: QuestionChoice[] | null;
   correct?: unknown;
+  /** E4: معاملات التقييم — حاضرة للمؤلّف فقط (QuestionAdminResource)؛ محجوبة عن الطالب */
+  config?: QuestionConfig | null;
   points: number;
 }
 
