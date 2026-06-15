@@ -56,7 +56,7 @@ const TESTIMONIALS = [
 ];
 
 const CATEGORY_ICONS = [
-  <path key="book" d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0-3 3V4Zm0 13h14M9 8h6" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />,
+  <path key="book" d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 0-3 3V4Zm0 13h14M9 8h6" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />,
   <path key="code" d="m8 8-4 4 4 4m8-8 4 4-4 4m-3-10-2 12" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />,
   <path key="chart" d="M4 20V4m0 16h16M8 16v-5m4 5V8m4 8v-3" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />,
   <path key="globe" d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Zm-9-9h18M12 3c2.5 2.5 3.5 5.5 3.5 9S14.5 18.5 12 21c-2.5-2.5-3.5-5.5-3.5-9S9.5 5.5 12 3Z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />,
