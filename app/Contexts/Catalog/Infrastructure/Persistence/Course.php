@@ -134,6 +134,31 @@ final class Course extends Model
     }
 
     /**
+     * المؤلّفون المشاركون — many-to-many عبر course_members (role='co_author').
+     * المالك (instructor_id) ليس هنا؛ هو خاصيّة على courses.
+     *
+     * @return BelongsToMany<User, $this>
+     */
+    public function members(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'course_members')
+            ->withPivot('role')
+            ->withTimestamps();
+    }
+
+    /**
+     * هل هذا المستخدم مؤلّف مشارك على هذا المقرر؟
+     * تُستهلك في CoursePolicy و CourseAccess::isStaffFor.
+     */
+    public function hasCoAuthor(User $user): bool
+    {
+        return $this->members()
+            ->where('users.id', $user->getKey())
+            ->wherePivot('role', 'co_author')
+            ->exists();
+    }
+
+    /**
      * Keep drafts and in-review courses out of the search index.
      */
     public function shouldBeSearchable(): bool

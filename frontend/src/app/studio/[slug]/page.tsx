@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { API_BASE, api, getToken } from '@/lib/api';
+import { useAuth } from '@/lib/auth';
 import type { Course, LessonKind, Section } from '@/lib/types';
 import { t } from '@/i18n/dictionary';
 import { PageHeader } from '@/components/PageHeader';
@@ -13,6 +14,7 @@ import { AssessmentsPanel } from '@/components/studio/AssessmentsPanel';
 import { InstructorGradebook } from '@/components/studio/InstructorGradebook';
 import { CommunicationsPanel } from '@/components/studio/CommunicationsPanel';
 import { PrerequisitesManager } from '@/components/studio/PrerequisitesManager';
+import { CourseTeamManager } from '@/components/studio/CourseTeamManager';
 import { SectionScheduler } from '@/components/studio/SectionScheduler';
 import { badgeTone, statusLabel } from '@/lib/labels';
 import { SuccessMsg } from '@/components/StatusMessage';
@@ -27,6 +29,8 @@ const LESSON_KINDS: { value: LessonKind; label: string }[] = [
 
 export default function ManageCoursePage() {
   const { slug } = useParams<{ slug: string }>();
+  // E3: نحتاج هوية المستخدم الحالي لتحديد ما إذا كان مالك المقرر.
+  const { user: me } = useAuth();
   const [course, setCourse] = useState<Course | null>(null);
   const [tab, setTab] = useState<'curriculum' | 'assessments' | 'gradebook' | 'communications'>('curriculum');
   const [sectionTitle, setSectionTitle] = useState('');
@@ -260,6 +264,11 @@ export default function ManageCoursePage() {
 
             {/* E1: إدارة المتطلّبات السابقة (تأليف) */}
             <PrerequisitesManager courseSlug={slug} courseId={course.id} initial={course.prerequisites ?? []} />
+
+            {/* E3: فريق التأليف — للمالك فقط (الخادم هو الحارس النهائي بـ manageMembers) */}
+            {course.instructor?.id === me?.id && (
+              <CourseTeamManager courseSlug={slug} />
+            )}
 
             <form className="card mb-0" onSubmit={(e) => void addSection(e)}>
               <strong className="text-slate-900">{t('studio.addSection')}</strong>

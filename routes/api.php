@@ -32,6 +32,7 @@ use App\Http\Controllers\Api\V1\Auth\ResendVerificationController;
 use App\Http\Controllers\Api\V1\Auth\VerifyEmailController;
 use App\Http\Controllers\Api\V1\Catalog\CategoryController;
 use App\Http\Controllers\Api\V1\Catalog\CourseController;
+use App\Http\Controllers\Api\V1\Catalog\CourseMemberController;
 use App\Http\Controllers\Api\V1\Catalog\CoursePrerequisiteController;
 use App\Http\Controllers\Api\V1\Catalog\CoursePublishingController;
 use App\Http\Controllers\Api\V1\Catalog\LessonController;
@@ -226,6 +227,17 @@ Route::prefix('catalog')->name('api.catalog.')->group(function () {
             ->name('courses.prerequisites.store');
         Route::delete('courses/{course}/prerequisites/{prerequisite}', [CoursePrerequisiteController::class, 'destroy'])
             ->name('courses.prerequisites.destroy');
+
+        // E3 — التأليف الجماعي: إدارة فريق التأليف (manageMembers — المالك فقط).
+        Route::get('courses/{course}/members', [CourseMemberController::class, 'index'])
+            ->name('courses.members.index');
+        Route::post('courses/{course}/members', [CourseMemberController::class, 'store'])
+            ->name('courses.members.store');
+        Route::delete('courses/{course}/members/{user}', [CourseMemberController::class, 'destroy'])
+            ->name('courses.members.destroy');
+        // نقطة بحث المدرّسين للـ picker (PDPL: id/name فقط).
+        Route::get('courses/{course}/instructors', [CourseMemberController::class, 'searchInstructors'])
+            ->name('courses.instructors.search');
 
         // Publishing workflow.
         Route::post('courses/{course}/submit', [CoursePublishingController::class, 'submit'])->name('courses.submit');

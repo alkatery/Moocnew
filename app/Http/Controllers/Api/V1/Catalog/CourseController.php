@@ -35,7 +35,10 @@ final class CourseController extends Controller
         $courses = Course::query()
             ->unless(
                 $request->user()->can(Permission::ReviewCourses->value),
-                fn ($q) => $q->where('instructor_id', $request->user()->getKey()),
+                // E3: يشمل مقررات المستخدم كمالك ومقررات هو co-author فيها.
+                fn ($q) => $q->where(fn ($w) => $w
+                    ->where('instructor_id', $request->user()->getKey())
+                    ->orWhereHas('members', fn ($m) => $m->where('users.id', $request->user()->getKey()))),
             )
             ->with(['category', 'instructor'])
             ->latest()

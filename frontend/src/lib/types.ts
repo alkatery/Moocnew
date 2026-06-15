@@ -400,6 +400,27 @@ export interface ContactMessageItem {
   created_at: string | null;
 }
 
+// ---- E3: التأليف الجماعي (Co-authors) ----
+
+/**
+ * عضو فريق التأليف — يطابق عنصر data في GET /catalog/courses/{slug}/members
+ * id/name/role فقط — PDPL (لا بريد/هاتف).
+ */
+export interface CourseMember {
+  id: number;
+  name: string;
+  role: 'co_author';
+}
+
+/**
+ * نتيجة بحث مدرّس — يطابق عنصر data في GET /catalog/courses/{slug}/instructors?q=
+ * id/name فقط — PDPL (لا بريد في الاستجابة).
+ */
+export interface InstructorSearchResult {
+  id: number;
+  name: string;
+}
+
 // ---- Studio v2: authoring & assessments ----
 
 export type LessonKind = 'video' | 'article' | 'image' | 'file' | 'live';
