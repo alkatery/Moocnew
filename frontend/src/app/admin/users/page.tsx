@@ -95,6 +95,16 @@ export default function AdminUsersPage() {
     }
   }
 
+  async function retire(user: AdminUser) {
+    if (!window.confirm(t('users.retireConfirm').replace('{name}', user.name))) return;
+    try {
+      await api(`/admin/users/${user.id}/retire`, { method: 'POST' });
+      setUsers((prev) => prev.filter((u) => u.id !== user.id));
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : t('common.error'));
+    }
+  }
+
   async function loginAs(user: AdminUser) {
     setError('');
     try {
@@ -190,6 +200,9 @@ export default function AdminUsersPage() {
                           </button>
                           <button className="btn btn-ghost px-2.5 py-1.5 text-xs" onClick={() => void resetPassword(u)}>
                             {t('users.resetPassword')}
+                          </button>
+                          <button className="btn btn-ghost px-2.5 py-1.5 text-xs text-amber-700 ring-amber-200" onClick={() => void retire(u)}>
+                            {t('users.retire')}
                           </button>
                           <button className="btn px-2.5 py-1.5 text-xs bg-red-600 hover:bg-red-700" onClick={() => void remove(u)}>
                             {t('users.delete')}

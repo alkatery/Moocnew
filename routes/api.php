@@ -139,6 +139,7 @@ Route::middleware('auth:sanctum')->prefix('admin')->name('api.admin.')->group(fu
     Route::post('users/{user}/reset-password', [UserController::class, 'resetPassword'])->name('users.password.reset');
     Route::post('users/{user}/impersonate', [UserController::class, 'impersonate'])->name('users.impersonate');
     Route::get('users/{user}/courses', [UserController::class, 'courses'])->name('users.courses');
+    Route::post('users/{user}/retire', [UserController::class, 'retire'])->name('users.retire');
     Route::delete('users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
     Route::patch('courses/{course}/instructor', [UserController::class, 'transferCourse'])->name('courses.transfer');
 
