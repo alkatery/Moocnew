@@ -42,7 +42,8 @@
 ## المرحلة 4 — التنفيذ (المرحلة E: عمق التأليف) ▶️
 - ✅ **E1 — المتطلّبات السابقة** (موقّع): جدول ربط ذاتي + استثناء Domain نقي PrerequisitesNotMet + رفض في EnrollmentService (مجاني+مدفوع، تجاوز للطاقم) + 422 بقائمة المتطلّبات + تأليف (PrerequisitesManager) + show يكشفها. الإكمال=Completed. 11 اختباراً. (امتحان الدخول مؤجَّل P3.)
 - ✅ **E2 — جدولة ظهور الأقسام** (موقّع): visible_from على sections + scope موحّد؛ منع تسريب المحتوى المجدول في النقاط الأربع (show/LessonAccess قبل المعاينة/ProgressController/المقام)؛ تجاوز الطاقم؛ SectionScheduler بالاستوديو. 21+11 اختباراً.
-- ⏭️ E3 — التأليف الجماعي · E4 — أنواع أسئلة إضافية · E5 — مكتبات المحتوى.
+- ✅ **E3 — التأليف الجماعي** (موقّع): course_members + توسعة CoursePolicy(update/view)/isStaffFor بـ hasCoAuthor؛ manageMembers للمالك حصراً (منع تصعيد — 10 نواقل محجوبة)؛ CourseMemberController + searchInstructors؛ CourseTeamManager بالاستوديو. 27 اختباراً.
+- ⏭️ E4 — أنواع أسئلة إضافية · E5 — مكتبات المحتوى.
 
 > ملاحظة تشغيل: تعطّل PostgreSQL/Redis عابراً عند إعادة تشغيل الحاوية؛ يُعاد بـ `pg_ctlcluster 16 main start` و`redis-server --daemonize yes` قبل pest.
 
@@ -74,3 +75,4 @@
 | 2026-06-15 | D4 — نصّ + ضوابط المشغّل | TranscriptSearch (بحث/تظليل آمن + aria-live، لا قفز) · VideoControls (سرعة + استئناف، لا تنزيل/جودة) · LessonNav (سابق/تالٍ) · أمامي بحت | typecheck نظيف · 107/107 · build ✅ (لا تغيير خلفي) | ✅ موقّع (مستقلّ) | المرحلة E |
 | 2026-06-15 | E1 — المتطلّبات السابقة | course_prerequisites + PrerequisitesNotMet (Domain نقي) + رفض EnrollmentService (مجاني+مدفوع، تجاوز طاقم) + 422 بالقائمة + تأليف PrerequisitesManager + show يكشفها | pint نظيف · pest 459/459 (1589) · front typecheck/107/build ✅ | ✅ موقّع (مستقلّ) | E2 |
 | 2026-06-15 | E2 — جدولة ظهور الأقسام | visible_from + scope موحّد + فلترة النقاط الأربع (show/LessonAccess قبل المعاينة/Progress 403/المقام) + تجاوز طاقم + SectionScheduler | pint نظيف · pest 480/480 (1643) · front typecheck/118/build ✅ | ✅ موقّع (مستقلّ) | E3 |
+| 2026-06-15 | E3 — التأليف الجماعي | course_members + CoursePolicy(update/view)/isStaffFor += hasCoAuthor + manageMembers (مالك حصراً، منع تصعيد) + CourseMemberController/searchInstructors + CourseTeamManager | pint نظيف · pest 507/507 (1699) · front typecheck/118/build ✅ | ✅ موقّع (مستقلّ) | E4 |
