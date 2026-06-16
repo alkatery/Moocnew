@@ -44,7 +44,11 @@
 - ✅ **E2 — جدولة ظهور الأقسام** (موقّع): visible_from على sections + scope موحّد؛ منع تسريب المحتوى المجدول في النقاط الأربع (show/LessonAccess قبل المعاينة/ProgressController/المقام)؛ تجاوز الطاقم؛ SectionScheduler بالاستوديو. 21+11 اختباراً.
 - ✅ **E3 — التأليف الجماعي** (موقّع): course_members + توسعة CoursePolicy(update/view)/isStaffFor بـ hasCoAuthor؛ manageMembers للمالك حصراً (منع تصعيد — 10 نواقل محجوبة)؛ CourseMemberController + searchInstructors؛ CourseTeamManager بالاستوديو. 27 اختباراً.
 - ✅ **E4 — أنواع أسئلة إضافية** (موقّع): توسعة QuestionType/AnswerGrader بـ dropdown/multi_select/numerical/regex (دون كسر القائم) + عمود config + أمان regex (preg_match، علَمَا i/u، حدود، كاتم أخطاء) + حجب الإجابة عن الطالب. 58 اختباراً.
-- ⏭️ E5 — مكتبات المحتوى (بنك أسئلة معاد استخدامه عبر المقررات).
+- ✅ **E5 — مكتبات المحتوى** (موقّع): QuestionImporter (نسخ عميق للحقول السبعة، بلا FK للمصدر — عزل تامّ) + importable/import + عزل ملكية ذرّي (403 بلا نسخ جزئي) + إصلاح ثغرة CourseCloner (config/explanation) + QuestionImportPicker. 25 اختباراً.
+- **✅ المرحلة E (عمق التأليف) — مكتملة وموقّعة بالكامل (E1–E5).**
+
+## 🏁 خطّة التنفيذ مكتملة — كل المراحل A→E موقّعة (21 دفعة)
+كل دفعة مرّت بالتسلسل الكامل (architect → backend/frontend → integrator → qa → compliance → reviewer مستقلّ) ووُقّعت. آخر حالة خضراء: **pest 590/590 (1898) · front 136/136 · build ناجح · pint نظيف**.
 
 > ملاحظة تشغيل: تعطّل PostgreSQL/Redis عابراً عند إعادة تشغيل الحاوية؛ يُعاد بـ `pg_ctlcluster 16 main start` و`redis-server --daemonize yes` قبل pest.
 
@@ -78,3 +82,4 @@
 | 2026-06-15 | E2 — جدولة ظهور الأقسام | visible_from + scope موحّد + فلترة النقاط الأربع (show/LessonAccess قبل المعاينة/Progress 403/المقام) + تجاوز طاقم + SectionScheduler | pint نظيف · pest 480/480 (1643) · front typecheck/118/build ✅ | ✅ موقّع (مستقلّ) | E3 |
 | 2026-06-15 | E3 — التأليف الجماعي | course_members + CoursePolicy(update/view)/isStaffFor += hasCoAuthor + manageMembers (مالك حصراً، منع تصعيد) + CourseMemberController/searchInstructors + CourseTeamManager | pint نظيف · pest 507/507 (1699) · front typecheck/118/build ✅ | ✅ موقّع (مستقلّ) | E4 |
 | 2026-06-16 | E4 — أنواع أسئلة إضافية | QuestionType/AnswerGrader += dropdown/multi_select/numerical/regex (دون كسر القائم) + config jsonb + regex آمن + حجب الإجابة عن الطالب + تأليف/أداء الأنواع | pint نظيف · pest 565/565 (1830) · front typecheck/120/build ✅ | ✅ موقّع (مستقلّ) | E5 |
+| 2026-06-16 | E5 — مكتبات المحتوى | QuestionImporter (نسخ عميق 7 حقول، بلا FK) + importable/import + عزل ملكية ذرّي (403) + إصلاح CourseCloner (config/explanation) + QuestionImportPicker | pint نظيف · pest 590/590 (1898) · front typecheck/136/build ✅ | ✅ موقّع (مستقلّ) | 🏁 الخطّة مكتملة |
