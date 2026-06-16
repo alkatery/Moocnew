@@ -24,14 +24,15 @@ export function PageHeader({
 }) {
   return (
     <header className="mb-6 border-b border-slate-200 pb-5">
+      {/* G3: text-slate-400 → text-slate-500 على روابط breadcrumb (خلفية بيضاء) */}
       {crumbs && crumbs.length > 0 && (
-        <nav className="mb-2 flex flex-wrap items-center gap-1.5 text-xs text-slate-400" aria-label="مسار التنقّل">
-          <Link className="text-slate-400 transition hover:text-brand-600" href="/">الرئيسية</Link>
+        <nav className="mb-2 flex flex-wrap items-center gap-1.5 text-xs text-slate-500" aria-label="مسار التنقّل">
+          <Link className="text-slate-500 transition hover:text-brand-600" href="/">الرئيسية</Link>
           {crumbs.map((c) => (
             <span key={c.label} className="flex items-center gap-1.5">
               <span aria-hidden>‹</span>
               {c.href ? (
-                <Link className="text-slate-400 transition hover:text-brand-600" href={c.href}>{c.label}</Link>
+                <Link className="text-slate-500 transition hover:text-brand-600" href={c.href}>{c.label}</Link>
               ) : (
                 <span className="font-medium text-slate-500">{c.label}</span>
               )}

@@ -8,6 +8,7 @@ import type { Course, SurveyAnswers } from '@/lib/types';
 import { t } from '@/i18n/dictionary';
 import { PageHeader } from '@/components/PageHeader';
 import { Stars } from '@/components/Stars';
+import { ErrorMsg } from '@/components/StatusMessage';
 
 const AXES: { key: keyof Omit<SurveyAnswers, 'comment'>; label: string; hint: string }[] = [
   { key: 'overall', label: 'التقييم العام', hint: 'رضاك العام عن تجربة الدورة' },
@@ -75,7 +76,7 @@ export default function SurveyPage() {
             <div key={axis.key} className="mb-5 flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4 last:border-0">
               <div>
                 <span className="label block text-slate-900">{axis.label}</span>
-                <span className="text-xs text-slate-400">{axis.hint}</span>
+                <span className="text-xs text-slate-500">{axis.hint}</span>
               </div>
               <Stars
                 size={26}
@@ -94,9 +95,10 @@ export default function SurveyPage() {
             onChange={(e) => setComment(e.target.value)}
             placeholder="ما الذي أعجبك؟ وما الذي تقترح تحسينه؟"
           />
-          <p className="mt-2 text-xs text-slate-400">تُعرض الملاحظات لفريق الجودة دون اسمك حفاظاً على خصوصيتك.</p>
+          <p className="mt-2 text-xs text-slate-500">تُعرض الملاحظات لفريق الجودة دون اسمك حفاظاً على خصوصيتك.</p>
 
-          {error && <p className="error mt-3">{error}</p>}
+          {/* G5: role="alert" عبر ErrorMsg */}
+          <ErrorMsg msg={error} />
 
           <button className="btn mt-4 w-full" disabled={saving} onClick={() => void submit()}>
             {saving ? t('common.loading') : 'إرسال التقييم'}

@@ -6,6 +6,7 @@ import { api, ApiError } from '@/lib/api';
 import type { NewsPost, Paginated } from '@/lib/types';
 import { formatDate } from '@/lib/format';
 import { t } from '@/i18n/dictionary';
+import { ErrorMsg } from '@/components/StatusMessage';
 
 const EMPTY = { title: '', excerpt: '', body: '', published: true };
 
@@ -67,7 +68,8 @@ export default function AdminNewsPage() {
         <h1>{t('admin.news')}</h1>
         <Link className="btn btn-ghost" href="/admin">{t('admin.title')}</Link>
       </div>
-      {error && <p className="error mb-4">{error}</p>}
+      {/* G5: role="alert" عبر ErrorMsg */}
+      <ErrorMsg msg={error} />
 
       <div className="grid gap-6 lg:grid-cols-2">
         <form className="card mb-0 self-start" onSubmit={(e) => void create(e)}>
@@ -100,7 +102,7 @@ export default function AdminNewsPage() {
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div>
                     <strong className="text-slate-900">{p.title}</strong>
-                    <div className="mt-1 flex items-center gap-2 text-xs text-slate-400">
+                    <div className="mt-1 flex items-center gap-2 text-xs text-slate-500">
                       <span className={`badge ${p.published_at ? '' : 'bg-amber-50 text-amber-700'}`}>
                         {p.published_at ? 'منشور' : 'مسودة'}
                       </span>

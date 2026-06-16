@@ -31,6 +31,9 @@ final class SectionRequest extends FormRequest
         return [
             'title' => [$required, 'string', 'max:255'],
             'position' => ['nullable', 'integer', 'min:0'],
+            // E2: تاريخ ظهور القسم؛ null صريح يلغي الجدولة (ظاهر دائماً).
+            // تاريخ في الماضي مقبول (نشر فوري). أي تاريخ صالح يُقبل.
+            'visible_from' => ['nullable', 'date'],
         ];
     }
 }

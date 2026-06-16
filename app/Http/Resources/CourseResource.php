@@ -38,6 +38,15 @@ final class CourseResource extends JsonResource
                 'name' => $this->whenLoaded('instructor', fn () => $this->instructor->name),
             ],
             'sections' => SectionResource::collection($this->whenLoaded('sections')),
+            // E1: المتطلّبات السابقة — تُحمَّل عند show فقط (eager-load في CourseController::show).
+            // قائمة ثابتة بلا حالة لكل مستخدم (الجلب قد يكون مجهولاً).
+            'prerequisites' => $this->when(
+                $this->relationLoaded('prerequisites'),
+                fn () => $this->prerequisites
+                    ->map(fn ($p) => ['id' => $p->id, 'title' => $p->title, 'slug' => $p->slug])
+                    ->values()
+                    ->all(),
+            ),
         ];
     }
 }

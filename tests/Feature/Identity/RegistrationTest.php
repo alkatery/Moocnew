@@ -6,6 +6,8 @@ use App\Contexts\Identity\Domain\Consent\ConsentType;
 use App\Contexts\Identity\Domain\Role;
 use App\Models\User;
 use Database\Seeders\RolesAndPermissionsSeeder;
+use Illuminate\Auth\Notifications\VerifyEmail;
+use Illuminate\Support\Facades\Notification;
 
 beforeEach(function () {
     $this->seed(RolesAndPermissionsSeeder::class);
@@ -26,16 +28,23 @@ function validRegistrationPayload(array $overrides = []): array
     ], $overrides);
 }
 
-it('registers a user, issues a token and assigns the student role', function () {
+it('registers an unverified user without a token and sends a verification mail', function () {
+    Notification::fake();
+
     $response = $this->postJson('/api/v1/auth/register', validRegistrationPayload());
 
+    // No token is issued until the email is proven (login blocks unverified).
     $response->assertCreated()
-        ->assertJsonStructure(['token', 'user' => ['id', 'email', 'roles']])
+        ->assertJsonStructure(['message', 'user' => ['id', 'email', 'roles']])
+        ->assertJsonMissingPath('token')
         ->assertJsonPath('user.roles', [Role::Student->value]);
 
     $user = User::query()->where('email', 'sara@example.com')->firstOrFail();
     expect($user->country)->toBe('SA');
     expect($user->locale)->toBe('ar'); // default
+    expect($user->hasVerifiedEmail())->toBeFalse();
+
+    Notification::assertSentTo($user, VerifyEmail::class);
 });
 
 it('records the PDPL consents granted at sign-up with the policy version', function () {

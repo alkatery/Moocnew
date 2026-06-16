@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Api\V1\Admin;
 use App\Contexts\Catalog\Domain\Course\CourseStatus;
 use App\Contexts\Catalog\Infrastructure\Persistence\Course;
 use App\Contexts\Identity\Application\ActivityLogger;
+use App\Contexts\Identity\Application\AnonymizeUser;
 use App\Contexts\Identity\Application\CreateUserAccount;
 use App\Contexts\Identity\Domain\Permission;
 use App\Contexts\Identity\Domain\Role;
@@ -154,6 +155,23 @@ final class UserController extends Controller
         $user->delete(); // soft delete
 
         $activity->log('user.deleted', $request->user(), $user);
+
+        return response()->json(status: 204);
+    }
+
+    /**
+     * PDPL «right to erasure» on behalf of a data subject: anonymise the
+     * account (clear PII, revoke sessions, soft-delete) while keeping its
+     * related records referentially intact. Distinct from destroy(), which
+     * keeps PII for recoverable removals.
+     */
+    public function retire(Request $request, User $user, AnonymizeUser $anonymize): JsonResponse
+    {
+        abort_unless($request->user()->can(Permission::ManageUsers->value), 403);
+        abort_if($user->is($request->user()), 422, 'لا يمكنك إخفاء هوية حسابك.');
+        abort_if($user->hasRole(Role::SuperAdmin->value), 403, 'لا يمكن إخفاء هوية حساب الإدارة العليا.');
+
+        $anonymize->handle($user, 'user.retired', $request->user());
 
         return response()->json(status: 204);
     }

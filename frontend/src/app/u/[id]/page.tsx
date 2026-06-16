@@ -57,7 +57,7 @@ export default function LearnerProfilePage() {
             {profile.certificates.map((c) => (
               <li key={c.verification_uuid} className="flex items-center justify-between gap-3 px-5 py-3 text-sm">
                 <span className="text-slate-700">{c.title}</span>
-                <span className="flex items-center gap-2 text-xs text-slate-400">
+                <span className="flex items-center gap-2 text-xs text-slate-500">
                   {c.grade != null && <span className="badge bg-emerald-50 text-emerald-700">{c.grade}%</span>}
                   <time>{formatDate(c.issued_at)}</time>
                 </span>

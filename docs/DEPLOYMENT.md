@@ -95,4 +95,19 @@ docker compose exec app php artisan scout:sync-index-settings   # Meilisearch
 
 ## CI/CD
 - `.github/workflows/ci.yml` يشغّل Pint + Pest على PostgreSQL 16 + Redis لكل
-  دفع/PR. اربط النشر (مثلاً عبر SSH/Compose) بعد نجاح CI على الفرع الرئيسي.
+  دفع/PR.
+- `.github/workflows/deploy.yml` ينشر آلياً عبر **SSH من مشغّل GitHub** عند الدفع/الدمج
+  إلى الفرع الإنتاجي، أو يدويّاً من تبويب Actions. لا يعتمد على بيئة محلية.
+
+### تهيئة النشر الآلي (مرّة واحدة)
+1. **على الخادم** — شغّل المُهيّئ مرّة (يثبّت Docker، يستنسخ المشروع إلى `/opt/mooc`، يُقلع الحزمة):
+   ```bash
+   APP_DOMAIN=api.example.com WEB_DOMAIN=example.com bash docs/deploy/setup-vps.sh
+   ```
+2. **في المستودع** (`Settings → Secrets and variables → Actions`) أضِف الأسرار:
+   - `SSH_HOST` — IP/نطاق الخادم · `SSH_USER` — مستخدم SSH · `SSH_PRIVATE_KEY` — مفتاح نشر خاص.
+   - (اختياري كـ Variables) `SSH_PORT` (افتراضي 22) · `APP_DIR` (افتراضي `/opt/mooc`) · `DEPLOY_BRANCH`.
+   > يُفضَّل إنشاء مفتاح نشر **مخصّص** لهذا الغرض وإضافة عامّه إلى `~/.ssh/authorized_keys` على الخادم، وإبطاله عند الانتهاء. الأسرار لا تظهر في السجلات.
+3. بعدها: كل دمج إلى الفرع الإنتاجي → يسحب الخادم أحدث الكود، يبني الحاويات، يشغّل الهجرات وأوامر الكاش. `.env` محميّ (لا يمسّه `git reset`). الفرع الإنتاجي الحالي مضبوط في `deploy.yml` على `claude/mooc-platform-setup-k5fma1` — حدّثه إن أعدت تسمية الفرع.
+
+> ملاحظة أمنية: لتشديد التحقّق من مضيف SSH، استبدل `accept-new` بمفتاح مضيف مثبَّت في الوركفلو.

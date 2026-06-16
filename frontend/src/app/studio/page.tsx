@@ -126,7 +126,7 @@ export default function StudioPage() {
                       </span>
                       <span className="min-w-0 flex-1">
                         <strong className="block truncate text-slate-900">{c.title}</strong>
-                        <span className="text-xs text-slate-400">
+                        <span className="text-xs text-slate-500">
                           {c.pricing_type === 'free' ? t('course.free') : formatMinor(c.price_minor)}
                         </span>
                       </span>

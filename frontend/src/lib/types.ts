@@ -5,6 +5,18 @@ export interface Category {
   parent_id?: number | null;
 }
 
+// ---- E1: المتطلّبات السابقة ----
+
+/**
+ * متطلّب سابق — عنصر مصفوفة prerequisites في CourseResource (ثابت، بلا حالة لكل مستخدم).
+ * يطابق شكل §1.أ من عقد E1: GET /api/v1/catalog/courses/{slug}
+ */
+export interface CoursePrerequisite {
+  id: number;
+  title: string;
+  slug: string;
+}
+
 export interface Course {
   id: number;
   title: string;
@@ -21,6 +33,8 @@ export interface Course {
   sections?: Section[];
   instructor?: { id: number; name: string };
   category?: Category | null;
+  /** قائمة المتطلّبات السابقة — يأتي عند GET /catalog/courses/{slug} فقط (لا في القوائم) */
+  prerequisites?: CoursePrerequisite[];
 }
 
 export interface Section {
@@ -28,6 +42,8 @@ export interface Section {
   title: string;
   position: number;
   lessons: Lesson[];
+  /** E2: تاريخ ظهور القسم — ISO 8601 أو null (ظاهر دائماً). يُرجَع من SectionResource للطاقم. */
+  visible_from?: string | null;
 }
 
 export interface Lesson {
@@ -53,6 +69,8 @@ export interface AuthUser {
   name: string;
   email: string;
   roles: string[];
+  locale?: string | null;
+  timezone?: string | null;
 }
 
 export interface AdminUser {
@@ -91,6 +109,55 @@ export interface ForumPost {
   created_at: string | null;
 }
 
+// ---- D2: تمييز الإجابة + متابعة الموضوع ----
+
+/**
+ * شكل الموضوع الكامل كما يُرجعه GET /community/threads/{id}
+ * يحمل الحقول الجديدة: user_id, accepted_post_id (§3.د من عقد D2)
+ */
+export interface ForumThreadFull {
+  id: number;
+  title: string;
+  /** معرّف صاحب الموضوع — لتحديد ظهور زر التمييز */
+  user_id: number;
+  /** معرّف الرد المقبول حالياً، أو null إن لم يُميَّز رد بعد */
+  accepted_post_id: number | null;
+}
+
+/**
+ * استجابة GET /community/threads/{id} الكاملة — §3.د
+ * subscribed: هل المستخدم الحالي متابع للموضوع
+ * can_accept: هل يحقّ للمستخدم الحالي تمييز إجابة (صاحب الموضوع أو طاقم المقرر)
+ */
+export interface ThreadDetail {
+  thread: ForumThreadFull;
+  posts: ForumPost[];
+  subscribed: boolean;
+  can_accept: boolean;
+}
+
+/**
+ * استجابة POST /community/threads/{id}/accept — §3.أ
+ * accepted_post_id: معرّف الرد المميَّز أو null بعد الإلغاء
+ */
+export interface AcceptPostResponse {
+  data: {
+    thread_id: number;
+    accepted_post_id: number | null;
+  };
+}
+
+/**
+ * استجابة POST|DELETE /community/threads/{id}/subscribe — §3.ب و§3.ج
+ * subscribed: الحالة الجديدة للمتابعة
+ */
+export interface SubscribeResponse {
+  data: {
+    thread_id: number;
+    subscribed: boolean;
+  };
+}
+
 export interface NotificationItem {
   id: string;
   data: Record<string, unknown>;
@@ -102,6 +169,26 @@ export interface Preference {
   type: string;
   channel: string;
   enabled: boolean;
+}
+
+// ---- D3: ملخّصات الإشعارات المجدولة ----
+
+/**
+ * تكرار ملخّص النشاط — §9.ب من عقد D3.
+ * off   = بدون تجميع (فوري، الافتراضي)
+ * daily = ملخّص يومي بالبريد
+ * weekly = ملخّص أسبوعي كلّ أحد
+ */
+export type DigestFrequency = 'off' | 'daily' | 'weekly';
+
+/**
+ * استجابة GET /api/v1/notifications/preferences — توسعة §5.أ من عقد D3.
+ * data: مصفوفة type×channel (بقيت كما هي، لا كسر).
+ * digest.frequency: القيمة الحالية لتكرار الملخّص.
+ */
+export interface PreferencesResponse {
+  data: Preference[];
+  digest: { frequency: DigestFrequency };
 }
 
 export interface CalendarEvent {
@@ -169,6 +256,7 @@ export interface PathDetail {
   slug: string;
   summary: string | null;
   description: string | null;
+  cover_image?: string | null;   // §3.5 — حقل الغلاف المُرجَع من API (مؤكَّد §1.أ)
   published_at: string | null;
   levels: PathLevel[];
   viewer: {
@@ -312,6 +400,27 @@ export interface ContactMessageItem {
   created_at: string | null;
 }
 
+// ---- E3: التأليف الجماعي (Co-authors) ----
+
+/**
+ * عضو فريق التأليف — يطابق عنصر data في GET /catalog/courses/{slug}/members
+ * id/name/role فقط — PDPL (لا بريد/هاتف).
+ */
+export interface CourseMember {
+  id: number;
+  name: string;
+  role: 'co_author';
+}
+
+/**
+ * نتيجة بحث مدرّس — يطابق عنصر data في GET /catalog/courses/{slug}/instructors?q=
+ * id/name فقط — PDPL (لا بريد في الاستجابة).
+ */
+export interface InstructorSearchResult {
+  id: number;
+  name: string;
+}
+
 // ---- Studio v2: authoring & assessments ----
 
 export type LessonKind = 'video' | 'article' | 'image' | 'file' | 'live';
@@ -340,9 +449,26 @@ export interface LessonContent {
   transcript: string | null;
 }
 
-export type QuestionKind = 'mcq' | 'true_false' | 'short_answer';
+export type QuestionKind =
+  | 'mcq'
+  | 'true_false'
+  | 'short_answer'
+  | 'dropdown'
+  | 'multi_select'
+  | 'numerical'
+  | 'regex';
 
 export interface QuestionChoice { id: string; text: string }
+
+/**
+ * إعدادات التقييم للأنواع الجديدة (E4) — تُكشف للمؤلّف فقط عبر QuestionAdminResource.
+ * numerical: tolerance (هامش الخطأ المسموح به ≥0).
+ * regex: flags ('i' = تجاهل حالة الأحرف؛ '' = حسّاس).
+ */
+export interface QuestionConfig {
+  tolerance?: number; // numerical فقط
+  flags?: string;     // regex فقط: '' | 'i'
+}
 
 export interface BankQuestion {
   id: number;
@@ -350,6 +476,8 @@ export interface BankQuestion {
   body: string;
   choices: QuestionChoice[] | null;
   correct?: unknown;
+  /** E4: معاملات التقييم — حاضرة للمؤلّف فقط (QuestionAdminResource)؛ محجوبة عن الطالب */
+  config?: QuestionConfig | null;
   points: number;
 }
 
@@ -366,6 +494,13 @@ export interface QuizItem {
   questions_count?: number;
 }
 
+/** معيار واحد في نموذج التصحيح (Rubric) — يأتي من AssignmentResource */
+export interface RubricCriterion {
+  id: string;
+  title: string;
+  max_points: number;
+}
+
 export interface AssignmentItem {
   id: number;
   course_id: number;
@@ -375,6 +510,28 @@ export interface AssignmentItem {
   due_at: string | null;
   points: number;
   weight: number;
+  /** معايير التصحيح — null إن كان التصحيح بدرجة مباشرة */
+  rubric: RubricCriterion[] | null;
+}
+
+/** تسليم واجب — يُرجعه AssignmentSubmissionResource (بعد بند §2 من العقد C2) */
+export interface AssignmentSubmission {
+  id: number;
+  assignment_id: number;
+  user_id: number;
+  /** اسم الطالب — يُضاف في §2.أ من الخلفية */
+  student: { id: number; name: string };
+  content: string | null;
+  has_file: boolean;
+  /** رابط تنزيل الملف المحمي — يُضاف في §2.ب، null إن لا ملف */
+  file_url: string | null;
+  grade: number | null;
+  /** درجات المعايير — مفاتيحها criterion.id؛ null إن صُحِّح بدرجة مباشرة أو لم يُصحَّح */
+  rubric_scores: Record<string, number> | null;
+  feedback: string | null;
+  submitted_at: string;
+  /** null ⇒ غير مُصحَّح؛ وجود قيمة ⇒ مُصحَّح */
+  graded_at: string | null;
 }
 
 export interface InstructorOption { id: number; name: string; email: string }
@@ -439,4 +596,111 @@ export interface SurveyDetailSummary {
   averages: SurveyAverages;
   count: number;
   comments: SurveyComment[];
+}
+
+// ---- E5: مكتبات المحتوى (استيراد أسئلة) ----
+
+/**
+ * سؤال قابل للاستيراد — يطابق ImportableQuestionResource (§3.3 من عقد E5).
+ * يُرجَع من GET /assessment/courses/{slug}/questions/importable
+ */
+export interface ImportableQuestion {
+  id: number;
+  type: QuestionKind;
+  body: string;
+  points: number;
+  choices_count: number | null;
+  source_course: { id: number; title: string; slug: string };
+}
+
+// ---- C1: Gradebook للمعلّم (instructor gradebook) ----
+
+/** عمود واحد في جدول الدرجات: اختبار أو واجب */
+export interface GradebookColumn {
+  key: string;           // "quiz:3" | "assignment:5"
+  type: 'quiz' | 'assignment';
+  id: number;
+  title: string;
+  pass_mark: number | null;
+  weight: number;
+}
+
+/** خلية درجة طالب في تقييم معيّن */
+export interface GradebookCell {
+  score: number | null;  // نسبة 0–100 أو null (لم يُرصد/لم يُسلَّم/لم يُصحَّح)
+  passed: boolean;
+}
+
+/** صف طالب واحد في جدول الدرجات */
+export interface GradebookRow {
+  user_id: number;
+  name: string;
+  enrollment_status: 'active' | 'completed';
+  overall: number | null;           // الدرجة الكلية الموزونة أو null إن لا تقييمات
+  passed: boolean;
+  cells: Record<string, GradebookCell>; // مفاتيحها = column.key
+}
+
+/** استجابة GET /api/v1/assessment/courses/{slug}/gradebook — حقل data */
+export interface InstructorGradebook {
+  course: { id: number; title: string; passing_grade: number };
+  columns: GradebookColumn[];
+  rows: GradebookRow[];
+}
+
+// ---- D1: العلامات المرجعية (Bookmarks) ----
+/** علامة مرجعية واحدة — يطابق عنصر data في GET/POST /api/v1/bookmarks */
+export interface Bookmark {
+  id: number;
+  lesson: { id: number; title: string; type: Lesson['type'] };
+  course: { id: number; title: string; slug: string };
+  created_at: string;
+}
+
+// ---- C3: إعلانات المقرر والبريد الجماعي ----
+
+/**
+ * إعلان مقرر واحد — يطابق شكل `data` في §3.أ و§3.ب من العقد C3.
+ * يُخزَّن في جدول `course_announcements` (لا `recipients_queued` في القائمة).
+ */
+export interface CourseAnnouncement {
+  id: number;
+  course_id: number;
+  title: string;
+  body: string;
+  author: { id: number; name: string };
+  created_at: string;
+}
+
+/**
+ * استجابة POST /api/v1/courses/{course}/announcements (201) — §3.أ.
+ * `recipients_queued`: عدد الملتحقين النشطين الذين دُفعت لهم مهام الإشعار.
+ */
+export interface AnnouncementCreateResponse {
+  data: CourseAnnouncement;
+  recipients_queued: number;
+}
+
+/**
+ * استجابة POST /api/v1/courses/{course}/bulk-email (202) — §3.ج.
+ * `recipients_queued`: عدد المستهدَفين قبل فلترة القناة الفردية.
+ * `audience`: الفئة المستهدَفة (v1: all_active فقط).
+ */
+export interface BulkEmailResponse {
+  recipients_queued: number;
+  audience: string;
+}
+
+/**
+ * استجابة GET /api/v1/courses/{course}/announcements (200) — §3.ب.
+ * مُرقّمة: `meta` يحوي بيانات الصفحة.
+ */
+export interface AnnouncementsListResponse {
+  data: CourseAnnouncement[];
+  meta: {
+    current_page: number;
+    last_page: number;
+    per_page: number;
+    total: number;
+  };
 }

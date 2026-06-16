@@ -22,6 +22,9 @@ final class SectionResource extends JsonResource
             'id' => $this->id,
             'title' => $this->title,
             'position' => $this->position,
+            // E2: تاريخ الظهور المجدول؛ null = ظاهر دائماً. للطالب يكون null غالباً
+            // (الأقسام المجدولة غائبة أصلاً من المصفوفة)؛ يُفيد الاستوديو لعرض شارة «يظهر في …».
+            'visible_from' => $this->visible_from?->toIso8601String(),
             'lessons' => LessonResource::collection($this->whenLoaded('lessons')),
         ];
     }

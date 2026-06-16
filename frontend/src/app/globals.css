@@ -11,6 +11,30 @@
   h1 { @apply text-2xl font-bold text-slate-900; }
   h2 { @apply text-lg font-bold text-slate-900; }
   a { @apply text-brand-600; }
+
+  /* G1: sr-only مع إظهار عند التركيز — مطلوب لرابط التخطّي */
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+  }
+
+  /* G2: focus-visible عامّ لكل العناصر التفاعلية — تباين ≥ 3:1 (#1f3a93 على أبيض = 10:1) */
+  a:focus-visible,
+  button:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible,
+  [tabindex]:focus-visible {
+    outline: 2px solid #1f3a93;
+    outline-offset: 2px;
+  }
 }
 
 @layer components {
@@ -29,16 +53,19 @@
   .btn {
     @apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl border-0
            bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition
-           hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-300
+           hover:bg-brand-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-600
            disabled:cursor-default disabled:opacity-60;
+    /* G2: رُفعت الحلقة من brand-300 (1.99:1) إلى brand-600 (10:1) */
   }
   .btn-ghost { @apply bg-transparent text-brand-700 ring-1 ring-inset ring-brand-200 hover:bg-brand-50; }
 
   /* Forms */
   .input {
     @apply mb-3.5 mt-1.5 block w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5
-           text-sm shadow-sm outline-none transition placeholder:text-slate-400
-           focus:border-brand-500 focus:ring-2 focus:ring-brand-200;
+           text-sm shadow-sm outline-none transition placeholder:text-slate-500
+           focus:border-brand-500 focus-visible:ring-2 focus-visible:ring-brand-500;
+    /* G2: رُفعت الحلقة من brand-200 (1.49:1) إلى brand-500 (4.21:1) */
+    /* G3: placeholder من slate-400 (2.56:1) إلى slate-500 (3.95:1 — يكفي لعنصر غير نصّي) */
   }
   .label { @apply text-sm font-medium text-slate-500; }
 

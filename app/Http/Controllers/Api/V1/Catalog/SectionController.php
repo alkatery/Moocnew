@@ -26,7 +26,15 @@ final class SectionController extends Controller
 
     public function update(SectionRequest $request, Section $section): SectionResource
     {
-        $section->update($request->safe()->only(['title', 'position']));
+        $data = $request->safe()->only(['title', 'position']);
+
+        // E2: visible_from — يُميَّز null الصريح (إلغاء الجدولة) عن «غير مُرسَل».
+        // array_key_exists تكتشف المفتاح حتى لو قيمته null، بخلاف isset/filled.
+        if (array_key_exists('visible_from', $request->validated())) {
+            $data['visible_from'] = $request->validated('visible_from'); // null أو تاريخ
+        }
+
+        $section->update($data);
 
         return new SectionResource($section);
     }

@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace App\Contexts\Enrollment\Application;
 
+use App\Contexts\Catalog\Domain\Course\CourseStatus;
 use App\Contexts\Catalog\Domain\Course\PricingType;
 use App\Contexts\Catalog\Infrastructure\Persistence\Course;
 use App\Contexts\Enrollment\Domain\EnrollmentStatus;
 use App\Contexts\Enrollment\Domain\Events\EnrollmentActivated;
+use App\Contexts\Enrollment\Domain\PrerequisitesNotMet;
 use App\Contexts\Enrollment\Infrastructure\Persistence\Enrollment;
 use App\Contexts\Identity\Application\ActivityLogger;
 use App\Contexts\Platform\Application\FeatureFlags;
@@ -30,17 +32,30 @@ final class EnrollmentService
         private readonly ActivityLogger $activity,
     ) {}
 
-    public function enroll(User $user, Course $course): Enrollment
+    /**
+     * @param  bool  $bypassPrerequisites  true للطاقم (مالك/مراجع/أدمن) — يتجاوز فحص المتطلّبات.
+     *                                     يُحدَّد في المتحكّم عبر CourseAccess::isStaffFor.
+     *
+     * @throws PrerequisitesNotMet إن وُجد متطلّب لم يُكمله المتعلّم.
+     */
+    public function enroll(User $user, Course $course, bool $bypassPrerequisites = false): Enrollment
     {
-        return DB::transaction(function () use ($user, $course): Enrollment {
+        return DB::transaction(function () use ($user, $course, $bypassPrerequisites): Enrollment {
             $existing = Enrollment::query()
                 ->where('user_id', $user->getKey())
                 ->where('course_id', $course->getKey())
                 ->lockForUpdate()
                 ->first();
 
+            // الالتحاق القائم (أي حالة) يُعاد كما هو — idempotent، لا فحص للمتطلّبات.
             if ($existing !== null) {
                 return $existing;
+            }
+
+            // --- فحص المتطلّبات السابقة (E1) ---
+            // يأتي قبل grantsImmediateAccess لأنه يحجب الإنشاء بصرف النظر عن الدفع.
+            if (! $bypassPrerequisites) {
+                $this->assertPrerequisitesMet($user, $course);
             }
 
             $immediateAccess = $this->grantsImmediateAccess($course);
@@ -113,6 +128,43 @@ final class EnrollmentService
         Enrollment::query()
             ->where('order_id', $orderId)
             ->update(['status' => EnrollmentStatus::Refunded->value]);
+    }
+
+    /**
+     * يفحص أن المتعلّم أكمل جميع المتطلّبات السابقة المنشورة للمقرر.
+     * «مكتمل» = enrollment.status === Completed (يشمل اجتياز درجة النجاح بحكم CourseCompletionService).
+     * استعلامان فقط — لا حلقة N+1.
+     *
+     * @throws PrerequisitesNotMet
+     */
+    private function assertPrerequisitesMet(User $user, Course $course): void
+    {
+        // استعلام 1: اجلب معرّفات المتطلّبات المنشورة للمقرر.
+        /** @var list<int> $requiredIds */
+        $requiredIds = $course
+            ->prerequisites()
+            ->where('status', CourseStatus::Published->value)
+            ->pluck('prerequisite_course_id')
+            ->all();
+
+        if ($requiredIds === []) {
+            return;
+        }
+
+        // استعلام 2: اجلب المعرّفات التي أكملها المتعلّم فعلاً من تلك المجموعة.
+        /** @var list<int> $completedIds */
+        $completedIds = Enrollment::query()
+            ->where('user_id', $user->getKey())
+            ->whereIn('course_id', $requiredIds)
+            ->where('status', EnrollmentStatus::Completed->value)
+            ->pluck('course_id')
+            ->all();
+
+        $missingIds = array_values(array_diff($requiredIds, $completedIds));
+
+        if ($missingIds !== []) {
+            throw new PrerequisitesNotMet($missingIds);
+        }
     }
 
     /**

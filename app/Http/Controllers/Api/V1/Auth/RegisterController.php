@@ -36,12 +36,14 @@ final class RegisterController extends Controller
             ]),
         ));
 
-        $token = $user->createToken(
-            $request->input('device_name', 'web'),
-        )->plainTextToken;
+        // Email ownership must be proven before a token is ever issued
+        // (login blocks unverified accounts). The verification mail is a
+        // transactional security notification, so it bypasses the
+        // preference centre intentionally.
+        $user->sendEmailVerificationNotification();
 
         return response()->json([
-            'token' => $token,
+            'message' => 'تم إنشاء حسابك. أرسلنا رابط تفعيل إلى بريدك.',
             'user' => new UserResource($user),
         ], 201);
     }

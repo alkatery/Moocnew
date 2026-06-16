@@ -13,6 +13,7 @@ use App\Contexts\Identity\Domain\Permission;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 final class ForumController extends Controller
 {
@@ -52,14 +53,25 @@ final class ForumController extends Controller
         $course = $thread->course;
         $this->authorizeParticipation($request, $course);
 
-        $isModerator = $request->user()->can(Permission::Moderate->value);
+        $user = $request->user();
+        $isModerator = $user->can(Permission::Moderate->value);
 
         $posts = $thread->posts()
             ->when(! $isModerator, fn ($q) => $q->whereNull('hidden_at'))
             ->orderBy('created_at')
             ->get();
 
-        return response()->json(['data' => ['thread' => $thread, 'posts' => $posts]]);
+        // D2 — حقول إضافية لتمكين أزرار الواجهة بلا استعلام إضافي
+        $subscribed = $thread->subscriptions()->where('user_id', $user->getKey())->exists();
+        $canAccept = $thread->user_id === $user->getKey()
+            || $this->access->isStaffFor($user, $course);
+
+        return response()->json(['data' => [
+            'thread' => $thread,
+            'posts' => $posts,
+            'subscribed' => $subscribed,
+            'can_accept' => $canAccept,
+        ]]);
     }
 
     public function reply(Request $request, ForumThread $thread): JsonResponse
@@ -73,6 +85,84 @@ final class ForumController extends Controller
         $post = $this->forum->reply($thread, $request->user(), $data['body'], $data['parent_id'] ?? null);
 
         return response()->json(['data' => $post], 201);
+    }
+
+    /**
+     * D2 — تمييز رد كإجابة مقبولة أو إلغاء التمييز (toggle).
+     *
+     * التخويل: صاحب الموضوع أو طاقم المقرر فقط.
+     * POST /api/v1/community/threads/{thread}/accept  { post_id }
+     */
+    public function accept(Request $request, ForumThread $thread): JsonResponse
+    {
+        // تخويل: صاحب الموضوع أو طاقم المقرر
+        abort_unless(
+            $thread->user_id === $request->user()->getKey()
+                || $this->access->isStaffFor($request->user(), $thread->course),
+            403,
+            'غير مصرَّح لك بتمييز الإجابة على هذا الموضوع.'
+        );
+
+        $data = $request->validate([
+            'post_id' => ['required', 'integer', Rule::exists('forum_posts', 'id')],
+        ]);
+
+        $post = ForumPost::findOrFail($data['post_id']);
+
+        // الرد يجب أن ينتمي لهذا الموضوع
+        abort_unless(
+            $post->thread_id === $thread->getKey(),
+            422,
+            'الرد لا ينتمي إلى هذا الموضوع.'
+        );
+
+        // لا يُميَّز رد مخفيّ إشرافياً
+        abort_unless(
+            $post->hidden_at === null,
+            422,
+            'لا يمكن تمييز رد محجوب.'
+        );
+
+        $acceptedPostId = $this->forum->accept($thread, $post);
+
+        return response()->json(['data' => [
+            'thread_id' => $thread->getKey(),
+            'accepted_post_id' => $acceptedPostId,
+        ]]);
+    }
+
+    /**
+     * D2 — متابعة موضوع (idempotent).
+     *
+     * POST /api/v1/community/threads/{thread}/subscribe
+     */
+    public function subscribe(Request $request, ForumThread $thread): JsonResponse
+    {
+        $this->authorizeParticipation($request, $thread->course);
+
+        $this->forum->subscribe($thread, $request->user());
+
+        return response()->json(['data' => [
+            'thread_id' => $thread->getKey(),
+            'subscribed' => true,
+        ]]);
+    }
+
+    /**
+     * D2 — إلغاء متابعة موضوع (idempotent).
+     *
+     * DELETE /api/v1/community/threads/{thread}/subscribe
+     */
+    public function unsubscribe(Request $request, ForumThread $thread): JsonResponse
+    {
+        $this->authorizeParticipation($request, $thread->course);
+
+        $this->forum->unsubscribe($thread, $request->user());
+
+        return response()->json(['data' => [
+            'thread_id' => $thread->getKey(),
+            'subscribed' => false,
+        ]]);
     }
 
     public function report(Request $request, ForumPost $post): JsonResponse

@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from 'react';
 import { API_BASE, api, ApiError, getToken } from '@/lib/api';
 import type { SiteContentField } from '@/lib/types';
 import { t } from '@/i18n/dictionary';
+import { ErrorMsg, SuccessMsg } from '@/components/StatusMessage';
 
 const GROUP_LABELS: Record<string, string> = {
   branding: 'الهوية والشعار',
@@ -72,8 +73,9 @@ export default function AdminContentPage() {
         </div>
       </div>
 
-      {error && <p className="error mb-4">{error}</p>}
-      {saved && <p className="success mb-4">تم حفظ التعديلات — ستظهر للزوّار فوراً.</p>}
+      {/* G5: role="alert"/"status" عبر ErrorMsg/SuccessMsg */}
+      <ErrorMsg msg={error} />
+      <SuccessMsg msg={saved ? 'تم حفظ التعديلات — ستظهر للزوّار فوراً.' : ''} />
 
       {loading ? (
         <p className="label">{t('common.loading')}</p>
@@ -163,7 +165,7 @@ function FieldEditor({
             // eslint-disable-next-line @next/next/no-img-element
             <img src={value} alt={field.label} className="h-14 w-auto max-w-[200px] rounded-lg border border-slate-200 bg-slate-50 object-contain p-1" />
           ) : (
-            <span className="flex h-14 w-24 items-center justify-center rounded-lg border border-dashed border-slate-300 text-xs text-slate-400">
+            <span className="flex h-14 w-24 items-center justify-center rounded-lg border border-dashed border-slate-300 text-xs text-slate-500">
               لا توجد صورة
             </span>
           )}

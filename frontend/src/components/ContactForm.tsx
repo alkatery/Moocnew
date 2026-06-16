@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { api, ApiError } from '@/lib/api';
 import { t } from '@/i18n/dictionary';
+import { ErrorMsg } from '@/components/StatusMessage';
 
 const EMPTY = { name: '', email: '', phone: '', subject: '', message: '' };
 
@@ -53,7 +54,7 @@ export function ContactForm() {
 
   return (
     <form className="card" onSubmit={(e) => void submit(e)}>
-      {error && <p className="error mb-3">{error}</p>}
+      <ErrorMsg msg={error} />
       <div className="grid gap-x-3 sm:grid-cols-2">
         <div>
           <label className="label" htmlFor="cf-name">{t('contact.name')}</label>

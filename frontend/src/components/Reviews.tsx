@@ -7,6 +7,7 @@ import type { Review, ReviewSummary } from '@/lib/types';
 import { formatDate } from '@/lib/format';
 import { t } from '@/i18n/dictionary';
 import { Stars } from '@/components/Stars';
+import { ErrorMsg } from '@/components/StatusMessage';
 
 export function Reviews({ courseSlug }: { courseSlug: string }) {
   const { user } = useAuth();
@@ -46,7 +47,7 @@ export function Reviews({ courseSlug }: { courseSlug: string }) {
           <span className="flex items-center gap-2 text-sm text-slate-500">
             <Stars value={summary.average} />
             <span className="font-bold text-slate-700">{summary.average}</span>
-            <span className="text-slate-400">({summary.count} {t('reviews.count')})</span>
+            <span className="text-slate-500">({summary.count} {t('reviews.count')})</span>
           </span>
         )}
       </div>
@@ -59,13 +60,14 @@ export function Reviews({ courseSlug }: { courseSlug: string }) {
           </div>
           <textarea className="input min-h-20" placeholder={t('reviews.write')}
             value={comment} onChange={(e) => setComment(e.target.value)} />
-          {error && <p className="error mb-2">{error}</p>}
+          {/* G5: role="alert" عبر ErrorMsg */}
+          <ErrorMsg msg={error} />
           <button className="btn" disabled={busy}>{busy ? t('common.loading') : t('reviews.submit')}</button>
         </form>
       )}
 
       {reviews.length === 0 ? (
-        <p className="text-sm text-slate-400">{t('reviews.empty')}</p>
+        <p className="text-sm text-slate-500">{t('reviews.empty')}</p>
       ) : (
         <ul className="divide-y divide-slate-100">
           {reviews.map((r) => (
@@ -75,7 +77,7 @@ export function Reviews({ courseSlug }: { courseSlug: string }) {
                 <Stars value={r.rating} size={14} />
               </div>
               {r.comment && <p className="mt-1 text-sm leading-6 text-slate-600">{r.comment}</p>}
-              {r.created_at && <time className="text-xs text-slate-400">{formatDate(r.created_at)}</time>}
+              {r.created_at && <time className="text-xs text-slate-500">{formatDate(r.created_at)}</time>}
             </li>
           ))}
         </ul>

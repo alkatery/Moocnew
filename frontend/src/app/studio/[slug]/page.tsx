@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { API_BASE, api, getToken } from '@/lib/api';
+import { useAuth } from '@/lib/auth';
 import type { Course, LessonKind, Section } from '@/lib/types';
 import { t } from '@/i18n/dictionary';
 import { PageHeader } from '@/components/PageHeader';
@@ -10,7 +11,13 @@ import { LessonTypeIcon } from '@/components/LessonTypeIcon';
 import { HelpGuide } from '@/components/HelpGuide';
 import { LessonEditor } from '@/components/studio/LessonEditor';
 import { AssessmentsPanel } from '@/components/studio/AssessmentsPanel';
+import { InstructorGradebook } from '@/components/studio/InstructorGradebook';
+import { CommunicationsPanel } from '@/components/studio/CommunicationsPanel';
+import { PrerequisitesManager } from '@/components/studio/PrerequisitesManager';
+import { CourseTeamManager } from '@/components/studio/CourseTeamManager';
+import { SectionScheduler } from '@/components/studio/SectionScheduler';
 import { badgeTone, statusLabel } from '@/lib/labels';
+import { SuccessMsg } from '@/components/StatusMessage';
 
 const LESSON_KINDS: { value: LessonKind; label: string }[] = [
   { value: 'article', label: 'مقال' },
@@ -22,8 +29,10 @@ const LESSON_KINDS: { value: LessonKind; label: string }[] = [
 
 export default function ManageCoursePage() {
   const { slug } = useParams<{ slug: string }>();
+  // E3: نحتاج هوية المستخدم الحالي لتحديد ما إذا كان مالك المقرر.
+  const { user: me } = useAuth();
   const [course, setCourse] = useState<Course | null>(null);
-  const [tab, setTab] = useState<'curriculum' | 'assessments'>('curriculum');
+  const [tab, setTab] = useState<'curriculum' | 'assessments' | 'gradebook' | 'communications'>('curriculum');
   const [sectionTitle, setSectionTitle] = useState('');
   const [passingGrade, setPassingGrade] = useState('0');
   const [note, setNote] = useState('');
@@ -140,7 +149,8 @@ export default function ManageCoursePage() {
         crumbs={[{ href: '/studio', label: t('nav.studio') }, { label: course.title }]}
         actions={
           <>
-            {note && <span className="success self-center">{note}</span>}
+            {/* G5: role="status" عبر SuccessMsg */}
+            <SuccessMsg msg={note} />
             {course.status === 'draft' || course.status === 'rejected' ? (
               <button className="btn" onClick={() => void submit()}>{t('studio.submit')}</button>
             ) : course.status === 'pending_review' ? (
@@ -163,21 +173,69 @@ export default function ManageCoursePage() {
         ]}
       />
 
-      {/* Tabs */}
-      <div className="mb-6 flex gap-2 border-b border-slate-200">
-        {([['curriculum', 'المنهج'], ['assessments', 'التقييمات والدرجات']] as const).map(([k, label]) => (
-          <button key={k} onClick={() => setTab(k)}
-            className={`-mb-px border-b-2 px-4 py-2.5 text-sm font-bold transition ${
-              tab === k ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-400 hover:text-slate-600'
-            }`}>
-            {label}
-          </button>
-        ))}
+      {/* G6: role="tablist"/"tab"/aria-selected — G3: slate-400→slate-500 للتبويب غير النشط */}
+      {/* C1: أضيف تبويب ثالث «درجات الطلاب» بنفس نمط a11y القائم */}
+      {/* C3: أضيف تبويب رابع «التواصل» بنفس نمط a11y — لا كسر للتبويبات السابقة */}
+      {/* a11y (WAI-ARIA Tabs): id لكل تبويب + roving tabindex + تنقّل بالأسهم (RTL: يسار=التالي) */}
+      <div className="mb-6 flex gap-2 border-b border-slate-200" role="tablist" aria-label="أقسام الاستوديو">
+        {(() => {
+          const keys = ['curriculum', 'assessments', 'gradebook', 'communications'] as const;
+          const labels: Record<(typeof keys)[number], string> = {
+            curriculum: 'المنهج',
+            assessments: 'التقييمات والدرجات',
+            gradebook: t('gradebook.tab'),
+            communications: t('comm.tab'),
+          };
+          const onKeyDown = (e: React.KeyboardEvent, k: (typeof keys)[number]) => {
+            const i = keys.indexOf(k);
+            let next: (typeof keys)[number] | null = null;
+            if (e.key === 'ArrowLeft') next = keys[(i + 1) % keys.length]; // RTL: السهم الأيسر يتقدّم
+            else if (e.key === 'ArrowRight') next = keys[(i - 1 + keys.length) % keys.length];
+            else if (e.key === 'Home') next = keys[0];
+            else if (e.key === 'End') next = keys[keys.length - 1];
+            if (next) {
+              e.preventDefault();
+              setTab(next);
+              const id = `tab-${next}`;
+              requestAnimationFrame(() => document.getElementById(id)?.focus());
+            }
+          };
+          return keys.map((k) => (
+            <button
+              key={k}
+              id={`tab-${k}`}
+              role="tab"
+              aria-selected={tab === k}
+              aria-controls={`tabpanel-${k}`}
+              tabIndex={tab === k ? 0 : -1}
+              onClick={() => setTab(k)}
+              onKeyDown={(e) => onKeyDown(e, k)}
+              className={`-mb-px border-b-2 px-4 py-2.5 text-sm font-bold transition ${
+                tab === k ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-500 hover:text-slate-600'
+              }`}
+            >
+              {labels[k]}
+            </button>
+          ));
+        })()}
       </div>
 
-      {tab === 'assessments' ? (
+      {/* G6: tabpanel يربط بـ aria-controls على كل تبويب — a11y: aria-labelledby للاسم */}
+      <div id="tabpanel-assessments" role="tabpanel" aria-labelledby="tab-assessments" hidden={tab !== 'assessments'}>
         <AssessmentsPanel courseSlug={slug} sections={sections} />
-      ) : (
+      </div>
+
+      {/* C1: tabpanel درجات الطلاب — يُحمَّل عند فتح التبويب */}
+      <div id="tabpanel-gradebook" role="tabpanel" aria-labelledby="tab-gradebook" hidden={tab !== 'gradebook'}>
+        {tab === 'gradebook' && <InstructorGradebook courseSlug={slug} />}
+      </div>
+
+      {/* C3: tabpanel التواصل — يُحمَّل كسلاً عند فتح التبويب فقط */}
+      <div id="tabpanel-communications" role="tabpanel" aria-labelledby="tab-communications" hidden={tab !== 'communications'}>
+        {tab === 'communications' && <CommunicationsPanel courseSlug={slug} />}
+      </div>
+
+      <div id="tabpanel-curriculum" role="tabpanel" aria-labelledby="tab-curriculum" hidden={tab !== 'curriculum'}>
         <div className="grid gap-6 lg:grid-cols-3">
           <div className="lg:order-2">
             <div className="card mb-4">
@@ -198,11 +256,19 @@ export default function ManageCoursePage() {
               <label className="label mt-3 block" htmlFor="passing-grade">{t('studio.passingGrade')}</label>
               <input id="passing-grade" className="input" type="number" min="0" max="100" dir="ltr"
                 value={passingGrade} onChange={(e) => setPassingGrade(e.target.value)} />
-              <p className="mb-3 text-xs text-slate-400">
+              <p className="mb-3 text-xs text-slate-500">
                 عند ضبطها أكبر من صفر، لن تُمنح الشهادة إلا بتحقيق هذه الدرجة في متوسط التقييمات الموزون.
               </p>
               <button className="btn w-full">{t('common.save')}</button>
             </form>
+
+            {/* E1: إدارة المتطلّبات السابقة (تأليف) */}
+            <PrerequisitesManager courseSlug={slug} courseId={course.id} initial={course.prerequisites ?? []} />
+
+            {/* E3: فريق التأليف — للمالك فقط (الخادم هو الحارس النهائي بـ manageMembers) */}
+            {course.instructor?.id === me?.id && (
+              <CourseTeamManager courseSlug={slug} />
+            )}
 
             <form className="card mb-0" onSubmit={(e) => void addSection(e)}>
               <strong className="text-slate-900">{t('studio.addSection')}</strong>
@@ -219,9 +285,13 @@ export default function ManageCoursePage() {
             ) : (
               sections.map((s, si) => (
                 <div key={s.id} className="card p-0">
-                  <div className="flex items-center justify-between gap-2 border-b border-slate-100 px-5 py-3.5">
-                    <strong className="min-w-0 truncate text-slate-900">القسم {si + 1}: {s.title}</strong>
-                    <div className="flex shrink-0 items-center gap-1 text-slate-400">
+                  <div className="flex items-start justify-between gap-2 border-b border-slate-100 px-5 py-3.5">
+                    {/* E2: عنوان القسم + شارة الجدولة ومحرّرها */}
+                    <div className="min-w-0 flex-1">
+                      <strong className="block truncate text-slate-900">القسم {si + 1}: {s.title}</strong>
+                      <SectionScheduler section={s} onSaved={load} />
+                    </div>
+                    <div className="flex shrink-0 items-center gap-1 text-slate-500">
                       <button title="تحريك لأعلى" className="rounded p-1 hover:bg-slate-100 disabled:opacity-30"
                         disabled={si === 0} onClick={() => void moveSection(si, -1)}>▲</button>
                       <button title="تحريك لأسفل" className="rounded p-1 hover:bg-slate-100 disabled:opacity-30"
@@ -235,7 +305,7 @@ export default function ManageCoursePage() {
                     {s.lessons.map((l, li) => (
                       <li key={l.id}>
                         <div className="flex items-center gap-2 px-5 py-3 text-sm text-slate-600">
-                          <span className="text-slate-400"><LessonTypeIcon type={l.type} /></span>
+                          <span className="text-slate-500"><LessonTypeIcon type={l.type} /></span>
                           <button className="min-w-0 flex-1 truncate text-start hover:text-brand-700"
                             onClick={() => setOpenLesson(openLesson === l.id ? null : l.id)}>
                             {l.title}
@@ -272,7 +342,7 @@ export default function ManageCoursePage() {
             )}
           </div>
         </div>
-      )}
+      </div>
     </section>
   );
 }

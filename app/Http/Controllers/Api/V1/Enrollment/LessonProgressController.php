@@ -23,6 +23,14 @@ final class LessonProgressController extends Controller
     ): JsonResponse {
         $lesson->loadMissing('section.course');
 
+        // E2: الدرس ضمن قسم غير ظاهر بعد — يُرفض حتى بطلب مباشر بالـ id.
+        // خط دفاع ثانٍ يمنع تسجيل تقدّم/استئناف على محتوى مجدول مسرَّب.
+        abort_unless(
+            $access->canAccess($request->user(), $lesson),
+            403,
+            'هذا الدرس غير متاح بعد.',
+        );
+
         $enrollment = $access->activeEnrollmentFor($request->user(), $lesson);
 
         // Progress can only be recorded against an active enrollment.

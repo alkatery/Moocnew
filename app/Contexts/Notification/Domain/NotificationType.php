@@ -16,6 +16,10 @@ enum NotificationType: string
     case SessionReminder = 'session_reminder';
     case PathCompleted = 'path_completed';
     case StudyPlanReminder = 'study_plan_reminder';
+    case CourseAnnouncement = 'course_announcement';  // C3: إعلانات المقرر
+    case CourseBulkEmail = 'course_bulk_email';        // C3: رسائل المعلّم الجماعية
+    case ForumReply = 'forum_reply';                   // D2: ردود المنتدى
+    case Digest = 'digest';                            // D3: ملخّص النشاط الدوري
 
     public function label(): string
     {
@@ -26,6 +30,10 @@ enum NotificationType: string
             self::SessionReminder => 'تذكير بحصة مباشرة',
             self::PathCompleted => 'إتمام مسار تخصصي',
             self::StudyPlanReminder => 'تنبيهات الخطة الدراسية',
+            self::CourseAnnouncement => 'إعلانات المقرر',
+            self::CourseBulkEmail => 'رسائل المعلّم',
+            self::ForumReply => 'ردود المنتدى',
+            self::Digest => 'ملخّص النشاط',
         };
     }
 }

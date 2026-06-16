@@ -68,6 +68,23 @@ final class CourseGradeService implements CourseGradeProvider
             return null;
         }
 
+        return self::weightedOverall($components);
+    }
+
+    /**
+     * حساب المتوسط الموزون لمكوّنات التقييم (مشترك مع GradebookService — DRY).
+     *
+     * كل مكوّن: ['score' => int 0–100, 'weight' => int >= 1].
+     * تُعيد null إن كانت المصفوفة فارغة.
+     *
+     * @param  list<array{score: int, weight: int}>  $components
+     */
+    public static function weightedOverall(array $components): ?int
+    {
+        if ($components === []) {
+            return null;
+        }
+
         $totalWeight = array_sum(array_column($components, 'weight'));
         $weightedSum = array_sum(array_map(
             static fn (array $c): int => $c['score'] * $c['weight'],

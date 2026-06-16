@@ -35,7 +35,7 @@ export function Nav() {
   const isStaff = roles.includes('super_admin') || roles.includes('supervisor');
 
   return (
-    <nav className="nav">
+    <nav className="nav" aria-label="التنقّل الرئيسي">
       <div className="inner">
         <Link href="/"><Logo /></Link>
         <Link href="/catalog">{t('nav.catalog')}</Link>
@@ -44,11 +44,13 @@ export function Nav() {
         {!user && <Link className="hidden sm:inline" href="/about">{t('nav.about')}</Link>}
         {!user && <Link className="hidden sm:inline" href="/contact">{t('nav.contact')}</Link>}
         {user && <Link href="/learn">{t('nav.myLearning')}</Link>}
+        {user && <Link href="/bookmarks">{t('nav.bookmarks')}</Link>}
         {user && <Link className="hidden sm:inline" href="/leaderboard">{t('nav.leaderboard')}</Link>}
         {user && <Link href="/calendar">{t('nav.calendar')}</Link>}
         {isInstructor && <Link href="/studio">{t('nav.studio')}</Link>}
         {isStaff && <Link href="/admin">{t('nav.admin')}</Link>}
         {user && <Link href="/notifications">{t('nav.notifications')}</Link>}
+        {user && <Link className="hidden sm:inline" href="/account">{t('nav.account')}</Link>}
         {user ? (
           <button className="btn" onClick={() => void logout()}>{t('nav.logout')}</button>
         ) : (

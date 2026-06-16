@@ -13,6 +13,8 @@ interface AuthState {
   impersonating: string | null;
   login: (email: string, password: string) => Promise<void>;
   register: (payload: RegisterPayload) => Promise<void>;
+  adoptSession: (token: string) => Promise<void>;
+  refresh: () => Promise<void>;
   logout: () => Promise<void>;
   impersonate: (token: string, name: string) => Promise<void>;
   stopImpersonating: () => Promise<void>;
@@ -61,15 +63,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(res.user);
   }, []);
 
+  // Registration no longer logs the user in: the account stays unverified
+  // until the email link is followed, so no token is issued here.
   const register = useCallback(async (payload: RegisterPayload) => {
-    const res = await api<{ token: string; user: AuthUser }>('/auth/register', {
+    await api<{ message: string; user: AuthUser }>('/auth/register', {
       method: 'POST',
       body: payload,
       auth: false,
     });
-    setToken(res.token);
-    setUser(res.user);
   }, []);
+
+  // Adopt a token handed back by the email-verification endpoint so the user
+  // lands already signed in.
+  const adoptSession = useCallback(async (token: string) => {
+    setToken(token);
+    setLoading(true);
+    await loadMe();
+  }, [loadMe]);
 
   const logout = useCallback(async () => {
     try {
@@ -108,7 +118,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ user, loading, impersonating, login, register, logout, impersonate, stopImpersonating }}
+      value={{ user, loading, impersonating, login, register, adoptSession, refresh: loadMe, logout, impersonate, stopImpersonating }}
     >
       {children}
     </AuthContext.Provider>

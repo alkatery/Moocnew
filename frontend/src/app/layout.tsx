@@ -23,11 +23,22 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body className="flex min-h-screen flex-col">
+        {/* G1: رابط تخطّي للمحتوى الرئيسي — مرئي عند التركيز بلوحة المفاتيح فقط */}
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:absolute focus:start-4 focus:top-4
+                     focus:z-50 focus:rounded-xl focus:bg-brand-600 focus:px-4 focus:py-2
+                     focus:text-sm focus:font-bold focus:text-white focus:outline-none
+                     focus:ring-2 focus:ring-white"
+        >
+          تخطّى إلى المحتوى الرئيسي
+        </a>
         <SiteContentProvider>
           <AuthProvider>
             <ImpersonationBanner />
             <Nav />
-            <main className="container flex-1">{children}</main>
+            {/* G1: id="main-content" هدف رابط التخطّي */}
+            <main id="main-content" className="container flex-1">{children}</main>
             <Footer />
           </AuthProvider>
         </SiteContentProvider>

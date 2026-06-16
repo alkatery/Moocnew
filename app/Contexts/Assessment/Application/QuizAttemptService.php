@@ -110,7 +110,13 @@ final class QuizAttemptService
 
             foreach ($questions as $question) {
                 $submitted = $answers[$question->id] ?? null;
-                $correct = ! $expired && $this->grader->isCorrect($question->type, $question->correct, $submitted);
+                // Application تقرأ config وتمرّره — Domain لا يقرأ النموذج
+                $correct = ! $expired && $this->grader->isCorrect(
+                    $question->type,
+                    $question->correct,
+                    $submitted,
+                    $question->config ?? [],
+                );
 
                 $totalPoints += $question->points;
                 if ($correct) {

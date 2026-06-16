@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\Api\V1\Account\AccountController;
 use App\Http\Controllers\Api\V1\Admin\ActivityLogController;
 use App\Http\Controllers\Api\V1\Admin\CourseCloneController;
 use App\Http\Controllers\Api\V1\Admin\EnrollmentCodeController;
@@ -15,18 +16,25 @@ use App\Http\Controllers\Api\V1\Analytics\AnalyticsController;
 use App\Http\Controllers\Api\V1\Analytics\PresenceController;
 use App\Http\Controllers\Api\V1\Assessment\AssignmentController;
 use App\Http\Controllers\Api\V1\Assessment\AssignmentSubmissionController;
+use App\Http\Controllers\Api\V1\Assessment\CourseGradebookController;
 use App\Http\Controllers\Api\V1\Assessment\CourseGradeController;
 use App\Http\Controllers\Api\V1\Assessment\QuestionController;
+use App\Http\Controllers\Api\V1\Assessment\QuestionImportController;
 use App\Http\Controllers\Api\V1\Assessment\QuizAttemptController;
 use App\Http\Controllers\Api\V1\Assessment\QuizController;
+use App\Http\Controllers\Api\V1\Assessment\SubmissionFileController;
 use App\Http\Controllers\Api\V1\Assistant\AnalystController;
 use App\Http\Controllers\Api\V1\Assistant\TutorController;
 use App\Http\Controllers\Api\V1\Auth\LoginController;
 use App\Http\Controllers\Api\V1\Auth\LogoutController;
 use App\Http\Controllers\Api\V1\Auth\MeController;
 use App\Http\Controllers\Api\V1\Auth\RegisterController;
+use App\Http\Controllers\Api\V1\Auth\ResendVerificationController;
+use App\Http\Controllers\Api\V1\Auth\VerifyEmailController;
 use App\Http\Controllers\Api\V1\Catalog\CategoryController;
 use App\Http\Controllers\Api\V1\Catalog\CourseController;
+use App\Http\Controllers\Api\V1\Catalog\CourseMemberController;
+use App\Http\Controllers\Api\V1\Catalog\CoursePrerequisiteController;
 use App\Http\Controllers\Api\V1\Catalog\CoursePublishingController;
 use App\Http\Controllers\Api\V1\Catalog\LessonController;
 use App\Http\Controllers\Api\V1\Catalog\LessonTranscriptController;
@@ -49,10 +57,13 @@ use App\Http\Controllers\Api\V1\Enrollment\LessonProgressController;
 use App\Http\Controllers\Api\V1\Enrollment\MediaStreamController;
 use App\Http\Controllers\Api\V1\Enrollment\PlaybackController;
 use App\Http\Controllers\Api\V1\HealthController;
+use App\Http\Controllers\Api\V1\Learning\BookmarkController;
 use App\Http\Controllers\Api\V1\Learning\LessonNoteController;
 use App\Http\Controllers\Api\V1\Learning\PathController;
 use App\Http\Controllers\Api\V1\Learning\PathEnrollmentController;
 use App\Http\Controllers\Api\V1\Learning\StudyPlanController;
+use App\Http\Controllers\Api\V1\Notification\CourseAnnouncementController;
+use App\Http\Controllers\Api\V1\Notification\CourseBulkEmailController;
 use App\Http\Controllers\Api\V1\Notification\NotificationController;
 use App\Http\Controllers\Api\V1\Notification\PreferenceController;
 use App\Http\Controllers\Api\V1\Platform\PublicStatsController;
@@ -81,10 +92,29 @@ Route::prefix('auth')->name('api.auth.')->group(function () {
     Route::post('register', RegisterController::class)->name('register');
     Route::post('login', LoginController::class)->name('login');
 
+    // Re-send the verification mail (generic response, enumeration-safe).
+    Route::post('email/resend', ResendVerificationController::class)
+        ->middleware('throttle:6,1')->name('verification.resend');
+
     Route::middleware('auth:sanctum')->group(function () {
         Route::post('logout', LogoutController::class)->name('logout');
         Route::get('me', MeController::class)->name('me');
     });
+});
+
+// Signed verification link target. The global name `verification.verify` is
+// required by Illuminate's VerifyEmail notification. The `signed` middleware
+// authenticates the request, so no Sanctum token is needed here.
+Route::get('auth/email/verify/{id}/{hash}', VerifyEmailController::class)
+    ->middleware(['signed', 'throttle:6,1'])
+    ->name('verification.verify');
+
+// Self-service account management + PDPL data-subject rights.
+Route::middleware('auth:sanctum')->prefix('account')->name('api.account.')->group(function () {
+    Route::patch('/', [AccountController::class, 'update'])->name('update');
+    Route::put('password', [AccountController::class, 'password'])->name('password');
+    Route::get('export', [AccountController::class, 'export'])->name('export');
+    Route::delete('/', [AccountController::class, 'destroy'])->name('destroy');
 });
 
 Route::middleware('auth:sanctum')->prefix('admin')->name('api.admin.')->group(function () {
@@ -117,6 +147,7 @@ Route::middleware('auth:sanctum')->prefix('admin')->name('api.admin.')->group(fu
     Route::post('users/{user}/reset-password', [UserController::class, 'resetPassword'])->name('users.password.reset');
     Route::post('users/{user}/impersonate', [UserController::class, 'impersonate'])->name('users.impersonate');
     Route::get('users/{user}/courses', [UserController::class, 'courses'])->name('users.courses');
+    Route::post('users/{user}/retire', [UserController::class, 'retire'])->name('users.retire');
     Route::delete('users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
     Route::patch('courses/{course}/instructor', [UserController::class, 'transferCourse'])->name('courses.transfer');
 
@@ -192,6 +223,23 @@ Route::prefix('catalog')->name('api.catalog.')->group(function () {
         Route::patch('courses/{course}', [CourseController::class, 'update'])->name('courses.update');
         Route::delete('courses/{course}', [CourseController::class, 'destroy'])->name('courses.destroy');
 
+        // E1 — المتطلّبات السابقة (تأليف — CoursePolicy::update).
+        Route::post('courses/{course}/prerequisites', [CoursePrerequisiteController::class, 'store'])
+            ->name('courses.prerequisites.store');
+        Route::delete('courses/{course}/prerequisites/{prerequisite}', [CoursePrerequisiteController::class, 'destroy'])
+            ->name('courses.prerequisites.destroy');
+
+        // E3 — التأليف الجماعي: إدارة فريق التأليف (manageMembers — المالك فقط).
+        Route::get('courses/{course}/members', [CourseMemberController::class, 'index'])
+            ->name('courses.members.index');
+        Route::post('courses/{course}/members', [CourseMemberController::class, 'store'])
+            ->name('courses.members.store');
+        Route::delete('courses/{course}/members/{user}', [CourseMemberController::class, 'destroy'])
+            ->name('courses.members.destroy');
+        // نقطة بحث المدرّسين للـ picker (PDPL: id/name فقط).
+        Route::get('courses/{course}/instructors', [CourseMemberController::class, 'searchInstructors'])
+            ->name('courses.instructors.search');
+
         // Publishing workflow.
         Route::post('courses/{course}/submit', [CoursePublishingController::class, 'submit'])->name('courses.submit');
         Route::post('courses/{course}/approve', [CoursePublishingController::class, 'approve'])->name('courses.approve');
@@ -265,6 +313,10 @@ Route::middleware('auth:sanctum')->name('api.enrollment.')->group(function () {
     Route::get('lessons/{lesson}/notes', [LessonNoteController::class, 'index'])->name('lesson.notes.index');
     Route::post('lessons/{lesson}/notes', [LessonNoteController::class, 'store'])->name('lesson.notes.store');
     Route::delete('lesson-notes/{note}', [LessonNoteController::class, 'destroy'])->name('lesson.notes.destroy');
+    // D1 — العلامات المرجعية (bookmarks)
+    Route::get('bookmarks', [BookmarkController::class, 'index'])->name('bookmarks.index');
+    Route::post('bookmarks', [BookmarkController::class, 'store'])->name('bookmarks.store');
+    Route::delete('bookmarks/{bookmark}', [BookmarkController::class, 'destroy'])->name('bookmarks.destroy');
     Route::get('lessons/{lesson}/checkpoints', [LessonCheckpointController::class, 'index'])->name('lesson.checkpoints');
     Route::post('lessons/{lesson}/checkpoints/{question}/answer', [LessonCheckpointController::class, 'answer'])->name('lesson.checkpoints.answer');
     Route::get('catalog/courses/{course}/progress', [CourseProgressController::class, 'show'])->name('course.progress');
@@ -296,6 +348,12 @@ Route::middleware('auth:sanctum')->prefix('assessment')->name('api.assessment.')
     Route::patch('questions/{question}', [QuestionController::class, 'update'])->name('questions.update');
     Route::delete('questions/{question}', [QuestionController::class, 'destroy'])->name('questions.destroy');
 
+    // E5 — مكتبات المحتوى: استيراد أسئلة بين مقررات المؤلّف.
+    Route::get('courses/{course}/questions/importable', [QuestionImportController::class, 'importable'])
+        ->name('questions.importable');
+    Route::post('courses/{course}/questions/import', [QuestionImportController::class, 'import'])
+        ->name('questions.import');
+
     // Quizzes.
     Route::get('courses/{course}/quizzes', [QuizController::class, 'index'])->name('quizzes.index');
     Route::post('courses/{course}/quizzes', [QuizController::class, 'store'])->name('quizzes.store');
@@ -315,8 +373,14 @@ Route::middleware('auth:sanctum')->prefix('assessment')->name('api.assessment.')
     Route::get('assignments/{assignment}/submissions', [AssignmentSubmissionController::class, 'index'])->name('submissions.index');
     Route::post('submissions/{submission}/grade', [AssignmentSubmissionController::class, 'grade'])->name('submissions.grade');
 
+    // §2.ب — تنزيل ملف التسليم (طاقم المقرر فقط، التخويل داخل المتحكّم)
+    Route::get('submissions/{submission}/file', SubmissionFileController::class)->name('submissions.file');
+
     // The learner's gradebook for a course (overall grade + per-assessment).
     Route::get('courses/{course}/grade', CourseGradeController::class)->name('courses.grade');
+
+    // مصفوفة الدرجات الكاملة للطاقم (C1 — Gradebook للمعلّم).
+    Route::get('courses/{course}/gradebook', CourseGradebookController::class)->name('courses.gradebook');
 });
 
 /*
@@ -342,6 +406,28 @@ Route::middleware('auth:sanctum')->prefix('notifications')->name('api.notificati
     Route::post('{id}/read', [NotificationController::class, 'markAsRead'])->name('read');
     Route::get('preferences', [PreferenceController::class, 'index'])->name('preferences.index');
     Route::put('preferences', [PreferenceController::class, 'update'])->name('preferences.update');
+});
+
+/*
+|--------------------------------------------------------------------------
+| C3 — إعلانات المقرر والبريد الجماعي (PRD §5.ط)
+|--------------------------------------------------------------------------
+| الإعلانات: طاقم المقرر ينشر (throttle:30,1) والطاقم+المتعلّم النشط يقرأ.
+| البريد الجماعي: طاقم المقرر فقط (throttle:5,1 — حاجز مكافحة سبام).
+| التخويل داخل كلّ متحكّم/طلب عبر CourseAccess::isStaffFor / canParticipate.
+| {course} يُربط بالـ slug (Course::getRouteKeyName).
+*/
+Route::middleware('auth:sanctum')->prefix('courses')->name('api.courses.communications.')->group(function () {
+    Route::post('{course}/announcements', [CourseAnnouncementController::class, 'store'])
+        ->middleware('throttle:30,1')
+        ->name('announcements.store');
+
+    Route::get('{course}/announcements', [CourseAnnouncementController::class, 'index'])
+        ->name('announcements.index');
+
+    Route::post('{course}/bulk-email', CourseBulkEmailController::class)
+        ->middleware('throttle:5,1')
+        ->name('bulk-email.send');
 });
 
 /*
@@ -381,6 +467,10 @@ Route::middleware('auth:sanctum')->prefix('community')->name('api.community.')->
     Route::post('posts/{post}/report', [ForumController::class, 'report'])->name('posts.report');
     Route::post('posts/{post}/hide', [ForumController::class, 'hide'])->name('posts.hide');
     Route::post('courses/{course}/bans', [ForumController::class, 'ban'])->name('bans.store');
+    // D2 — تمييز الإجابة المقبولة (toggle) + متابعة الموضوع
+    Route::post('threads/{thread}/accept', [ForumController::class, 'accept'])->name('threads.accept');
+    Route::post('threads/{thread}/subscribe', [ForumController::class, 'subscribe'])->name('threads.subscribe');
+    Route::delete('threads/{thread}/subscribe', [ForumController::class, 'unsubscribe'])->name('threads.unsubscribe');
 
     // Support tickets.
     Route::get('tickets', [TicketController::class, 'index'])->name('tickets.index');

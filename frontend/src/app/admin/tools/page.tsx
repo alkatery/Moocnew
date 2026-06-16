@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { api, ApiError, API_BASE, getToken } from '@/lib/api';
 import type { Course, EnrollmentCodeItem, ImportSummary, Paginated } from '@/lib/types';
+import { ErrorMsg, SuccessMsg } from '@/components/StatusMessage';
 
 /** Download a protected CSV: the token lives in localStorage (not a cookie),
  *  so we fetch with the Authorization header and save the Blob. */
@@ -157,7 +158,8 @@ export default function AdminToolsPage() {
         <h1>أدوات الإدارة</h1>
         <Link className="btn btn-ghost" href="/admin">لوحة الإدارة</Link>
       </div>
-      {error && <p className="error mb-4">{error}</p>}
+      {/* G5: role="alert" عبر ErrorMsg */}
+      <ErrorMsg msg={error} />
 
       <div className="grid gap-6 lg:grid-cols-2">
         {/* CSV import */}
@@ -182,13 +184,15 @@ export default function AdminToolsPage() {
 
           {summary && (
             <div className="mt-4 rounded-lg bg-slate-50 p-3 text-sm">
-              <p className="success">
+              {/* G5: role="status" لرسالة النجاح */}
+              <p className="success" role="status">
                 أُنشئ: {summary.created} — تُخطي: {summary.skipped} — أُلحق: {summary.enrolled}
               </p>
               {summary.errors.length > 0 && (
                 <ul className="mt-2 space-y-1">
                   {summary.errors.map((er, i) => (
-                    <li key={i} className="error">سطر {er.line}: {er.message}</li>
+                    /* G5: role="alert" لكل سطر خطأ */
+                    <li key={i} className="error" role="alert">سطر {er.line}: {er.message}</li>
                   ))}
                 </ul>
               )}
@@ -213,7 +217,8 @@ export default function AdminToolsPage() {
           <button className="btn w-full" disabled={cloning || !cloneCourse} onClick={() => void cloneSelected()}>
             {cloning ? 'جارٍ النسخ…' : 'إنشاء نسخة'}
           </button>
-          {cloneMessage && <p className="success mt-3">{cloneMessage}</p>}
+          {/* G5: role="status" لرسالة نجاح النسخ */}
+          <SuccessMsg msg={cloneMessage} />
         </div>
 
         {/* Enrollment codes */}

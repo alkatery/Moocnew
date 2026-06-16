@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Laravel\Scout\Searchable;
@@ -114,6 +115,47 @@ final class Course extends Model
     public function reviews(): HasMany
     {
         return $this->hasMany(CourseReview::class);
+    }
+
+    /**
+     * المتطلّبات السابقة لهذا المقرر — many-to-many ذاتية.
+     * الطالب يجب أن يُكمل كلّ مقرر في هذه القائمة قبل الالتحاق.
+     *
+     * @return BelongsToMany<self, $this>
+     */
+    public function prerequisites(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            self::class,
+            'course_prerequisites',
+            'course_id',
+            'prerequisite_course_id',
+        );
+    }
+
+    /**
+     * المؤلّفون المشاركون — many-to-many عبر course_members (role='co_author').
+     * المالك (instructor_id) ليس هنا؛ هو خاصيّة على courses.
+     *
+     * @return BelongsToMany<User, $this>
+     */
+    public function members(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'course_members')
+            ->withPivot('role')
+            ->withTimestamps();
+    }
+
+    /**
+     * هل هذا المستخدم مؤلّف مشارك على هذا المقرر؟
+     * تُستهلك في CoursePolicy و CourseAccess::isStaffFor.
+     */
+    public function hasCoAuthor(User $user): bool
+    {
+        return $this->members()
+            ->where('users.id', $user->getKey())
+            ->wherePivot('role', 'co_author')
+            ->exists();
     }
 
     /**

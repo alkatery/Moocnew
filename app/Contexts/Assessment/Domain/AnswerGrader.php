@@ -14,13 +14,19 @@ final class AnswerGrader
     /**
      * @param  mixed  $correct  the question's answer key
      * @param  mixed  $answer  the learner's submitted answer
+     * @param  array  $config  معاملات التقييم (tolerance/flags) — تستخدمها الأنواع الجديدة فقط
      */
-    public function isCorrect(QuestionType $type, mixed $correct, mixed $answer): bool
+    public function isCorrect(QuestionType $type, mixed $correct, mixed $answer, array $config = []): bool
     {
         return match ($type) {
             QuestionType::Mcq => $this->gradeMcq($correct, $answer),
             QuestionType::TrueFalse => $this->gradeTrueFalse($correct, $answer),
             QuestionType::ShortAnswer => $this->gradeShortAnswer($correct, $answer),
+            // E4 — أنواع إضافية
+            QuestionType::Dropdown => $this->gradeMcq($correct, $answer),
+            QuestionType::MultiSelect => $this->gradeMcq($correct, $answer),
+            QuestionType::Numerical => $this->gradeNumerical($correct, $answer, $config),
+            QuestionType::Regex => $this->gradeRegex($correct, $answer, $config),
         };
     }
 
@@ -77,5 +83,72 @@ final class AnswerGrader
         $value = preg_replace('/\s+/u', ' ', $value) ?? $value;
 
         return mb_strtolower(trim($value));
+    }
+
+    // ------------------------------------------------------------------ E4
+
+    /**
+     * Numerical: إجابة رقمية ضمن هامش خطأ (±tolerance) حول القيمة الصحيحة.
+     * tolerance = 0 ⇒ مطابقة تامة؛ المقارنة <= شاملة للحد.
+     *
+     * @param  array  $config  ['tolerance' => float≥0]
+     */
+    private function gradeNumerical(mixed $correct, mixed $answer, array $config): bool
+    {
+        if (! is_numeric($answer)) {
+            return false;
+        }
+
+        if (! is_array($correct) || $correct === []) {
+            return false;
+        }
+
+        $target = (float) $correct[0];
+        $tolerance = (float) ($config['tolerance'] ?? 0);
+        $given = (float) $answer;
+
+        return abs($given - $target) <= $tolerance;
+    }
+
+    /**
+     * Regex: مطابقة نصّية آمنة — النمط مُولَّد محلياً، الأعلام مقصورة على i/u.
+     * الحد الأقصى لطول الإجابة: 2000 محرف (حماية ReDoS من جهة الإدخال).
+     * أي فشل في preg_match يُعاد false بأمان (لا استثناء، لا 500).
+     *
+     * @param  array  $config  ['flags' => 'i'|'']
+     */
+    private function gradeRegex(mixed $correct, mixed $answer, array $config): bool
+    {
+        if (! is_string($answer)) {
+            return false;
+        }
+
+        // حماية ReDoS: ردّ الإجابة الطويلة جداً قبل تشغيل PCRE
+        if (mb_strlen($answer) > 2000) {
+            return false;
+        }
+
+        if (! is_array($correct) || $correct === [] || ! is_string($correct[0])) {
+            return false;
+        }
+
+        $pattern = $correct[0];
+
+        // المحدِّد يُضاف هنا، لا يُخزَّن — هروب الشرطة المائلة فقط
+        $safePattern = str_replace('/', '\/', $pattern);
+
+        // العلم الوحيد المسموح: i (تجاهل الحالة)؛ u (Unicode) مفروض دائماً
+        $rawFlags = $config['flags'] ?? '';
+        $allowedFlags = in_array($rawFlags, ['', 'i'], true) ? $rawFlags : '';
+        $delimited = '/'.$safePattern.'/u'.$allowedFlags;
+
+        // كاتم الأخطاء + فحص صريح — لا 500، لا توقّف عند نمط تالف
+        $result = @preg_match($delimited, $answer);
+
+        if ($result === false) {
+            return false;
+        }
+
+        return $result === 1;
     }
 }

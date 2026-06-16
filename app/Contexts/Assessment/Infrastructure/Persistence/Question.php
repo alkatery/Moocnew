@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
  * A reusable question in a course's bank (PRD §5.هـ).
+ * E4: إضافة config لمعاملات التقييم (tolerance/flags).
  *
  * @property int $id
  * @property int $course_id
@@ -18,6 +19,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string $body
  * @property array|null $choices
  * @property mixed $correct
+ * @property array|null $config
  * @property int $points
  */
 final class Question extends Model
@@ -30,6 +32,7 @@ final class Question extends Model
         'body',
         'choices',
         'correct',
+        'config',
         'explanation',
         'points',
     ];
@@ -40,6 +43,7 @@ final class Question extends Model
             'type' => QuestionType::class,
             'choices' => 'array',
             'correct' => 'array',
+            'config' => 'array',
             'points' => 'integer',
         ];
     }

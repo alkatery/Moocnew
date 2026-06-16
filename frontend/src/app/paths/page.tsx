@@ -45,7 +45,7 @@ export default function PathsPage() {
               <div className="flex flex-1 flex-col p-4">
                 <strong className="line-clamp-1 text-slate-900">{p.title}</strong>
                 <p className="mt-1 line-clamp-2 text-sm text-slate-500">{p.summary}</p>
-                <div className="mt-auto flex items-center gap-2 pt-3 text-xs text-slate-400">
+                <div className="mt-auto flex items-center gap-2 pt-3 text-xs text-slate-500">
                   <span className="badge">{p.levels_count} مستويات</span>
                   <span className="badge">{p.courses_count} دورات</span>
                   <span className="badge bg-emerald-50 text-emerald-700">شهادة مسار</span>

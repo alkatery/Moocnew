@@ -43,6 +43,7 @@ final class CourseAccess
     public function isStaffFor(User $user, Course $course): bool
     {
         return $course->instructor_id === $user->getKey()
+            || $course->hasCoAuthor($user)              // E3: المؤلّف المشارك = طاقم المقرر.
             || $user->can(Permission::ReviewCourses->value);
     }
 

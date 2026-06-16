@@ -51,7 +51,7 @@ export default function CalendarPage() {
                   <p className="mt-1 text-sm text-slate-500">
                     {new Intl.DateTimeFormat('ar', { dateStyle: 'full', timeStyle: 'short' }).format(date)}
                   </p>
-                  <p className="text-xs text-slate-400">الموافق هجرياً: {e.hijri}</p>
+                  <p className="text-xs text-slate-500">الموافق هجرياً: {e.hijri}</p>
                 </div>
               </div>
             );

@@ -6,9 +6,10 @@ import { api, ApiError } from '@/lib/api';
 import { t } from '@/i18n/dictionary';
 import { PageHeader } from '@/components/PageHeader';
 
+// E4: موسَّع بالأنواع الأربعة الجديدة — لا يحمل correct/config (محجوبان عن الطالب)
 interface RunnerQuestion {
   id: number;
-  type: 'mcq' | 'true_false' | 'short_answer';
+  type: 'mcq' | 'true_false' | 'short_answer' | 'dropdown' | 'multi_select' | 'numerical' | 'regex';
   body: string;
   choices: { id: string; text: string }[] | null;
   points: number;
@@ -150,8 +151,10 @@ export default function QuizRunnerPage() {
                 <span className="badge shrink-0">{q.points} نقطة</span>
               </div>
 
-              {q.type === 'mcq' && q.choices && (
-                <div className="space-y-2">
+              {/* MCQ: صناديق اختيار متعددة */}
+              {(q.type === 'mcq') && q.choices && (
+                <fieldset className="space-y-2 border-0 p-0">
+                  <legend className="sr-only">خيارات الإجابة — اختر ما يناسب</legend>
                   {q.choices.map((c) => {
                     const picked = Array.isArray(answers[q.id]) && (answers[q.id] as string[]).includes(c.id);
                     return (
@@ -160,6 +163,7 @@ export default function QuizRunnerPage() {
                           picked ? 'border-brand-400 bg-brand-50' : 'border-slate-200 hover:border-slate-300'
                         }`}>
                         <input type="checkbox" checked={picked}
+                          aria-label={c.text}
                           onChange={(e) => setAnswers((prev) => {
                             const cur = Array.isArray(prev[q.id]) ? (prev[q.id] as string[]) : [];
                             return { ...prev, [q.id]: e.target.checked ? [...cur, c.id] : cur.filter((x) => x !== c.id) };
@@ -168,25 +172,133 @@ export default function QuizRunnerPage() {
                       </label>
                     );
                   })}
+                </fieldset>
+              )}
+
+              {/* E4 multi_select: يعيد استخدام كتلة MCQ — صناديق اختيار، إجابة = مصفوفة معرّفات */}
+              {q.type === 'multi_select' && q.choices && (
+                <fieldset className="space-y-2 border-0 p-0">
+                  <legend className="sr-only">خيارات الإجابة — حدّد كل الإجابات الصحيحة</legend>
+                  {q.choices.map((c) => {
+                    const picked = Array.isArray(answers[q.id]) && (answers[q.id] as string[]).includes(c.id);
+                    return (
+                      <label key={c.id}
+                        className={`flex cursor-pointer items-center gap-3 rounded-xl border p-3 text-sm transition ${
+                          picked ? 'border-brand-400 bg-brand-50' : 'border-slate-200 hover:border-slate-300'
+                        }`}>
+                        <input type="checkbox" checked={picked}
+                          aria-label={c.text}
+                          onChange={(e) => setAnswers((prev) => {
+                            const cur = Array.isArray(prev[q.id]) ? (prev[q.id] as string[]) : [];
+                            return { ...prev, [q.id]: e.target.checked ? [...cur, c.id] : cur.filter((x) => x !== c.id) };
+                          })} />
+                        {c.text}
+                      </label>
+                    );
+                  })}
+                </fieldset>
+              )}
+
+              {/* E4 dropdown: قائمة منسدلة — الإجابة = مصفوفة عنصر واحد ["<id>"] */}
+              {q.type === 'dropdown' && q.choices && (
+                <div>
+                  <label htmlFor={`dropdown-${q.id}`} className="sr-only">
+                    {t('q.runner.selectPlaceholder')}
+                  </label>
+                  <select
+                    id={`dropdown-${q.id}`}
+                    className="input m-0"
+                    value={
+                      Array.isArray(answers[q.id]) && (answers[q.id] as string[]).length > 0
+                        ? (answers[q.id] as string[])[0]
+                        : ''
+                    }
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setAnswers((prev) => ({ ...prev, [q.id]: val ? [val] : [] }));
+                    }}
+                    aria-label={`إجابة السؤال ${q.id}`}
+                  >
+                    <option value="">{t('q.runner.selectPlaceholder')}</option>
+                    {q.choices.map((c) => (
+                      <option key={c.id} value={c.id}>{c.text}</option>
+                    ))}
+                  </select>
                 </div>
               )}
 
               {q.type === 'true_false' && (
-                <div className="flex gap-2">
-                  {[true, false].map((v) => (
-                    <button key={String(v)} type="button"
-                      className={`chip ${answers[q.id] === v ? 'chip-active' : ''}`}
-                      onClick={() => setAnswers((prev) => ({ ...prev, [q.id]: v }))}>
-                      {v ? 'صح' : 'خطأ'}
-                    </button>
-                  ))}
-                </div>
+                <fieldset className="border-0 p-0">
+                  <legend className="sr-only">صح أم خطأ؟</legend>
+                  <div className="flex gap-2">
+                    {[true, false].map((v) => (
+                      <button key={String(v)} type="button"
+                        className={`chip ${answers[q.id] === v ? 'chip-active' : ''}`}
+                        aria-pressed={answers[q.id] === v}
+                        onClick={() => setAnswers((prev) => ({ ...prev, [q.id]: v }))}>
+                        {v ? 'صح' : 'خطأ'}
+                      </button>
+                    ))}
+                  </div>
+                </fieldset>
               )}
 
               {q.type === 'short_answer' && (
-                <input className="input m-0" placeholder="إجابتك…"
-                  value={(answers[q.id] as string) ?? ''}
-                  onChange={(e) => setAnswers((prev) => ({ ...prev, [q.id]: e.target.value }))} />
+                <div>
+                  <label htmlFor={`short-answer-${q.id}`} className="sr-only">
+                    {t('q.runner.textLabel')}
+                  </label>
+                  <input
+                    id={`short-answer-${q.id}`}
+                    className="input m-0"
+                    placeholder="إجابتك…"
+                    value={(answers[q.id] as string) ?? ''}
+                    aria-label={t('q.runner.textLabel')}
+                    onChange={(e) => setAnswers((prev) => ({ ...prev, [q.id]: e.target.value }))}
+                  />
+                </div>
+              )}
+
+              {/* E4 numerical: حقل رقمي — dir=ltr، الإجابة = نص قابل للتحويل */}
+              {q.type === 'numerical' && (
+                <div>
+                  <label htmlFor={`numerical-${q.id}`} className="mb-1 block text-xs text-slate-500">
+                    {t('q.runner.numericalLabel')}
+                  </label>
+                  <input
+                    id={`numerical-${q.id}`}
+                    className="input m-0"
+                    type="number"
+                    dir="ltr"
+                    step="any"
+                    placeholder={t('q.numerical.placeholder')}
+                    value={(answers[q.id] as string) ?? ''}
+                    aria-label={t('q.runner.numericalLabel')}
+                    onChange={(e) => {
+                      // تطبيع الفاصلة العربية إلى نقطة لاتينية قبل الإرسال
+                      const val = e.target.value.replace(/[٫،,]/g, '.');
+                      setAnswers((prev) => ({ ...prev, [q.id]: val }));
+                    }}
+                  />
+                </div>
+              )}
+
+              {/* E4 regex: حقل نصي عادي — الطالب لا يرى النمط (محجوب) */}
+              {q.type === 'regex' && (
+                <div>
+                  <label htmlFor={`regex-${q.id}`} className="mb-1 block text-xs text-slate-500">
+                    {t('q.runner.textLabel')}
+                  </label>
+                  <input
+                    id={`regex-${q.id}`}
+                    className="input m-0"
+                    type="text"
+                    placeholder="إجابتك…"
+                    value={(answers[q.id] as string) ?? ''}
+                    aria-label={t('q.runner.textLabel')}
+                    onChange={(e) => setAnswers((prev) => ({ ...prev, [q.id]: e.target.value }))}
+                  />
+                </div>
               )}
             </div>
           ))}

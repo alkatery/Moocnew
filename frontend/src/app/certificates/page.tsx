@@ -8,6 +8,7 @@ import { formatDate } from '@/lib/format';
 import { t } from '@/i18n/dictionary';
 import { PageHeader } from '@/components/PageHeader';
 import { EmptyState } from '@/components/EmptyState';
+import { ErrorMsg } from '@/components/StatusMessage';
 
 export default function CertificatesPage() {
   const [items, setItems] = useState<CertificateView[]>([]);
@@ -75,7 +76,8 @@ export default function CertificatesPage() {
         subtitle="كل شهاداتك الموثّقة — لكل شهادة رمز QR وصفحة تحقق علنية."
         crumbs={[{ label: t('certificates.title') }]}
       />
-      {error && <p className="error mb-4">{error}</p>}
+      {/* G5: role="alert" عبر ErrorMsg */}
+      <ErrorMsg msg={error} />
 
       {loading ? (
         <p className="label">{t('common.loading')}</p>
@@ -93,7 +95,7 @@ export default function CertificatesPage() {
                 </span>
                 <div className="min-w-0 flex-1">
                   <strong className="block text-slate-900">{cert.course_title}</strong>
-                  <div className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-slate-400">
+                  <div className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-slate-500">
                     <span className="badge">
                       {cert.subject_type === 'learning_path' ? t('certificates.path') : t('certificates.course')}
                     </span>
