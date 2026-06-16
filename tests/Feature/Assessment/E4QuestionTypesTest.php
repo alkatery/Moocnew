@@ -336,7 +336,7 @@ it('QuestionResource does not expose correct for any new type', function () {
     $qNum = e4Question($this->course, [
         'type' => 'numerical',
         'choices' => null,
-        'correct' => [42],
+        'correct' => [987654321],
         'config' => ['tolerance' => 1],
     ]);
     $qReg = e4Question($this->course, [
@@ -357,7 +357,7 @@ it('QuestionResource does not expose correct for any new type', function () {
         ->and($content)->not->toContain('"config"')
         ->and($content)->not->toContain('"tolerance"')
         ->and($content)->not->toContain('"flags"')
-        ->and($content)->not->toContain('42')       // القيمة الرقمية
+        ->and($content)->not->toContain('987654321') // القيمة الرقمية الصحيحة (مميّزة لتفادي تصادم المعرّفات)
         ->and($content)->not->toContain('^test$');  // النمط
 });
 
