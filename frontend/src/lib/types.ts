@@ -598,6 +598,21 @@ export interface SurveyDetailSummary {
   comments: SurveyComment[];
 }
 
+// ---- E5: مكتبات المحتوى (استيراد أسئلة) ----
+
+/**
+ * سؤال قابل للاستيراد — يطابق ImportableQuestionResource (§3.3 من عقد E5).
+ * يُرجَع من GET /assessment/courses/{slug}/questions/importable
+ */
+export interface ImportableQuestion {
+  id: number;
+  type: QuestionKind;
+  body: string;
+  points: number;
+  choices_count: number | null;
+  source_course: { id: number; title: string; slug: string };
+}
+
 // ---- C1: Gradebook للمعلّم (instructor gradebook) ----
 
 /** عمود واحد في جدول الدرجات: اختبار أو واجب */

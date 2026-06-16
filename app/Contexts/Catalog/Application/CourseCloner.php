@@ -112,6 +112,8 @@ final class CourseCloner
                 'body' => $question->body,
                 'choices' => $question->choices,
                 'correct' => $question->correct,
+                'config' => $question->config,
+                'explanation' => $question->explanation,
                 'points' => $question->points,
             ]);
 

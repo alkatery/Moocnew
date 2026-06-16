@@ -19,6 +19,7 @@ use App\Http\Controllers\Api\V1\Assessment\AssignmentSubmissionController;
 use App\Http\Controllers\Api\V1\Assessment\CourseGradebookController;
 use App\Http\Controllers\Api\V1\Assessment\CourseGradeController;
 use App\Http\Controllers\Api\V1\Assessment\QuestionController;
+use App\Http\Controllers\Api\V1\Assessment\QuestionImportController;
 use App\Http\Controllers\Api\V1\Assessment\QuizAttemptController;
 use App\Http\Controllers\Api\V1\Assessment\QuizController;
 use App\Http\Controllers\Api\V1\Assessment\SubmissionFileController;
@@ -346,6 +347,12 @@ Route::middleware('auth:sanctum')->prefix('assessment')->name('api.assessment.')
     Route::post('courses/{course}/questions', [QuestionController::class, 'store'])->name('questions.store');
     Route::patch('questions/{question}', [QuestionController::class, 'update'])->name('questions.update');
     Route::delete('questions/{question}', [QuestionController::class, 'destroy'])->name('questions.destroy');
+
+    // E5 — مكتبات المحتوى: استيراد أسئلة بين مقررات المؤلّف.
+    Route::get('courses/{course}/questions/importable', [QuestionImportController::class, 'importable'])
+        ->name('questions.importable');
+    Route::post('courses/{course}/questions/import', [QuestionImportController::class, 'import'])
+        ->name('questions.import');
 
     // Quizzes.
     Route::get('courses/{course}/quizzes', [QuizController::class, 'index'])->name('quizzes.index');

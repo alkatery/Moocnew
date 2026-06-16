@@ -7,6 +7,8 @@ import { t } from '@/i18n/dictionary';
 import { ErrorMsg } from '@/components/StatusMessage';
 // C2: مراجعة/تصحيح تسليمات الواجبات — يُحمَّل كسلًا inline ضمن بطاقة الواجبات
 import { SubmissionReview } from '@/components/studio/SubmissionReview';
+// E5: منتقي استيراد الأسئلة — يُحمَّل كسلًا عند الفتح فقط
+import { QuestionImportPicker } from '@/components/studio/QuestionImportPicker';
 
 const KIND_LABELS: Record<QuestionKind, string> = {
   mcq: 'اختيار من متعدد',
@@ -31,6 +33,8 @@ export function AssessmentsPanel({ courseSlug, sections }: { courseSlug: string;
   const [err, setErr] = useState('');
   // C2: معرّف الواجب المفتوح لمراجعة تسليماته (null = لا شيء مفتوح)
   const [reviewAssignmentId, setReviewAssignmentId] = useState<number | null>(null);
+  // E5: هل منتقي الاستيراد مفتوح؟
+  const [importPickerOpen, setImportPickerOpen] = useState(false);
 
   const load = useCallback(() => {
     api<{ data: BankQuestion[] }>(`/assessment/courses/${courseSlug}/questions`).then((r) => setQuestions(r.data)).catch(() => undefined);
@@ -48,8 +52,33 @@ export function AssessmentsPanel({ courseSlug, sections }: { courseSlug: string;
 
       {/* ------------------------------------------------ question bank */}
       <div className="card mb-0 self-start">
-        <strong className="text-slate-900">بنك الأسئلة</strong>
+        <div className="mb-1 flex items-center justify-between gap-2">
+          <strong className="text-slate-900">بنك الأسئلة</strong>
+          {/* E5: زرّ «استيراد من مكتبتي» — يفتح/يغلق منتقي الاستيراد */}
+          <button
+            type="button"
+            className="btn btn-ghost text-xs"
+            onClick={() => setImportPickerOpen((prev) => !prev)}
+            aria-expanded={importPickerOpen}
+            aria-controls="import-picker-panel"
+            aria-label={t('import.open')}
+          >
+            {t('import.open')}
+          </button>
+        </div>
         <p className="mb-3 text-xs text-slate-500">أسئلة الدورة المُعاد استخدامها في الاختبارات — التصحيح آلي بالكامل.</p>
+
+        {/* E5: منتقي الاستيراد — يُحمَّل كسلًا عند الفتح فقط */}
+        {importPickerOpen && (
+          <div id="import-picker-panel" className="mb-4">
+            <QuestionImportPicker
+              courseSlug={courseSlug}
+              onImported={load}
+              onClose={() => setImportPickerOpen(false)}
+            />
+          </div>
+        )}
+
         {questions.length > 0 && (
           <ul className="mb-4 divide-y divide-slate-100">
             {questions.map((q) => (
