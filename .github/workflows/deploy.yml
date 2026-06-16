@@ -1,0 +1,100 @@
+name: Deploy
+
+# نشر آلي إلى خادم VPS عبر SSH — الاتصال يتمّ من مشغّل GitHub (لا يحتاج بيئة محلية).
+#
+# يُشغَّل:
+#   • تلقائياً عند الدفع/الدمج إلى الفرع الإنتاجي (انظر branches أدناه).
+#   • يدويّاً من تبويب Actions (workflow_dispatch).
+#
+# ── الأسرار المطلوبة (Settings → Secrets and variables → Actions → Secrets) ──
+#   SSH_HOST          عنوان الخادم (IP أو نطاق)
+#   SSH_USER          مستخدم SSH (مثل root أو deploy)
+#   SSH_PRIVATE_KEY   مفتاح نشر خاص (يُفضَّل مخصّصاً لهذا الغرض، وأن يُبطَل لاحقاً)
+#
+# ── متغيّرات اختيارية (Settings → … → Variables) ──
+#   SSH_PORT          منفذ SSH (الافتراضي 22)
+#   APP_DIR           مسار المشروع على الخادم (الافتراضي /opt/mooc — مطابق لـ setup-vps.sh)
+#   DEPLOY_BRANCH     الفرع المنشور على الخادم (الافتراضي: الفرع الذي شغّل الوركفلو)
+#
+# ── شرط مسبق لمرّة واحدة على الخادم ──
+#   شغّل المُهيّئ مرّة واحدة فيثبّت Docker ويستنسخ المشروع ويُقلع الحزمة:
+#     APP_DOMAIN=api.example.com WEB_DOMAIN=example.com bash docs/deploy/setup-vps.sh
+#   بعدها يتولّى هذا الوركفلو كل نشرة تالية.
+#
+# ملاحظة: إن أعدتَ تسمية فرعك الإنتاجي (مثلاً إلى main)، حدّث قيمة branches أدناه.
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - claude/mooc-platform-setup-k5fma1
+
+# لا تسمح بتداخل عمليتي نشر متزامنتين على نفس الخادم.
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy over SSH
+    runs-on: ubuntu-latest
+    steps:
+      - name: Push deploy to server
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SSH_PORT: ${{ secrets.SSH_PORT }}
+          APP_DIR_VAR: ${{ vars.APP_DIR }}
+          DEPLOY_BRANCH_VAR: ${{ vars.DEPLOY_BRANCH }}
+          GH_REF_NAME: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+
+          # تحقّق من توفّر الأسرار قبل أي اتصال.
+          if [ -z "${SSH_HOST}" ] || [ -z "${SSH_USER}" ] || [ -z "${SSH_PRIVATE_KEY}" ]; then
+            echo "::error::الأسرار SSH_HOST و SSH_USER و SSH_PRIVATE_KEY مطلوبة. أضِفها في إعدادات المستودع."
+            exit 1
+          fi
+
+          PORT="${SSH_PORT:-22}"
+          APP_DIR="${APP_DIR_VAR:-/opt/mooc}"
+          BRANCH="${DEPLOY_BRANCH_VAR:-$GH_REF_NAME}"
+
+          # جهّز مفتاح SSH ومعرفة المضيف.
+          mkdir -p ~/.ssh
+          printf '%s\n' "${SSH_PRIVATE_KEY}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -p "${PORT}" -H "${SSH_HOST}" >> ~/.ssh/known_hosts 2>/dev/null || true
+
+          echo "==> النشر: الفرع ${BRANCH} إلى ${SSH_USER}@${SSH_HOST}:${APP_DIR}"
+
+          # نفّذ النشر على الخادم. الأوامر مطابقة لـ docs/DEPLOYMENT.md.
+          # .env محميّ (مُتجاهَل في git) فلا يمسّه reset --hard.
+          ssh -i ~/.ssh/deploy_key -p "${PORT}" -o StrictHostKeyChecking=accept-new \
+            "${SSH_USER}@${SSH_HOST}" \
+            "APP_DIR='${APP_DIR}' BRANCH='${BRANCH}' bash -s" <<'REMOTE'
+          set -euo pipefail
+          cd "${APP_DIR}"
+          echo "==> سحب أحدث ${BRANCH}"
+          git fetch --all --prune
+          git reset --hard "origin/${BRANCH}"
+
+          echo "==> بناء وتشغيل الحاويات"
+          docker compose build
+          docker compose up -d
+
+          echo "==> الهجرات وأوامر الصيانة"
+          docker compose exec -T app php artisan migrate --force
+          docker compose exec -T app php artisan storage:link || true
+          docker compose exec -T app php artisan config:cache
+          docker compose exec -T app php artisan route:cache
+          docker compose exec -T app php artisan scout:sync-index-settings || true
+
+          docker compose ps
+          echo "==> اكتمل النشر"
+          REMOTE
+
+      - name: Cleanup key
+        if: always()
+        run: rm -f ~/.ssh/deploy_key
