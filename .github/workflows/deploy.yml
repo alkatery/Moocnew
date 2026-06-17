@@ -101,6 +101,15 @@ jobs:
           docker compose exec -T app php artisan route:cache
           docker compose exec -T app php artisan scout:sync-index-settings || true
 
+          # حمّل إعداد nginx المحدّث ليعيد تحليل عنوان app الحالي (تفادي 502 بعد
+          # إعادة إنشاء حاوية app). يُعاد التشغيل فقط إن اجتاز الإعداد nginx -t،
+          # حمايةً للإنتاج من إعداد معطوب (يبقى web عاملاً بإعداده المُحمّل سابقاً).
+          if docker compose exec -T web nginx -t; then
+            docker compose restart web
+          else
+            echo "::warning::تخطّي إعادة تشغيل web — إعداد nginx لم يجتَز nginx -t"
+          fi
+
           docker compose ps
           echo "==> اكتمل النشر"
           REMOTE
