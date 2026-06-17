@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { api, ApiError } from '@/lib/api';
+import { api, ApiError, API_BASE, getToken } from '@/lib/api';
 import type { Course, Paginated, PathDetail, PathSummary } from '@/lib/types';
 import { t } from '@/i18n/dictionary';
 import { ErrorMsg } from '@/components/StatusMessage';
@@ -67,6 +67,26 @@ export default function AdminPathsPage() {
       });
       await load();
     } catch { setError(t('common.error')); }
+  }
+
+  // رفع غلاف المسار — رفع متعدّد الأجزاء مباشر (api() يدعم JSON فقط)،
+  // مطابق لرفع غلاف الدورة وصور الموقع. الحقل: image (png/jpg/webp ≤ 4MB).
+  async function uploadCover(path: PathSummary, file: File) {
+    setBusy(true); setError('');
+    try {
+      const form = new FormData();
+      form.append('image', file);
+      const token = getToken();
+      const res = await fetch(`${API_BASE}/learning/paths/${path.slug}/cover`, {
+        method: 'POST',
+        headers: { Accept: 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: form,
+      });
+      if (!res.ok) throw new Error('upload failed');
+      await load();
+    } catch {
+      setError('تعذّر رفع الغلاف. تأكّد أنّ الصورة png/jpg/webp وحجمها أقل من 4 ميجابايت.');
+    } finally { setBusy(false); }
   }
 
   async function remove(path: PathSummary) {
@@ -156,6 +176,16 @@ export default function AdminPathsPage() {
                 </div>
                 <div className="page-actions">
                   <button className="btn btn-ghost" onClick={() => void openEditor(p)}>الدورات والمستويات</button>
+                  <label className="btn btn-ghost cursor-pointer">
+                    تغيير الغلاف
+                    <input type="file" className="sr-only" accept="image/png,image/jpeg,image/webp"
+                      disabled={busy}
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) void uploadCover(p, file);
+                        e.target.value = '';
+                      }} />
+                  </label>
                   <button className="btn btn-ghost" onClick={() => void togglePublish(p)}>
                     {p.published_at ? 'إلغاء النشر' : 'نشر'}
                   </button>
