@@ -51,7 +51,7 @@ export interface Section {
 export interface Lesson {
   id: number;
   title: string;
-  type: 'video' | 'article' | 'image' | 'file' | 'live';
+  type: 'video' | 'article' | 'image' | 'file' | 'live' | 'activity';
   position: number;
   is_free_preview: boolean;
   video_provider: string | null;
@@ -425,7 +425,7 @@ export interface InstructorSearchResult {
 
 // ---- Studio v2: authoring & assessments ----
 
-export type LessonKind = 'video' | 'article' | 'image' | 'file' | 'live';
+export type LessonKind = 'video' | 'article' | 'image' | 'file' | 'live' | 'activity';
 
 export interface LessonAuthoring {
   id: number;

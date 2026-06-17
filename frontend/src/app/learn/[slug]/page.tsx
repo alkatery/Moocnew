@@ -301,6 +301,22 @@ export default function PlayerPage() {
               </div>
             )}
 
+            {/* نشاط: تفكير ومشاركة (#3) */}
+            {active && active.type === 'activity' && (
+              <div className="m-6 rounded-2xl border border-amber-200 bg-amber-50/60 p-6">
+                <div className="mb-3 flex items-center gap-2 font-bold text-amber-800">
+                  <span aria-hidden>💡</span> نشاط: تفكير ومشاركة
+                </div>
+                <div className="whitespace-pre-wrap leading-relaxed text-slate-700">
+                  {content?.content ?? t('common.loading')}
+                </div>
+                <p className="mt-4 text-sm text-amber-700">
+                  تأمّل في المطلوب أعلاه، ثم شارك إجابتك وناقش زملاءك في{' '}
+                  <Link href={`/community/${slug}`} className="font-bold underline">نقاش الدورة</Link>.
+                </p>
+              </div>
+            )}
+
             {/* درس صورة */}
             {active && active.type === 'image' && (
               <div className="bg-slate-50 p-4 text-center">

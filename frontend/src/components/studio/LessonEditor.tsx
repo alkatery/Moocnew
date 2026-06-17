@@ -12,6 +12,7 @@ const TYPE_LABELS: Record<LessonKind, string> = {
   image: 'صورة',
   file: 'ملف (PDF…)',
   live: 'جلسة مباشرة',
+  activity: 'نشاط (تفكير/مشاركة)',
 };
 
 /** يؤلّف الثواني الكلية من دقيقة وثانية (الثواني 0..59، القيم غير سالبة). */
@@ -141,12 +142,13 @@ export function LessonEditor({
         </div>
       </div>
 
-      {(lesson.type === 'article' || lesson.type === 'live') && (
+      {(lesson.type === 'article' || lesson.type === 'live' || lesson.type === 'activity') && (
         <div>
           <label className="label block" htmlFor={`lc-${lesson.id}`}>
-            {lesson.type === 'article' ? 'نص المقال' : 'وصف الجلسة'}
+            {lesson.type === 'article' ? 'نص المقال' : lesson.type === 'activity' ? 'نصّ النشاط (سؤال/مهمة للتأمّل والمشاركة)' : 'وصف الجلسة'}
           </label>
           <textarea id={`lc-${lesson.id}`} className="input m-0 min-h-32" value={lesson.content ?? ''}
+            placeholder={lesson.type === 'activity' ? 'مثال: تأمّل في معنى الحديث ثم شارك رأيك مع زملائك في نقاش الدورة.' : undefined}
             onChange={(e) => patch('content', e.target.value)} />
         </div>
       )}

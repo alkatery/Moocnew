@@ -30,7 +30,7 @@ final class LessonContentController extends Controller
                 'id' => $lesson->id,
                 'title' => $lesson->title,
                 'type' => $lesson->type->value,
-                'content' => in_array($lesson->type, [LessonType::Article, LessonType::Live], true) || $lesson->content !== null
+                'content' => in_array($lesson->type, [LessonType::Article, LessonType::Live, LessonType::Activity], true) || $lesson->content !== null
                     ? $lesson->content
                     : null,
                 'asset_path' => $lesson->type->usesAsset() ? $lesson->asset_path : null,

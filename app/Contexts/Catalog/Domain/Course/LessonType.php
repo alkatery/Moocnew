@@ -6,8 +6,8 @@ namespace App\Contexts\Catalog\Domain\Course;
 
 /**
  * The kinds of lesson content (PRD §5.ب): a managed-service video, a
- * written article, an image, a downloadable file (e.g. PDF), or a
- * scheduled live session.
+ * written article, an image, a downloadable file (e.g. PDF), a scheduled
+ * live session, or an activity (a reflect-and-share discussion prompt — #3).
  */
 enum LessonType: string
 {
@@ -16,6 +16,8 @@ enum LessonType: string
     case Image = 'image';
     case File = 'file';
     case Live = 'live';
+    // نشاط «تفكير ومشاركة»: نصّ توجيهي (سؤال/مهمة) يتأمّله المتعلّم ويناقشه.
+    case Activity = 'activity';
 
     public function requiresVideo(): bool
     {
