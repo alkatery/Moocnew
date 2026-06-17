@@ -26,6 +26,10 @@ final class CourseResource extends JsonResource
             'cover_image' => $this->cover_image,
             'description' => $this->description,
             'status' => $this->status->value,
+            // هل يملك المُشاهِد صلاحية مراجعة الدورات (مشرف/مدير أعلى)؟ تُظهر الواجهة
+            // أزرار الاعتماد/الرفض في الاستوديو. المسار العام يحلّ المستخدم عبر
+            // حارس sanctum (احتياطي للحارس الافتراضي في المسارات المحميّة).
+            'can_review' => ($request->user() ?? $request->user('sanctum'))?->can('review', $this->resource) ?? false,
             'pricing_type' => $this->pricing_type->value,
             'price_minor' => $this->price_minor,
             'passing_grade' => $this->passing_grade,
