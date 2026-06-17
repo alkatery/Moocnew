@@ -493,6 +493,8 @@ export interface QuizItem {
   max_attempts: number | null;
   pass_mark: number;
   weight: number;
+  /** #3: موضع العنصر ضمن تسلسل الوحدة الموحّد. */
+  position: number;
   questions_count?: number;
 }
 
@@ -512,6 +514,8 @@ export interface AssignmentItem {
   due_at: string | null;
   points: number;
   weight: number;
+  /** #3: موضع العنصر ضمن تسلسل الوحدة الموحّد. */
+  position: number;
   /** معايير التصحيح — null إن كان التصحيح بدرجة مباشرة */
   rubric: RubricCriterion[] | null;
 }
