@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api\V1\Enrollment;
 
 use App\Contexts\Catalog\Infrastructure\Persistence\Course;
+use App\Contexts\Enrollment\Application\SectionGate;
 use App\Contexts\Enrollment\Domain\EnrollmentStatus;
 use App\Contexts\Enrollment\Infrastructure\Persistence\Enrollment;
 use App\Contexts\Enrollment\Infrastructure\Persistence\LessonProgress;
@@ -48,6 +49,8 @@ final class CourseProgressController extends Controller
                 'percent' => $enrollment->progress_percent,
                 'completed' => $enrollment->status === EnrollmentStatus::Completed,
                 'lessons' => $lessons,
+                // #3: وحدات مقفلة ببوّابة وحدة سابقة لم تُجتَز (للعرض في الواجهة).
+                'locked_sections' => app(SectionGate::class)->lockedSectionIds($request->user(), $course),
             ],
         ]);
     }

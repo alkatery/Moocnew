@@ -8,6 +8,7 @@ use App\Contexts\Assessment\Infrastructure\Persistence\Assignment;
 use App\Contexts\Assessment\Infrastructure\Persistence\AssignmentSubmission;
 use App\Contexts\Enrollment\Application\CourseAccess;
 use App\Contexts\Enrollment\Application\CourseCompletionService;
+use App\Contexts\Enrollment\Application\SectionGate;
 use App\Contexts\Identity\Application\ActivityLogger;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Assessment\GradeSubmissionRequest;
@@ -40,8 +41,16 @@ final class AssignmentSubmissionController extends Controller
         SubmitAssignmentRequest $request,
         Assignment $assignment,
         CourseAccess $access,
+        SectionGate $gate,
     ): JsonResponse {
-        abort_unless($access->hasActiveEnrollment($request->user(), $assignment->course_id), 403);
+        $user = $request->user();
+        abort_unless($access->hasActiveEnrollment($user, $assignment->course_id), 403);
+
+        // #3: بوّابة الوحدة — لا يُسلّم غير الطاقم واجب وحدة مقفلة.
+        abort_unless(
+            $access->isStaffFor($user, $assignment->course) || $gate->isSectionUnlockedFor($user, $assignment->course, $assignment->section_id),
+            403,
+        );
 
         $filePath = $request->hasFile('file')
             ? $request->file('file')->store("assignments/{$assignment->id}", 'media')

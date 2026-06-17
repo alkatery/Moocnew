@@ -69,6 +69,8 @@ export default function PlayerPage() {
 
   // D4: خريطة التقدّم lessonId → { video_position, completed }
   const [progressMap, setProgressMap] = useState<Map<number, { video_position: number; completed: boolean }>>(new Map());
+  // #3: معرّفات الوحدات المقفلة ببوّابة وحدة سابقة لم تُجتَز.
+  const [lockedSections, setLockedSections] = useState<Set<number>>(new Set());
   // D4: موضع الاستئناف للدرس النشط (null = لا استئناف)
   const [resumeAt, setResumeAt] = useState<number | null>(null);
 
@@ -94,6 +96,7 @@ export default function PlayerPage() {
           });
         });
         setProgressMap(map);
+        setLockedSections(new Set(res.data.locked_sections ?? []));
       })
       .catch(() => {
         // الفشل هنا لا يكسر الصفحة — يبدأ بلا استئناف
@@ -419,31 +422,48 @@ export default function PlayerPage() {
                 {course.sections?.length ?? 0} أقسام · {course.sections?.reduce((n, s) => n + s.lessons.length, 0) ?? 0} درساً
               </p>
             </div>
-            {course.sections?.map((s, si) => (
+            {course.sections?.map((s, si) => {
+              const locked = lockedSections.has(s.id);
+              return (
               <div key={s.id} className="border-b border-slate-100 last:border-0">
-                <div className="bg-slate-50 px-4 py-2.5 text-sm font-bold text-slate-700">
-                  القسم {si + 1}: {s.title}
+                <div className="flex items-center justify-between gap-2 bg-slate-50 px-4 py-2.5 text-sm font-bold text-slate-700">
+                  <span>القسم {si + 1}: {s.title}</span>
+                  {locked && (
+                    <span className="badge bg-slate-200 text-slate-600" title="اجتز اختبار الوحدة السابقة لفتح هذه الوحدة">🔒 مقفلة</span>
+                  )}
                 </div>
                 <ul>
-                  {s.lessons.map((l) => (
+                  {s.lessons.map((l) => {
+                    const lessonLocked = locked && !l.is_free_preview;
+                    return (
                     <li key={l.id}>
                       <button
-                        onClick={() => void open(l)}
-                        className={`flex w-full items-center gap-3 px-4 py-3 text-start text-sm transition hover:bg-brand-50 ${
-                          active?.id === l.id ? 'bg-brand-50 font-bold text-brand-700' : 'text-slate-600'
+                        onClick={() => { if (!lessonLocked) void open(l); }}
+                        disabled={lessonLocked}
+                        title={lessonLocked ? 'مقفل — اجتز اختبار الوحدة السابقة لفتحه' : undefined}
+                        className={`flex w-full items-center gap-3 px-4 py-3 text-start text-sm transition ${
+                          lessonLocked
+                            ? 'cursor-not-allowed text-slate-400'
+                            : active?.id === l.id
+                              ? 'bg-brand-50 font-bold text-brand-700 hover:bg-brand-50'
+                              : 'text-slate-600 hover:bg-brand-50'
                         }`}
                       >
                         <span className={active?.id === l.id ? 'text-brand-600' : 'text-slate-500'}>
                           <LessonTypeIcon type={l.type} />
                         </span>
                         <span className="flex-1">{l.title}</span>
-                        {l.is_free_preview && <span className="badge">معاينة</span>}
+                        {lessonLocked
+                          ? <span aria-hidden>🔒</span>
+                          : l.is_free_preview && <span className="badge">معاينة</span>}
                       </button>
                     </li>
-                  ))}
+                    );
+                  })}
                 </ul>
               </div>
-            ))}
+              );
+            })}
           </div>
 
           <div className="mt-6">

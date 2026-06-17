@@ -357,6 +357,8 @@ export interface CourseProgress {
   percent: number;
   completed?: boolean;
   lessons: { lesson_id: number; video_position: number; completed: boolean }[];
+  /** #3: معرّفات الوحدات المقفلة ببوّابة وحدة سابقة لم تُجتَز. */
+  locked_sections?: number[];
 }
 
 export type AssistantMode = 'off' | 'rules' | 'claude';
@@ -495,6 +497,8 @@ export interface QuizItem {
   weight: number;
   /** #3: موضع العنصر ضمن تسلسل الوحدة الموحّد. */
   position: number;
+  /** #3: اختبار بوّابة الوحدة — اجتيازه شرط لفتح الوحدة التالية. */
+  is_gate: boolean;
   questions_count?: number;
 }
 
