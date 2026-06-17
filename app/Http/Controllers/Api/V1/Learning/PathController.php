@@ -154,7 +154,7 @@ final class PathController extends Controller
         abort_unless($request->user()?->can(Permission::ManagePaths->value) ?? false, 403);
 
         $request->validate([
-            'image' => ['required', 'file', 'mimes:png,jpg,jpeg,webp', 'max:4096'],
+            'image' => ['required', 'file', 'mimes:png,jpg,jpeg,webp', 'max:15360'],
         ]);
 
         $url = $uploader->store($request->file('image'), 'covers', $path->cover_image);

@@ -21,7 +21,7 @@ final class UploadSiteImageRequest extends FormRequest
     {
         return [
             // SVG is allowed for logos; raster formats for everything else.
-            'image' => ['required', 'file', 'mimes:png,jpg,jpeg,webp,gif,svg,ico', 'max:4096'],
+            'image' => ['required', 'file', 'mimes:png,jpg,jpeg,webp,gif,svg,ico', 'max:15360'],
         ];
     }
 }

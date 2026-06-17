@@ -38,6 +38,10 @@ RUN docker-php-ext-configure intl \
     && pecl install redis \
     && docker-php-ext-enable redis
 
+# حدود رفع الملفات (الأغلفة/الشعار/ملفات الدروس) — تتجاوز افتراضات 2M/8M.
+# zz- يضمن التحميل بعد إعدادات php الافتراضية فيطغى عليها.
+COPY docker/php/uploads.ini /usr/local/etc/php/conf.d/zz-uploads.ini
+
 # Composer (copied from the official image).
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
