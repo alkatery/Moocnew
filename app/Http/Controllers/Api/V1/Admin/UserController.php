@@ -223,6 +223,7 @@ final class UserController extends Controller
 
         $newOwner = User::query()->findOrFail($validated['instructor_id']);
         abort_unless($newOwner->hasRole(Role::Instructor->value), 422, 'المستخدم المحدّد ليس مدرّساً.');
+        abort_if($newOwner->isDisabled(), 422, 'لا يمكن نقل الدورة إلى حساب موقوف.');
 
         $course->update(['instructor_id' => $newOwner->getKey()]);
 

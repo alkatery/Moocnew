@@ -92,6 +92,20 @@ it('transfers a course to another instructor', function () {
     expect($course->fresh()->instructor_id)->toBe($newOwner->id);
 });
 
+it('refuses to transfer a course to a disabled instructor', function () {
+    $owner = userWithRole(Role::Instructor);
+    $disabled = userWithRole(Role::Instructor);
+    $disabled->forceFill(['disabled_at' => now()])->save();
+    $course = Course::factory()->for($owner, 'instructor')->create();
+
+    Sanctum::actingAs(userWithRole(Role::SuperAdmin));
+
+    $this->patchJson("/api/v1/admin/courses/{$course->slug}/instructor", ['instructor_id' => $disabled->id])
+        ->assertStatus(422);
+
+    expect($course->fresh()->instructor_id)->toBe($owner->id);
+});
+
 it('exposes the audit trail to staff with event filtering', function () {
     $admin = userWithRole(Role::SuperAdmin);
     $student = userWithRole(Role::Student);

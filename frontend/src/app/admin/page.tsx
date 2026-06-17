@@ -69,6 +69,7 @@ export default function AdminPage() {
           <Link className="btn btn-ghost" href="/admin/users">{t('admin.users')}</Link>
           <Link className="btn btn-ghost" href="/admin/activity">{t('admin.activity')}</Link>
           <Link className="btn btn-ghost" href="/admin/content">{t('admin.content')}</Link>
+          <Link className="btn btn-ghost" href="/admin/categories">التصنيفات</Link>
           <Link className="btn btn-ghost" href="/admin/paths">إدارة المسارات</Link>
           <Link className="btn btn-ghost" href="/admin/quality">جودة التعليم</Link>
           <Link className="btn btn-ghost" href="/admin/news">{t('admin.news')}</Link>
