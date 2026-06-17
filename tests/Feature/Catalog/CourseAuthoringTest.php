@@ -143,3 +143,32 @@ it('serves a draft course to its authenticated owner but 404s for guests (studio
         ->assertOk()
         ->assertJsonPath('data.slug', $course->slug);
 });
+
+it('serves a draft to its owner via a real bearer token, not just actingAs (SPA studio regression)', function () {
+    // انحدار حقيقي: مسار العرض عام (خارج auth:sanctum)، فالحارس الافتراضي (web)
+    // لا يقرأ التوكن. Sanctum::actingAs يُبدّل الحارس الافتراضي فيُخفي العيب — لذا
+    // نُرسل توكناً حقيقيّاً في الترويسة تماماً كما تفعل واجهة الـ SPA.
+    $owner = userWithRole(Role::Instructor);
+    $course = Course::factory()->for($owner, 'instructor')->create(['status' => CourseStatus::Draft]);
+
+    $token = $owner->createToken('studio')->plainTextToken;
+
+    $this->withHeader('Authorization', "Bearer {$token}")
+        ->getJson("/api/v1/catalog/courses/{$course->slug}")
+        ->assertOk()
+        ->assertJsonPath('data.slug', $course->slug);
+});
+
+it('lets a super admin open any instructor’s draft via a real bearer token', function () {
+    // الـ Super Admin يتجاوز السياسة عبر Gate::before، لكن فقط متى حُلّ المستخدم
+    // من التوكن على هذا المسار العام — يحرس بقاء فتح الاستوديو لأي مسوّدة.
+    $admin = userWithRole(Role::SuperAdmin);
+    $owner = userWithRole(Role::Instructor);
+    $course = Course::factory()->for($owner, 'instructor')->create(['status' => CourseStatus::Draft]);
+
+    $token = $admin->createToken('studio')->plainTextToken;
+
+    $this->withHeader('Authorization', "Bearer {$token}")
+        ->getJson("/api/v1/catalog/courses/{$course->slug}")
+        ->assertOk();
+});
