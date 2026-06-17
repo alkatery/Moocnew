@@ -19,6 +19,22 @@ function roleLabel(role: string): string {
 
 const EMPTY = { name: '', email: '', password: '', role: 'instructor' as CreatableRole };
 
+/** صفّ دورة في لوحة «دورات المدرّس» (GET /admin/users/{id}/courses). */
+interface InstructorCourse {
+  id: number;
+  title: string;
+  slug: string;
+  status: string;
+  enrollments_count: number;
+}
+
+const COURSE_STATUS_LABEL: Record<string, string> = {
+  draft: 'مسودة',
+  pending_review: 'قيد المراجعة',
+  published: 'منشور',
+  archived: 'مؤرشف',
+};
+
 export default function AdminUsersPage() {
   const { impersonate } = useAuth();
   const router = useRouter();
@@ -28,6 +44,20 @@ export default function AdminUsersPage() {
   const [form, setForm] = useState(EMPTY);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+
+  // نقل الدورة: المدرّس المُوسَّع وقائمة دوراته، وخيارات المدرّسين للنقل إليهم.
+  const [coursesOf, setCoursesOf] = useState<number | null>(null);
+  const [userCourses, setUserCourses] = useState<InstructorCourse[]>([]);
+  const [instructors, setInstructors] = useState<AdminUser[]>([]);
+  const [transferSel, setTransferSel] = useState<Record<number, number | ''>>({});
+  const [coursesBusy, setCoursesBusy] = useState(false);
+
+  // قائمة المدرّسين الوجهة للنقل (تُجلب مرّة واحدة).
+  useEffect(() => {
+    api<Paginated<AdminUser>>('/admin/users?role=instructor')
+      .then((r) => setInstructors(r.data))
+      .catch(() => undefined);
+  }, []);
 
   function load() {
     const params = new URLSearchParams();
@@ -117,6 +147,35 @@ export default function AdminUsersPage() {
     }
   }
 
+  // فتح/طيّ لوحة دورات المدرّس (لعرضها ونقلها).
+  async function viewCourses(user: AdminUser) {
+    if (coursesOf === user.id) { setCoursesOf(null); return; }
+    setCoursesBusy(true); setError(''); setCoursesOf(user.id); setUserCourses([]);
+    try {
+      const res = await api<{ data: { courses: InstructorCourse[] } }>(`/admin/users/${user.id}/courses`);
+      setUserCourses(res.data.courses);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : t('common.error'));
+      setCoursesOf(null);
+    } finally { setCoursesBusy(false); }
+  }
+
+  // نقل دورة إلى مدرّس آخر. تختفي الدورة من قائمة المالك الحالي بعد النقل.
+  async function transferCourse(course: InstructorCourse) {
+    const targetId = transferSel[course.id];
+    if (targetId === '' || targetId === undefined) return;
+    const target = instructors.find((i) => i.id === targetId);
+    if (!window.confirm(`نقل «${course.title}» إلى ${target?.name ?? 'المدرّس المحدّد'}؟`)) return;
+    setCoursesBusy(true); setError('');
+    try {
+      await api(`/admin/courses/${course.slug}/instructor`, { method: 'PATCH', body: { instructor_id: targetId } });
+      setUserCourses((prev) => prev.filter((c) => c.id !== course.id));
+      setTransferSel((prev) => { const next = { ...prev }; delete next[course.id]; return next; });
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : t('common.error'));
+    } finally { setCoursesBusy(false); }
+  }
+
   return (
     <section>
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
@@ -194,6 +253,12 @@ export default function AdminUsersPage() {
                       )}
                       {!isSuper && (
                         <div className="flex flex-wrap gap-1.5">
+                          {u.roles.includes('instructor') && (
+                            <button className="btn btn-ghost px-2.5 py-1.5 text-xs" aria-expanded={coursesOf === u.id}
+                              onClick={() => void viewCourses(u)}>
+                              دوراته
+                            </button>
+                          )}
                           <button className="btn btn-ghost px-2.5 py-1.5 text-xs" onClick={() => void loginAs(u)}>
                             {t('users.impersonate')}
                           </button>
@@ -209,6 +274,43 @@ export default function AdminUsersPage() {
                           <button className="btn px-2.5 py-1.5 text-xs bg-red-600 hover:bg-red-700" onClick={() => void remove(u)}>
                             {t('users.delete')}
                           </button>
+                        </div>
+                      )}
+
+                      {/* لوحة دورات المدرّس + نقلها لمدرّس آخر */}
+                      {coursesOf === u.id && (
+                        <div className="basis-full">
+                          {coursesBusy && userCourses.length === 0 ? (
+                            <p className="py-2 text-sm text-slate-500">{t('common.loading')}</p>
+                          ) : userCourses.length === 0 ? (
+                            <p className="py-2 text-sm text-slate-500">لا توجد دورات لهذا المدرّس.</p>
+                          ) : (
+                            <ul className="mt-1 divide-y divide-slate-100 rounded-xl border border-slate-200 bg-slate-50">
+                              {userCourses.map((c) => (
+                                <li key={c.id} className="flex flex-wrap items-center gap-2 px-4 py-3 text-sm">
+                                  <div className="min-w-0 flex-1">
+                                    <strong className="block truncate text-slate-800">{c.title}</strong>
+                                    <span className="text-xs text-slate-500">
+                                      <span className="badge me-1">{COURSE_STATUS_LABEL[c.status] ?? c.status}</span>
+                                      {c.enrollments_count} ملتحق
+                                    </span>
+                                  </div>
+                                  <select className="input m-0 w-40 py-1.5 text-xs" aria-label={`نقل ${c.title} إلى مدرّس`}
+                                    value={transferSel[c.id] ?? ''}
+                                    onChange={(e) => setTransferSel((p) => ({ ...p, [c.id]: e.target.value === '' ? '' : Number(e.target.value) }))}>
+                                    <option value="">— نقل إلى —</option>
+                                    {instructors.filter((i) => i.id !== u.id).map((i) => (
+                                      <option key={i.id} value={i.id}>{i.name}</option>
+                                    ))}
+                                  </select>
+                                  <button className="btn px-2.5 py-1.5 text-xs" disabled={coursesBusy || !transferSel[c.id]}
+                                    onClick={() => void transferCourse(c)}>
+                                    نقل
+                                  </button>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
                         </div>
                       )}
                     </li>
