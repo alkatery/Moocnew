@@ -1,0 +1,7 @@
+node_modules
+.next
+.git
+dump.rdb
+tsconfig.tsbuildinfo
+npm-debug.log*
+.env*.local

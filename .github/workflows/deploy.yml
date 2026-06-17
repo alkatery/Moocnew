@@ -1,0 +1,124 @@
+name: Deploy
+
+# نشر آلي إلى خادم VPS عبر SSH — الاتصال يتمّ من مشغّل GitHub (لا يحتاج بيئة محلية).
+#
+# يُشغَّل:
+#   • تلقائياً عند الدفع/الدمج إلى الفرع الإنتاجي (انظر branches أدناه).
+#   • يدويّاً من تبويب Actions (workflow_dispatch).
+#
+# ── الأسرار المطلوبة (Settings → Secrets and variables → Actions → Secrets) ──
+#   SSH_HOST          عنوان الخادم (IP أو نطاق)
+#   SSH_USER          مستخدم SSH (مثل root أو deploy)
+#   SSH_PRIVATE_KEY   مفتاح نشر خاص (يُفضَّل مخصّصاً لهذا الغرض، وأن يُبطَل لاحقاً)
+#
+# ── متغيّرات اختيارية (Settings → … → Variables) ──
+#   SSH_PORT          منفذ SSH (الافتراضي 22)
+#   APP_DIR           مسار المشروع على الخادم (الافتراضي /opt/mooc — مطابق لـ setup-vps.sh)
+#   DEPLOY_BRANCH     الفرع المنشور على الخادم (الافتراضي: الفرع الذي شغّل الوركفلو)
+#   COMPOSE_FILE      ملف الحزمة (الافتراضي docker-compose.full.yml — كل الخدمات + الواجهة)
+#   NEXT_PUBLIC_API_BASE  عنوان الـ API للمتصفّح (الافتراضي http://<SSH_HOST>:8080/api/v1)
+#
+# ── شرط مسبق لمرّة واحدة على الخادم ──
+#   شغّل المُهيّئ مرّة واحدة فيثبّت Docker ويستنسخ المشروع ويُقلع الحزمة:
+#     APP_DOMAIN=api.example.com WEB_DOMAIN=example.com bash docs/deploy/setup-vps.sh
+#   بعدها يتولّى هذا الوركفلو كل نشرة تالية.
+#
+# ملاحظة: إن أعدتَ تسمية فرعك الإنتاجي (مثلاً إلى main)، حدّث قيمة branches أدناه.
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - claude/mooc-platform-setup-k5fma1
+
+# لا تسمح بتداخل عمليتي نشر متزامنتين على نفس الخادم.
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy over SSH
+    runs-on: ubuntu-latest
+    steps:
+      - name: Push deploy to server
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SSH_PORT: ${{ secrets.SSH_PORT }}
+          APP_DIR_VAR: ${{ vars.APP_DIR }}
+          DEPLOY_BRANCH_VAR: ${{ vars.DEPLOY_BRANCH }}
+          COMPOSE_FILE_VAR: ${{ vars.COMPOSE_FILE }}
+          NEXT_PUBLIC_API_BASE_VAR: ${{ vars.NEXT_PUBLIC_API_BASE }}
+          GH_REF_NAME: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+
+          # تحقّق من توفّر الأسرار قبل أي اتصال.
+          if [ -z "${SSH_HOST}" ] || [ -z "${SSH_USER}" ] || [ -z "${SSH_PRIVATE_KEY}" ]; then
+            echo "::error::الأسرار SSH_HOST و SSH_USER و SSH_PRIVATE_KEY مطلوبة. أضِفها في إعدادات المستودع."
+            exit 1
+          fi
+
+          PORT="${SSH_PORT:-22}"
+          APP_DIR="${APP_DIR_VAR:-/opt/mooc}"
+          BRANCH="${DEPLOY_BRANCH_VAR:-$GH_REF_NAME}"
+          # ملف الحزمة الإنتاجي (FULL = كل الخدمات + الواجهة + سياسات restart).
+          COMPOSE_FILE="${COMPOSE_FILE_VAR:-docker-compose.full.yml}"
+          # عنوان الـ API الذي يصله المتصفّح (يُحقَن في بناء الواجهة). افتراضياً مضيف الخادم.
+          NEXT_PUBLIC_API_BASE="${NEXT_PUBLIC_API_BASE_VAR:-http://${SSH_HOST}:8080/api/v1}"
+
+          # جهّز مفتاح SSH ومعرفة المضيف.
+          mkdir -p ~/.ssh
+          printf '%s\n' "${SSH_PRIVATE_KEY}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -p "${PORT}" -H "${SSH_HOST}" >> ~/.ssh/known_hosts 2>/dev/null || true
+
+          echo "==> النشر: الفرع ${BRANCH} إلى ${SSH_USER}@${SSH_HOST}:${APP_DIR}"
+
+          # نفّذ النشر على الخادم. الأوامر مطابقة لـ docs/DEPLOYMENT.md.
+          # .env محميّ (مُتجاهَل في git) فلا يمسّه reset --hard.
+          ssh -i ~/.ssh/deploy_key -p "${PORT}" -o StrictHostKeyChecking=accept-new \
+            "${SSH_USER}@${SSH_HOST}" \
+            "APP_DIR='${APP_DIR}' BRANCH='${BRANCH}' COMPOSE_FILE='${COMPOSE_FILE}' NEXT_PUBLIC_API_BASE='${NEXT_PUBLIC_API_BASE}' bash -s" <<'REMOTE'
+          set -euo pipefail
+          export COMPOSE_FILE NEXT_PUBLIC_API_BASE
+          cd "${APP_DIR}"
+          echo "==> سحب أحدث ${BRANCH} (الحزمة: ${COMPOSE_FILE})"
+          git fetch --all --prune
+          git reset --hard "origin/${BRANCH}"
+
+          echo "==> بناء وتشغيل الحاويات (الواجهة بعنوان API: ${NEXT_PUBLIC_API_BASE})"
+          docker compose build
+          docker compose up -d
+
+          echo "==> مزامنة اعتماديات PHP ثم الهجرات وأوامر الصيانة"
+          docker compose exec -T app composer install --no-dev --optimize-autoloader --no-interaction
+          docker compose exec -T app php artisan migrate --force
+          docker compose exec -T app php artisan storage:link || true
+          docker compose exec -T app php artisan config:cache
+          docker compose exec -T app php artisan route:cache
+          docker compose exec -T app php artisan scout:sync-index-settings || true
+
+          # محتوى تجريبي شرعي (الحديث/الفقه/التفسير) — متعطّف: يتخطّى إن وُجد،
+          # ويستبدل المحتوى التجريبي القديم مرّة واحدة. غير حرج للنشر.
+          docker compose exec -T app php artisan db:seed --class=DemoContentSeeder --force \
+            || echo "::warning::تعذّر بذر المحتوى التجريبي الشرعي (غير حرج)"
+
+          # حمّل إعداد nginx المحدّث ليعيد تحليل عنوان app الحالي (تفادي 502 بعد
+          # إعادة إنشاء حاوية app). يُعاد التشغيل فقط إن اجتاز الإعداد nginx -t،
+          # حمايةً للإنتاج من إعداد معطوب (يبقى web عاملاً بإعداده المُحمّل سابقاً).
+          if docker compose exec -T web nginx -t; then
+            docker compose restart web
+          else
+            echo "::warning::تخطّي إعادة تشغيل web — إعداد nginx لم يجتَز nginx -t"
+          fi
+
+          docker compose ps
+          echo "==> اكتمل النشر"
+          REMOTE
+
+      - name: Cleanup key
+        if: always()
+        run: rm -f ~/.ssh/deploy_key
