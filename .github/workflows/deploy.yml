@@ -15,6 +15,8 @@ name: Deploy
 #   SSH_PORT          منفذ SSH (الافتراضي 22)
 #   APP_DIR           مسار المشروع على الخادم (الافتراضي /opt/mooc — مطابق لـ setup-vps.sh)
 #   DEPLOY_BRANCH     الفرع المنشور على الخادم (الافتراضي: الفرع الذي شغّل الوركفلو)
+#   COMPOSE_FILE      ملف الحزمة (الافتراضي docker-compose.full.yml — كل الخدمات + الواجهة)
+#   NEXT_PUBLIC_API_BASE  عنوان الـ API للمتصفّح (الافتراضي http://<SSH_HOST>:8080/api/v1)
 #
 # ── شرط مسبق لمرّة واحدة على الخادم ──
 #   شغّل المُهيّئ مرّة واحدة فيثبّت Docker ويستنسخ المشروع ويُقلع الحزمة:
@@ -47,6 +49,8 @@ jobs:
           SSH_PORT: ${{ secrets.SSH_PORT }}
           APP_DIR_VAR: ${{ vars.APP_DIR }}
           DEPLOY_BRANCH_VAR: ${{ vars.DEPLOY_BRANCH }}
+          COMPOSE_FILE_VAR: ${{ vars.COMPOSE_FILE }}
+          NEXT_PUBLIC_API_BASE_VAR: ${{ vars.NEXT_PUBLIC_API_BASE }}
           GH_REF_NAME: ${{ github.ref_name }}
         run: |
           set -euo pipefail
@@ -60,6 +64,10 @@ jobs:
           PORT="${SSH_PORT:-22}"
           APP_DIR="${APP_DIR_VAR:-/opt/mooc}"
           BRANCH="${DEPLOY_BRANCH_VAR:-$GH_REF_NAME}"
+          # ملف الحزمة الإنتاجي (FULL = كل الخدمات + الواجهة + سياسات restart).
+          COMPOSE_FILE="${COMPOSE_FILE_VAR:-docker-compose.full.yml}"
+          # عنوان الـ API الذي يصله المتصفّح (يُحقَن في بناء الواجهة). افتراضياً مضيف الخادم.
+          NEXT_PUBLIC_API_BASE="${NEXT_PUBLIC_API_BASE_VAR:-http://${SSH_HOST}:8080/api/v1}"
 
           # جهّز مفتاح SSH ومعرفة المضيف.
           mkdir -p ~/.ssh
@@ -73,18 +81,20 @@ jobs:
           # .env محميّ (مُتجاهَل في git) فلا يمسّه reset --hard.
           ssh -i ~/.ssh/deploy_key -p "${PORT}" -o StrictHostKeyChecking=accept-new \
             "${SSH_USER}@${SSH_HOST}" \
-            "APP_DIR='${APP_DIR}' BRANCH='${BRANCH}' bash -s" <<'REMOTE'
+            "APP_DIR='${APP_DIR}' BRANCH='${BRANCH}' COMPOSE_FILE='${COMPOSE_FILE}' NEXT_PUBLIC_API_BASE='${NEXT_PUBLIC_API_BASE}' bash -s" <<'REMOTE'
           set -euo pipefail
+          export COMPOSE_FILE NEXT_PUBLIC_API_BASE
           cd "${APP_DIR}"
-          echo "==> سحب أحدث ${BRANCH}"
+          echo "==> سحب أحدث ${BRANCH} (الحزمة: ${COMPOSE_FILE})"
           git fetch --all --prune
           git reset --hard "origin/${BRANCH}"
 
-          echo "==> بناء وتشغيل الحاويات"
+          echo "==> بناء وتشغيل الحاويات (الواجهة بعنوان API: ${NEXT_PUBLIC_API_BASE})"
           docker compose build
           docker compose up -d
 
-          echo "==> الهجرات وأوامر الصيانة"
+          echo "==> مزامنة اعتماديات PHP ثم الهجرات وأوامر الصيانة"
+          docker compose exec -T app composer install --no-dev --optimize-autoloader --no-interaction
           docker compose exec -T app php artisan migrate --force
           docker compose exec -T app php artisan storage:link || true
           docker compose exec -T app php artisan config:cache

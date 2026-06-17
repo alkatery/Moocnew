@@ -75,10 +75,15 @@ final class CourseController extends Controller
 
     public function show(Request $request, Course $course, CourseAccess $courseAccess): CourseResource
     {
-        abort_unless($request->user()?->can('view', $course) ?? $course->status === CourseStatus::Published, 404);
+        // المسار عام (يخدم الزوّار الدورات المنشورة) فهو خارج حارس auth:sanctum،
+        // والحارس الافتراضي (web) لا يقرأ توكن Sanctum. نَحُلّ صاحب التوكن صراحةً
+        // ليفتح المالك/الطاقم مسوّداتهم في الاستوديو. ($request->user() احتياطي
+        // للجلسات/الاختبارات؛ user('sanctum') يقرأ التوكن في طلبات الـ SPA.)
+        $user = $request->user() ?? $request->user('sanctum');
+
+        abort_unless($user?->can('view', $course) ?? $course->status === CourseStatus::Published, 404);
 
         // E2: تحديد هوية المُشاهِد — الطاقم يرى كل الأقسام، الطالب/الزائر يرى الظاهر فقط.
-        $user = $request->user();
         $isStaff = $user !== null && $courseAccess->isStaffFor($user, $course);
 
         $course->load([
