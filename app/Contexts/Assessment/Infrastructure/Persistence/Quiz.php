@@ -35,6 +35,7 @@ final class Quiz extends Model
         'pass_mark',
         'weight',
         'position',
+        'is_gate',
     ];
 
     protected function casts(): array
@@ -47,6 +48,7 @@ final class Quiz extends Model
             'pass_mark' => 'integer',
             'weight' => 'integer',
             'position' => 'integer',
+            'is_gate' => 'boolean',
         ];
     }
 

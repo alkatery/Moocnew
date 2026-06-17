@@ -48,6 +48,7 @@ final class StoreQuizRequest extends FormRequest
             'max_attempts' => ['nullable', 'integer', 'min:1'],
             'pass_mark' => ['nullable', 'integer', 'min:0', 'max:100'],
             'weight' => ['nullable', 'integer', 'min:1', 'max:100'],
+            'is_gate' => ['nullable', 'boolean'],
             'section_id' => [
                 'nullable', 'integer',
                 Rule::exists('sections', 'id')->where('course_id', $this->course()?->getKey()),

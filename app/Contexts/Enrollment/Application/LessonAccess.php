@@ -49,12 +49,20 @@ final class LessonAccess
         }
 
         // الخطوة 5 (القائم): الالتحاق النشط يمنح الوصول.
-        return Enrollment::query()
+        $enrolled = Enrollment::query()
             ->where('user_id', $user->getKey())
             ->where('course_id', $course->getKey())
             ->whereIn('status', [EnrollmentStatus::Active->value, EnrollmentStatus::Completed->value])
             ->where(fn ($q) => $q->whereNull('access_expires_at')->orWhere('access_expires_at', '>', now()))
             ->exists();
+
+        if (! $enrolled) {
+            return false;
+        }
+
+        // الخطوة 6 (#3): بوّابة الوحدة — تُقفَل الوحدة حتى يجتاز المتعلّم بوّابة
+        // الوحدة السابقة. لا تُقيَّد دروس المعاينة المجانية (عادت true قبلاً).
+        return app(SectionGate::class)->isUnlockedFor($user, $lesson->section);
     }
 
     /**

@@ -108,7 +108,10 @@ export function AssessmentsPanel({ courseSlug, sections }: { courseSlug: string;
               {quizzes.map((qz) => (
                 <li key={qz.id} className="flex items-center justify-between gap-2 py-2.5">
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-medium text-slate-800">{qz.title}</p>
+                    <p className="truncate text-sm font-medium text-slate-800">
+                      {qz.title}
+                      {qz.is_gate && <span className="badge ms-1 bg-amber-50 text-amber-700">بوّابة</span>}
+                    </p>
                     <span className="text-xs text-slate-500">
                       {qz.questions_count ?? '—'} سؤالاً · نجاح {qz.pass_mark}% · وزن ×{qz.weight}
                       {sectionName(qz.section_id) ? ` · ${sectionName(qz.section_id)}` : ''}
@@ -548,6 +551,7 @@ function QuizForm({ courseSlug, questions, sections, onCreated }: {
   const [weight, setWeight] = useState('1');
   const [drawCount, setDrawCount] = useState('');
   const [sectionId, setSectionId] = useState('');
+  const [isGate, setIsGate] = useState(false);
   const [picked, setPicked] = useState<number[]>([]);
   const [msg, setMsg] = useState('');
 
@@ -565,10 +569,11 @@ function QuizForm({ courseSlug, questions, sections, onCreated }: {
           weight: parseInt(weight || '1', 10),
           draw_count: drawCount ? parseInt(drawCount, 10) : null,
           section_id: sectionId ? parseInt(sectionId, 10) : null,
+          is_gate: Boolean(sectionId) && isGate,
           question_ids: picked,
         },
       });
-      setTitle(''); setPicked([]); setMsg('أُنشئ الاختبار ✓');
+      setTitle(''); setPicked([]); setIsGate(false); setMsg('أُنشئ الاختبار ✓');
       onCreated();
     } catch (err) { setMsg(err instanceof Error ? err.message : t('common.error')); }
   }
@@ -600,6 +605,12 @@ function QuizForm({ courseSlug, questions, sections, onCreated }: {
           <option value="">بدون ربط بقسم (عام للدورة)</option>
           {sections.map((s) => <option key={s.id} value={s.id}>القسم: {s.title}</option>)}
         </select>
+      )}
+      {sectionId && (
+        <label className="flex items-center gap-2 text-xs text-slate-600">
+          <input type="checkbox" checked={isGate} onChange={(e) => setIsGate(e.target.checked)} />
+          بوّابة الوحدة: يجب على الطالب اجتيازه لفتح الوحدة التالية
+        </label>
       )}
       <div className="max-h-40 space-y-1 overflow-y-auto rounded-lg bg-slate-50 p-2">
         {questions.length === 0
