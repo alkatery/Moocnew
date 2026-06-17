@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Contexts\Assessment\Infrastructure\Persistence\Assignment;
 use App\Contexts\Assessment\Infrastructure\Persistence\Quiz;
 use App\Contexts\Assessment\Infrastructure\Persistence\QuizAttempt;
 use App\Contexts\Catalog\Infrastructure\Persistence\Course;
@@ -10,6 +11,7 @@ use App\Contexts\Enrollment\Domain\EnrollmentStatus;
 use App\Contexts\Enrollment\Infrastructure\Persistence\Enrollment;
 use App\Contexts\Identity\Domain\Role;
 use Database\Seeders\RolesAndPermissionsSeeder;
+use Laravel\Sanctum\Sanctum;
 
 beforeEach(function () {
     $this->seed(RolesAndPermissionsSeeder::class);
@@ -78,4 +80,43 @@ it('lets course staff bypass unit gates', function () {
     ]);
 
     expect(app(LessonAccess::class)->canAccess($instructor, $lesson2))->toBeTrue();
+});
+
+it('blocks quiz attempts and assignment submissions in a locked unit', function () {
+    $instructor = userWithRole(Role::Instructor);
+    $course = Course::factory()->for($instructor, 'instructor')->published()->create();
+    $s1 = $course->sections()->create(['title' => 'و1', 'position' => 1]);
+    $s2 = $course->sections()->create(['title' => 'و2', 'position' => 2]);
+    $gate = Quiz::query()->create([
+        'course_id' => $course->id, 'section_id' => $s1->id, 'title' => 'بوّابة',
+        'is_gate' => true, 'pass_mark' => 50, 'position' => 1,
+    ]);
+    $quiz2 = Quiz::query()->create([
+        'course_id' => $course->id, 'section_id' => $s2->id, 'title' => 'اختبار و2', 'pass_mark' => 50, 'position' => 1,
+    ]);
+    $assignment2 = Assignment::query()->create([
+        'course_id' => $course->id, 'section_id' => $s2->id, 'title' => 'واجب و2', 'points' => 100,
+    ]);
+
+    $student = userWithRole(Role::Student);
+    Enrollment::query()->create([
+        'user_id' => $student->id, 'course_id' => $course->id,
+        'status' => EnrollmentStatus::Active, 'enrolled_at' => now(),
+    ]);
+    Sanctum::actingAs($student);
+
+    // الوحدة 2 مقفلة: التقييمات فيها محظورة.
+    $this->postJson("/api/v1/assessment/quizzes/{$quiz2->id}/attempts")->assertStatus(403);
+    $this->postJson("/api/v1/assessment/assignments/{$assignment2->id}/submissions", ['content' => 'مسوّدة'])
+        ->assertStatus(403);
+
+    // اجتياز بوّابة الوحدة 1 يفتح تقييمات الوحدة 2.
+    QuizAttempt::query()->create([
+        'quiz_id' => $gate->id, 'user_id' => $student->id, 'question_ids' => [],
+        'score' => 100, 'passed' => true, 'started_at' => now()->subMinute(), 'submitted_at' => now(),
+    ]);
+
+    $this->postJson("/api/v1/assessment/quizzes/{$quiz2->id}/attempts")->assertSuccessful();
+    $this->postJson("/api/v1/assessment/assignments/{$assignment2->id}/submissions", ['content' => 'إجابتي'])
+        ->assertSuccessful();
 });

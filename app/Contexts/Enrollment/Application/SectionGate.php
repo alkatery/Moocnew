@@ -68,4 +68,17 @@ final class SectionGate
     {
         return ! in_array((int) $section->id, $this->lockedSectionIds($user, $section->course), true);
     }
+
+    /**
+     * هل القسم المُعطى (بمعرّفه، وقد يكون null لتقييم عام للمقرر) مفتوح للمستخدم؟
+     * تقييمات على مستوى المقرر (section_id = null) غير مُبوّبة.
+     */
+    public function isSectionUnlockedFor(User $user, Course $course, ?int $sectionId): bool
+    {
+        if ($sectionId === null) {
+            return true;
+        }
+
+        return ! in_array($sectionId, $this->lockedSectionIds($user, $course), true);
+    }
 }

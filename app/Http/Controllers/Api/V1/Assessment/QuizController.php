@@ -75,7 +75,7 @@ final class QuizController extends Controller
             'max_attempts' => $request->validated('max_attempts'),
             'pass_mark' => (int) $request->validated('pass_mark', $quiz->pass_mark),
             'weight' => (int) $request->validated('weight', $quiz->weight),
-            'is_gate' => $quiz->section_id !== null && (bool) $request->validated('is_gate', $quiz->is_gate),
+            'is_gate' => ($request->validated('section_id', $quiz->section_id) !== null) && (bool) $request->validated('is_gate', $quiz->is_gate),
         ]);
 
         $this->syncQuestions($quiz, $request->validated('question_ids'));
