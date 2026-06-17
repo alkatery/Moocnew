@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { API_BASE, api, getToken } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
-import type { Course, LessonKind, Section } from '@/lib/types';
+import type { AssignmentItem, Course, Lesson, LessonKind, QuizItem, Section } from '@/lib/types';
 import { t } from '@/i18n/dictionary';
 import { PageHeader } from '@/components/PageHeader';
 import { LessonTypeIcon } from '@/components/LessonTypeIcon';
@@ -39,6 +39,9 @@ export default function ManageCoursePage() {
   const [cover, setCover] = useState<string | null>(null);
   const [openLesson, setOpenLesson] = useState<number | null>(null);
   const [loadError, setLoadError] = useState(false);
+  // #3: اختبارات/واجبات الوحدات — تُعرض وتُرتّب ضمن تسلسل الوحدة الموحّد.
+  const [quizzes, setQuizzes] = useState<QuizItem[]>([]);
+  const [assignments, setAssignments] = useState<AssignmentItem[]>([]);
 
   const load = useCallback(() => {
     // Authoring view: fetch WITH auth so the owner can load their own draft
@@ -47,9 +50,46 @@ export default function ManageCoursePage() {
       .then((r) => { setCourse(r.data); setPassingGrade(String(r.data.passing_grade ?? 0)); setCover(r.data.cover_image ?? null); setLoadError(false); })
       .catch(() => setLoadError(true));
   }, [slug]);
-  useEffect(load, [load]);
+
+  const loadAssessables = useCallback(() => {
+    api<{ data: QuizItem[] }>(`/assessment/courses/${slug}/quizzes`).then((r) => setQuizzes(r.data)).catch(() => setQuizzes([]));
+    api<{ data: AssignmentItem[] }>(`/assessment/courses/${slug}/assignments`).then((r) => setAssignments(r.data)).catch(() => setAssignments([]));
+  }, [slug]);
+
+  const reloadAll = useCallback(() => { load(); loadAssessables(); }, [load, loadAssessables]);
+  useEffect(reloadAll, [reloadAll]);
 
   const sections: Section[] = course?.sections ?? [];
+
+  // #3: عنصر موحّد في تسلسل الوحدة — درس أو اختبار أو واجب، مرتّب بالموضع.
+  type UnitItem =
+    | { kind: 'lesson'; id: number; position: number; lesson: Lesson }
+    | { kind: 'quiz'; id: number; position: number; quiz: QuizItem }
+    | { kind: 'assignment'; id: number; position: number; assignment: AssignmentItem };
+
+  const KIND_RANK = { lesson: 0, quiz: 1, assignment: 2 } as const;
+
+  function unitItems(s: Section): UnitItem[] {
+    const items: UnitItem[] = [
+      ...s.lessons.map((l): UnitItem => ({ kind: 'lesson', id: l.id, position: l.position, lesson: l })),
+      ...quizzes.filter((q) => q.section_id === s.id).map((q): UnitItem => ({ kind: 'quiz', id: q.id, position: q.position, quiz: q })),
+      ...assignments.filter((a) => a.section_id === s.id).map((a): UnitItem => ({ kind: 'assignment', id: a.id, position: a.position, assignment: a })),
+    ];
+    return items.sort((a, b) => a.position - b.position || KIND_RANK[a.kind] - KIND_RANK[b.kind] || a.id - b.id);
+  }
+
+  // إعادة ترتيب موحّدة لعناصر الوحدة عبر النقطة الخلفية (مساحة 1..N واحدة).
+  async function moveItem(s: Section, items: UnitItem[], index: number, dir: -1 | 1) {
+    const j = index + dir;
+    if (j < 0 || j >= items.length) return;
+    const order = [...items];
+    [order[index], order[j]] = [order[j], order[index]];
+    await api(`/catalog/sections/${s.id}/items/order`, {
+      method: 'PUT',
+      body: { items: order.map((it) => ({ type: it.kind, id: it.id })) },
+    }).catch(() => setNote(t('common.error')));
+    reloadAll();
+  }
 
   async function uploadCover(file: File) {
     setNote('');
@@ -108,15 +148,6 @@ export default function ManageCoursePage() {
     if (j < 0 || j >= ids.length) return;
     [ids[index], ids[j]] = [ids[j], ids[index]];
     await api(`/catalog/courses/${slug}/sections/order`, { method: 'PUT', body: { ids } }).catch(() => setNote(t('common.error')));
-    load();
-  }
-
-  async function moveLesson(s: Section, index: number, dir: -1 | 1) {
-    const ids = s.lessons.map((l) => l.id);
-    const j = index + dir;
-    if (j < 0 || j >= ids.length) return;
-    [ids[index], ids[j]] = [ids[j], ids[index]];
-    await api(`/catalog/sections/${s.id}/lessons/order`, { method: 'PUT', body: { ids } }).catch(() => setNote(t('common.error')));
     load();
   }
 
@@ -192,7 +223,7 @@ export default function ManageCoursePage() {
         title="دليل بناء هذه الدورة"
         intro="ابنِ المنهج من تبويب «المنهج»، وأنشئ بنك الأسئلة والاختبارات والواجبات من تبويب «التقييمات والدرجات»، ثم أرسل الدورة للمراجعة."
         steps={[
-          { title: 'المنهج', body: 'أضف الأقسام ثم الدروس داخلها. اضغط على أي درس لفتح محرره الكامل: نوع المادة (مقال/فيديو/صورة/PDF/جلسة)، المحتوى، رفع الملفات، التفريغ النصي، والمعاينة المجانية. رتّب بالأسهم ▲▼.' },
+          { title: 'المنهج', body: 'أضف الأقسام ثم الدروس داخلها. اضغط على أي درس لفتح محرره الكامل: نوع المادة (مقال/فيديو/صورة/PDF/جلسة)، المحتوى، رفع الملفات، التفريغ النصي، والمعاينة المجانية. تظهر اختبارات الوحدة وواجباتها ضمن نفس التسلسل، ويمكنك ترتيب كل العناصر معاً (فيديو ← سؤال ← واجب ← اختبار) بالأسهم ▲▼.' },
           { title: 'التقييمات والدرجات', body: 'أنشئ أسئلة في البنك (اختيار من متعدد، صح/خطأ، إجابة قصيرة)، ثم جمّعها في اختبارات بمدة ومحاولات ووزن، وأضف واجبات تصححها يدوياً. وزن كل تقييم يحدد أثره في الدرجة النهائية.' },
           { title: 'درجة النجاح', body: 'من «إعدادات الدورة» حدد الدرجة المطلوبة للشهادة — تُحسب من متوسط الاختبارات والواجبات الموزون.' },
           { title: 'النشر', body: 'اضغط «إرسال للمراجعة» وستنشرها الإدارة بعد الاعتماد.' },
@@ -327,29 +358,45 @@ export default function ManageCoursePage() {
                     </div>
                   </div>
 
+                  {/* #3: تسلسل الوحدة الموحّد — دروس + اختبارات + واجبات، تُرتَّب معاً بالأسهم. */}
                   <ul className="divide-y divide-slate-50">
-                    {s.lessons.map((l, li) => (
-                      <li key={l.id}>
+                    {unitItems(s).map((it, ii, arr) => (
+                      <li key={`${it.kind}-${it.id}`}>
                         <div className="flex items-center gap-2 px-5 py-3 text-sm text-slate-600">
-                          <span className="text-slate-500"><LessonTypeIcon type={l.type} /></span>
-                          <button className="min-w-0 flex-1 truncate text-start hover:text-brand-700"
-                            onClick={() => setOpenLesson(openLesson === l.id ? null : l.id)}>
-                            {l.title}
-                            {l.is_free_preview && <span className="badge ms-2">معاينة</span>}
-                          </button>
+                          {it.kind === 'lesson' ? (
+                            <span className="text-slate-500"><LessonTypeIcon type={it.lesson.type} /></span>
+                          ) : (
+                            <span className="shrink-0 text-base" aria-hidden>{it.kind === 'quiz' ? '📝' : '✍️'}</span>
+                          )}
+                          {it.kind === 'lesson' ? (
+                            <button className="min-w-0 flex-1 truncate text-start hover:text-brand-700"
+                              onClick={() => setOpenLesson(openLesson === it.id ? null : it.id)}>
+                              {it.lesson.title}
+                              {it.lesson.is_free_preview && <span className="badge ms-2">معاينة</span>}
+                            </button>
+                          ) : (
+                            <span className="min-w-0 flex-1 truncate">
+                              {it.kind === 'quiz' ? it.quiz.title : it.assignment.title}
+                              <span className="badge ms-2 bg-amber-50 text-amber-700">{it.kind === 'quiz' ? 'اختبار' : 'واجب'}</span>
+                            </span>
+                          )}
                           <span className="flex shrink-0 items-center gap-1 text-slate-300">
                             <button title="لأعلى" className="rounded p-1 hover:bg-slate-100 disabled:opacity-30"
-                              disabled={li === 0} onClick={() => void moveLesson(s, li, -1)}>▲</button>
+                              disabled={ii === 0} onClick={() => void moveItem(s, arr, ii, -1)}>▲</button>
                             <button title="لأسفل" className="rounded p-1 hover:bg-slate-100 disabled:opacity-30"
-                              disabled={li === s.lessons.length - 1} onClick={() => void moveLesson(s, li, 1)}>▼</button>
-                            <button className="rounded px-1.5 py-1 text-xs text-brand-600 hover:bg-brand-50"
-                              onClick={() => setOpenLesson(openLesson === l.id ? null : l.id)}>
-                              {openLesson === l.id ? 'إغلاق' : 'تحرير'}
-                            </button>
+                              disabled={ii === arr.length - 1} onClick={() => void moveItem(s, arr, ii, 1)}>▼</button>
+                            {it.kind === 'lesson' ? (
+                              <button className="rounded px-1.5 py-1 text-xs text-brand-600 hover:bg-brand-50"
+                                onClick={() => setOpenLesson(openLesson === it.id ? null : it.id)}>
+                                {openLesson === it.id ? 'إغلاق' : 'تحرير'}
+                              </button>
+                            ) : (
+                              <span className="px-1.5 py-1 text-xs text-slate-400" title="حرّره من تبويب «التقييمات والدرجات»">تقييم</span>
+                            )}
                           </span>
                         </div>
-                        {openLesson === l.id && (
-                          <LessonEditor lessonId={l.id} courseSlug={slug} onSaved={load} onDeleted={() => { setOpenLesson(null); load(); }} />
+                        {it.kind === 'lesson' && openLesson === it.id && (
+                          <LessonEditor lessonId={it.id} courseSlug={slug} onSaved={load} onDeleted={() => { setOpenLesson(null); reloadAll(); }} />
                         )}
                       </li>
                     ))}
@@ -357,9 +404,12 @@ export default function ManageCoursePage() {
 
                   <div className="border-t border-slate-100 p-4">
                     <LessonAdder onAdd={(title, kind) => {
+                      // يُلحَق بعد كل عناصر الوحدة الحالية (دروس + اختبارات + واجبات).
+                      const its = unitItems(s);
+                      const nextPos = its.reduce((m, i) => Math.max(m, i.position), 0) + 1;
                       void api(`/catalog/sections/${s.id}/lessons`, {
                         method: 'POST',
-                        body: { title, type: kind, position: s.lessons.length + 1 },
+                        body: { title, type: kind, position: nextPos },
                       }).then(load).catch(() => setNote(t('common.error')));
                     }} />
                   </div>
