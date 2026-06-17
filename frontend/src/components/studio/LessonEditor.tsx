@@ -14,6 +14,13 @@ const TYPE_LABELS: Record<LessonKind, string> = {
   live: 'جلسة مباشرة',
 };
 
+/** يؤلّف الثواني الكلية من دقيقة وثانية (الثواني 0..59، القيم غير سالبة). */
+function composeSeconds(minutes: number, seconds: number): number {
+  const m = Number.isFinite(minutes) ? Math.max(0, Math.trunc(minutes)) : 0;
+  const s = Number.isFinite(seconds) ? Math.min(59, Math.max(0, Math.trunc(seconds))) : 0;
+  return m * 60 + s;
+}
+
 /**
  * Full inline editor for a single lesson inside the studio curriculum:
  * type, rich text content, image/PDF asset upload, video source,
@@ -210,10 +217,19 @@ export function LessonEditor({
           {bank.length === 0 && <p className="text-xs text-slate-500">أضف أسئلة لبنك الأسئلة أولاً (تبويب التقييمات).</p>}
           {checkpoints.map((cp, i) => (
             <div key={i} className="mb-1 flex items-center gap-2">
-              <input className="input m-0 w-24" type="number" min="0" dir="ltr" title="الثانية"
-                value={cp.at_seconds}
-                onChange={(e) => setCheckpoints((p) => p.map((x, j) => j === i ? { ...x, at_seconds: parseInt(e.target.value || '0', 10) } : x))} />
-              <select className="input m-0 flex-1" value={cp.question_id}
+              {/* توقيت ظهور السؤال داخل الفيديو: دقائق : ثوانٍ */}
+              <div className="flex items-center gap-1" dir="ltr" title="توقيت ظهور السؤال (دقائق:ثوانٍ)">
+                <input className="input m-0 w-14 text-center" type="number" min="0" aria-label="الدقيقة"
+                  value={Math.floor(cp.at_seconds / 60)}
+                  onChange={(e) => setCheckpoints((p) => p.map((x, j) => j === i
+                    ? { ...x, at_seconds: composeSeconds(parseInt(e.target.value || '0', 10), x.at_seconds % 60) } : x))} />
+                <span className="font-bold text-slate-400">:</span>
+                <input className="input m-0 w-14 text-center" type="number" min="0" max="59" aria-label="الثانية"
+                  value={cp.at_seconds % 60}
+                  onChange={(e) => setCheckpoints((p) => p.map((x, j) => j === i
+                    ? { ...x, at_seconds: composeSeconds(Math.floor(x.at_seconds / 60), parseInt(e.target.value || '0', 10)) } : x))} />
+              </div>
+              <select className="input m-0 flex-1" aria-label="السؤال" value={cp.question_id}
                 onChange={(e) => setCheckpoints((p) => p.map((x, j) => j === i ? { ...x, question_id: parseInt(e.target.value, 10) } : x))}>
                 {bank.map((q) => <option key={q.id} value={q.id}>{q.body}</option>)}
               </select>
@@ -222,7 +238,7 @@ export function LessonEditor({
             </div>
           ))}
           {checkpoints.length > 0 && (
-            <p className="text-xs text-slate-500">يتوقف الطالب عند الثانية المحددة ليجيب — تغذية راجعة فورية بلا تأثير على الدرجة.</p>
+            <p className="text-xs text-slate-500">يتوقف الطالب عند التوقيت المحدّد (دقيقة:ثانية) ليجيب — تغذية راجعة فورية بلا تأثير على الدرجة.</p>
           )}
         </div>
       )}
