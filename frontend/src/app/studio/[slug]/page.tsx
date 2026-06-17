@@ -25,6 +25,7 @@ const LESSON_KINDS: { value: LessonKind; label: string }[] = [
   { value: 'image', label: 'صورة' },
   { value: 'file', label: 'ملف PDF' },
   { value: 'live', label: 'جلسة مباشرة' },
+  { value: 'activity', label: 'نشاط (تفكير/مشاركة)' },
 ];
 
 export default function ManageCoursePage() {
