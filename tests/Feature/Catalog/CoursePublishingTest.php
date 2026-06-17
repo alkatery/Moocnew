@@ -60,3 +60,20 @@ it('forbids an instructor from approving courses', function () {
     $this->postJson("/api/v1/catalog/courses/{$course->slug}/approve")
         ->assertForbidden();
 });
+
+it('exposes can_review=true to a reviewer and false to the owner (drives studio buttons)', function () {
+    $owner = userWithRole(Role::Instructor);
+    $course = Course::factory()->for($owner, 'instructor')->pendingReview()->create();
+
+    // المراجِع (مشرف) يرى زرّي الاعتماد/الرفض.
+    Sanctum::actingAs(userWithRole(Role::Supervisor));
+    $this->getJson("/api/v1/catalog/courses/{$course->slug}")
+        ->assertOk()
+        ->assertJsonPath('data.can_review', true);
+
+    // المالك (مدرّس) لا يملك صلاحية المراجعة — لا أزرار.
+    Sanctum::actingAs($owner);
+    $this->getJson("/api/v1/catalog/courses/{$course->slug}")
+        ->assertOk()
+        ->assertJsonPath('data.can_review', false);
+});

@@ -24,6 +24,8 @@ export interface Course {
   summary: string | null;
   description: string | null;
   status: string;
+  /** هل يملك المستخدم الحالي صلاحية مراجعة الدورات (مشرف/مدير أعلى)؟ */
+  can_review?: boolean;
   pricing_type: 'free' | 'one_time' | 'subscription';
   price_minor: number;
   passing_grade?: number;

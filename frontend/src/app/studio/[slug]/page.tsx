@@ -128,6 +128,25 @@ export default function ManageCoursePage() {
     } catch (e) { setNote(e instanceof Error ? e.message : t('common.error')); }
   }
 
+  // إجراءات المراجِع (مشرف/مدير أعلى) على دورة قيد المراجعة.
+  async function approve() {
+    if (!window.confirm('اعتماد هذه الدورة ونشرها للطلاب؟')) return;
+    try {
+      await api(`/catalog/courses/${slug}/approve`, { method: 'POST' });
+      setNote('تم اعتماد الدورة ونشرها ✓');
+      load();
+    } catch (e) { setNote(e instanceof Error ? e.message : t('common.error')); }
+  }
+
+  async function reject() {
+    if (!window.confirm('رفض الدورة وإعادتها مسودّة للمؤلّف؟')) return;
+    try {
+      await api(`/catalog/courses/${slug}/reject`, { method: 'POST' });
+      setNote('أُعيدت الدورة مسودّة للمؤلّف ✓');
+      load();
+    } catch (e) { setNote(e instanceof Error ? e.message : t('common.error')); }
+  }
+
   if (loadError) {
     return (
       <section>
@@ -154,7 +173,14 @@ export default function ManageCoursePage() {
             {course.status === 'draft' || course.status === 'rejected' ? (
               <button className="btn" onClick={() => void submit()}>{t('studio.submit')}</button>
             ) : course.status === 'pending_review' ? (
-              <span className="badge">قيد المراجعة لدى الإدارة</span>
+              course.can_review ? (
+                <span className="inline-flex flex-wrap gap-2">
+                  <button className="btn" onClick={() => void approve()}>اعتماد ونشر</button>
+                  <button className="btn btn-ghost" onClick={() => void reject()}>رفض (إعادة لمسودّة)</button>
+                </span>
+              ) : (
+                <span className="badge">قيد المراجعة لدى الإدارة</span>
+              )
             ) : (
               <span className="badge bg-emerald-50 text-emerald-700">منشورة ومتاحة للطلاب</span>
             )}
