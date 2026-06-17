@@ -39,6 +39,7 @@ use App\Http\Controllers\Api\V1\Catalog\CoursePublishingController;
 use App\Http\Controllers\Api\V1\Catalog\LessonController;
 use App\Http\Controllers\Api\V1\Catalog\LessonTranscriptController;
 use App\Http\Controllers\Api\V1\Catalog\SectionController;
+use App\Http\Controllers\Api\V1\Catalog\SectionItemController;
 use App\Http\Controllers\Api\V1\Certification\CertificateController;
 use App\Http\Controllers\Api\V1\Communication\ForumController;
 use App\Http\Controllers\Api\V1\Communication\TicketController;
@@ -249,6 +250,8 @@ Route::prefix('catalog')->name('api.catalog.')->group(function () {
         Route::post('courses/{course}/cover', [CourseController::class, 'uploadCover'])->name('courses.cover');
         Route::post('courses/{course}/sections', [SectionController::class, 'store'])->name('sections.store');
         Route::put('courses/{course}/sections/order', [SectionController::class, 'reorder'])->name('sections.reorder');
+        // #3 — ترتيب موحّد لعناصر الوحدة (دروس + اختبارات + واجبات) في مساحة واحدة.
+        Route::put('sections/{section}/items/order', [SectionItemController::class, 'reorder'])->name('sections.items.reorder');
         Route::patch('sections/{section}', [SectionController::class, 'update'])->name('sections.update');
         Route::delete('sections/{section}', [SectionController::class, 'destroy'])->name('sections.destroy');
 

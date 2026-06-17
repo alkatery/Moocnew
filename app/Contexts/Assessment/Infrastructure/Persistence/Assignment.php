@@ -29,6 +29,7 @@ final class Assignment extends Model
         'points',
         'rubric',
         'weight',
+        'position',
     ];
 
     protected function casts(): array
@@ -38,6 +39,7 @@ final class Assignment extends Model
             'points' => 'integer',
             'rubric' => 'array',
             'weight' => 'integer',
+            'position' => 'integer',
         ];
     }
 

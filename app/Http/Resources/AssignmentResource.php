@@ -28,6 +28,7 @@ final class AssignmentResource extends JsonResource
             'points' => $this->points,
             'rubric' => $this->rubric,
             'weight' => $this->weight,
+            'position' => $this->position,
         ];
     }
 }

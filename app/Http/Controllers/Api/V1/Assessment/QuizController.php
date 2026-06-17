@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api\V1\Assessment;
 
+use App\Contexts\Assessment\Application\SectionItemPositioner;
 use App\Contexts\Assessment\Infrastructure\Persistence\Quiz;
 use App\Contexts\Catalog\Infrastructure\Persistence\Course;
 use App\Contexts\Enrollment\Application\CourseAccess;
@@ -38,11 +39,13 @@ final class QuizController extends Controller
         return new QuizResource($quiz->loadCount('questions'));
     }
 
-    public function store(StoreQuizRequest $request, Course $course): JsonResponse
+    public function store(StoreQuizRequest $request, Course $course, SectionItemPositioner $positioner): JsonResponse
     {
+        $sectionId = $request->validated('section_id');
+
         $quiz = Quiz::query()->create([
             'course_id' => $course->getKey(),
-            'section_id' => $request->validated('section_id'),
+            'section_id' => $sectionId,
             'title' => $request->validated('title'),
             'time_limit_minutes' => $request->validated('time_limit_minutes'),
             'shuffle' => (bool) $request->validated('shuffle', true),
@@ -50,6 +53,8 @@ final class QuizController extends Controller
             'max_attempts' => $request->validated('max_attempts'),
             'pass_mark' => (int) $request->validated('pass_mark', 60),
             'weight' => (int) $request->validated('weight', 1),
+            // يُلحَق بعد عناصر الوحدة الحالية ضمن مساحة الترتيب الموحّدة.
+            'position' => $positioner->next($sectionId !== null ? (int) $sectionId : null),
         ]);
 
         $this->syncQuestions($quiz, $request->validated('question_ids'));
