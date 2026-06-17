@@ -29,6 +29,7 @@ final class QuizResource extends JsonResource
             'max_attempts' => $this->max_attempts,
             'pass_mark' => $this->pass_mark,
             'weight' => $this->weight,
+            'position' => $this->position,
             'questions' => QuestionResource::collection($this->whenLoaded('questions')),
             'questions_count' => $this->whenCounted('questions'),
         ];

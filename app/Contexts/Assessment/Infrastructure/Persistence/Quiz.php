@@ -34,6 +34,7 @@ final class Quiz extends Model
         'max_attempts',
         'pass_mark',
         'weight',
+        'position',
     ];
 
     protected function casts(): array
@@ -45,6 +46,7 @@ final class Quiz extends Model
             'max_attempts' => 'integer',
             'pass_mark' => 'integer',
             'weight' => 'integer',
+            'position' => 'integer',
         ];
     }
 

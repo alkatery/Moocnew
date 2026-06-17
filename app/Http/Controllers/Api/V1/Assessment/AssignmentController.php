@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api\V1\Assessment;
 
+use App\Contexts\Assessment\Application\SectionItemPositioner;
 use App\Contexts\Assessment\Infrastructure\Persistence\Assignment;
 use App\Contexts\Catalog\Infrastructure\Persistence\Course;
 use App\Contexts\Enrollment\Application\CourseAccess;
@@ -25,17 +26,21 @@ final class AssignmentController extends Controller
         );
     }
 
-    public function store(StoreAssignmentRequest $request, Course $course): JsonResponse
+    public function store(StoreAssignmentRequest $request, Course $course, SectionItemPositioner $positioner): JsonResponse
     {
+        $sectionId = $request->validated('section_id');
+
         $assignment = Assignment::query()->create([
             'course_id' => $course->getKey(),
-            'section_id' => $request->validated('section_id'),
+            'section_id' => $sectionId,
             'title' => $request->validated('title'),
             'description' => $request->validated('description'),
             'due_at' => $request->validated('due_at'),
             'points' => (int) $request->validated('points', 100),
             'rubric' => $request->validated('rubric'),
             'weight' => (int) $request->validated('weight', 1),
+            // يُلحَق بعد عناصر الوحدة الحالية ضمن مساحة الترتيب الموحّدة.
+            'position' => $positioner->next($sectionId !== null ? (int) $sectionId : null),
         ]);
 
         return (new AssignmentResource($assignment))->response()->setStatusCode(201);
