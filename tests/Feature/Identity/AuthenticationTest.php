@@ -29,6 +29,29 @@ it('rejects invalid credentials with a generic error', function () {
     ])->assertStatus(422)->assertJsonValidationErrors('email');
 });
 
+it('throttles repeated failed logins to blunt brute-force and bcrypt DoS', function () {
+    User::factory()->create([
+        'email' => 'sara@example.com',
+        'password' => 'password1234',
+    ]);
+
+    // خمس محاولات فاشلة تستنفد الحدّ (MAX_ATTEMPTS).
+    foreach (range(1, 5) as $ignored) {
+        $this->postJson('/api/v1/auth/login', [
+            'email' => 'sara@example.com',
+            'password' => 'wrong-password',
+        ])->assertStatus(422);
+    }
+
+    // السادسة تُحظر برسالة «محاولات كثيرة» حتى بكلمة مرور صحيحة.
+    $response = $this->postJson('/api/v1/auth/login', [
+        'email' => 'sara@example.com',
+        'password' => 'password1234',
+    ])->assertStatus(422)->assertJsonValidationErrors('email');
+
+    expect($response->json('errors.email.0'))->toContain('محاولات دخول كثيرة');
+});
+
 it('returns the authenticated user from /me', function () {
     $user = User::factory()->create();
     Sanctum::actingAs($user);
