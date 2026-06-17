@@ -191,7 +191,7 @@ final class CourseController extends Controller
         abort_unless($request->user()?->can('update', $course) ?? false, 403);
 
         $request->validate([
-            'image' => ['required', 'file', 'mimes:png,jpg,jpeg,webp', 'max:4096'],
+            'image' => ['required', 'file', 'mimes:png,jpg,jpeg,webp', 'max:15360'],
         ]);
 
         $url = $uploader->store($request->file('image'), 'covers', $course->cover_image);

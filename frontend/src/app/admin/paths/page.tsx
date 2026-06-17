@@ -70,7 +70,7 @@ export default function AdminPathsPage() {
   }
 
   // رفع غلاف المسار — رفع متعدّد الأجزاء مباشر (api() يدعم JSON فقط)،
-  // مطابق لرفع غلاف الدورة وصور الموقع. الحقل: image (png/jpg/webp ≤ 4MB).
+  // مطابق لرفع غلاف الدورة وصور الموقع. الحقل: image (png/jpg/webp ≤ 15MB).
   async function uploadCover(path: PathSummary, file: File) {
     setBusy(true); setError('');
     try {
@@ -85,7 +85,7 @@ export default function AdminPathsPage() {
       if (!res.ok) throw new Error('upload failed');
       await load();
     } catch {
-      setError('تعذّر رفع الغلاف. تأكّد أنّ الصورة png/jpg/webp وحجمها أقل من 4 ميجابايت.');
+      setError('تعذّر رفع الغلاف. تأكّد أنّ الصورة png/jpg/webp وحجمها أقل من 15 ميجابايت.');
     } finally { setBusy(false); }
   }
 

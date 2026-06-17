@@ -135,7 +135,7 @@ function FieldEditor({
       const json = await res.json();
       onImageChanged(json.data.value as string);
     } catch {
-      setErr('تعذّر رفع الصورة. تأكد أنها صورة وبحجم أقل من 4 ميجابايت.');
+      setErr('تعذّر رفع الصورة. تأكد أنها صورة وبحجم أقل من 15 ميجابايت.');
     } finally {
       setUploading(false);
     }
